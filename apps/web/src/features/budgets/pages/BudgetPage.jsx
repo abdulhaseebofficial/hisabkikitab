@@ -19,6 +19,7 @@ import budgetService from '../api/budgetsApi';
 import { advisorApi as aiService } from '../../advisor';
 import { currencySymbol, formatMoney, monthLabel } from '../../../shared/utils/format';
 import useT from '../../../shared/i18n/I18nProvider';
+import { trackEvent } from '../../../shared/analytics/analytics';
 
 const now = new Date();
 
@@ -42,6 +43,7 @@ export default function Budget() {
   const { data, loading, error, reload } = useAsync(load, [period]);
 
   const saveLimit = () => {
+    const eventName = editing ? 'budget_updated' : 'budget_created';
     const limit = Number(limitValue);
     if (Number.isNaN(limit) || limit < 0) return toast.error(t('budget.enterLimit'));
 
@@ -51,6 +53,7 @@ export default function Budget() {
     return run(() => budgetService.set({ category, limit, month: period.month, year: period.year }), {
       success: `Budget set for ${category}`,
       onDone: () => {
+        trackEvent(eventName);
         setEditing(null);
         setNewCategory('');
         setLimitValue('');
@@ -74,6 +77,7 @@ export default function Budget() {
       {
         success: t('budget.planApplied'),
         onDone: () => {
+          trackEvent('budget_plan_applied');
           setSuggestion(null);
           reload();
         },

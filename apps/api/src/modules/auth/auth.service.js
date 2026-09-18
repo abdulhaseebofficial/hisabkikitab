@@ -39,7 +39,7 @@ const RESET_LINK_TTL_TEXT = '30 minutes';
  * the same amount of time and the endpoint cannot be used as an existence
  * oracle.
  */
-const DUMMY_HASH = bcrypt.hashSync('hisab-ki-kitab-timing-equaliser', 12);
+const DUMMY_HASH = bcrypt.hashSync('hisabkikitab-timing-equaliser', 12);
 
 /**
  * Issues both tokens and records the refresh token's hash against the user.

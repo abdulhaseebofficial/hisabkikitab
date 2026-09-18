@@ -25,6 +25,7 @@ import {
   PASSWORD_MISMATCH,
 } from '../../../shared/validation/rules';
 import DeleteAccountModal from '../components/DeleteAccountModal';
+import { trackEvent } from '../../../shared/analytics/analytics';
 
 const profileSchema = z.object({
   // The same rule the API applies, so editing a profile cannot save a name
@@ -124,7 +125,10 @@ export default function Settings() {
   const changeLanguage = (language) =>
     run(() => settingsApi.updateProfile({ language }), {
       success: t('language.changed'),
-      onDone: updateUser,
+      onDone: (updated) => {
+        updateUser(updated);
+        trackEvent('language_changed', { language: updated.language });
+      },
     });
 
   /**
@@ -140,6 +144,7 @@ export default function Settings() {
       success: t('mode.switched', { mode: t(`mode.${mode}`) }),
       onDone: (updated) => {
         updateUser(updated);
+        trackEvent('finance_mode_changed', { finance_mode: updated.financeMode });
         setPendingMode(null);
         // Every mounted screen is showing the other mode's numbers. This is the
         // same broadcast quick-add uses, and it is what makes the switch take

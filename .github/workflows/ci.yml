@@ -49,15 +49,15 @@ jobs:
   # The database-backed half. Runs against a throwaway Postgres, so it needs no
   # secrets and cannot touch anything real.
   integration:
-    name: Migrations and API
+    name: Migrations, database, API and browsers
     runs-on: ubuntu-latest
 
     services:
       postgres:
         image: postgres:17
         env:
-          POSTGRES_USER: hisab-ki-kitab
-          POSTGRES_PASSWORD: hisab-ki-kitab
+          POSTGRES_USER: hisabkikitab
+          POSTGRES_PASSWORD: hisabkikitab
           POSTGRES_DB: hisabkikitab_test
         ports: ['5432:5432']
         options: >-
@@ -67,12 +67,13 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql://hisab-ki-kitab:hisab-ki-kitab@localhost:5432/hisabkikitab_test
-      NODE_ENV: development
+      DATABASE_URL: postgresql://hisabkikitab:hisabkikitab@localhost:5432/hisabkikitab_test
+      NODE_ENV: test
       # Not secrets: this database exists for the length of one job.
       JWT_ACCESS_SECRET: ci-access-secret-long-enough-to-pass-validation-000000
       JWT_REFRESH_SECRET: ci-refresh-secret-long-enough-to-pass-validation-00000
-      CLIENT_URL: http://localhost:5173
+      PORT: 5000
+      VITE_API_URL: /api
 
     steps:
       - uses: actions/checkout@v4
@@ -85,6 +86,9 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Install Chromium and system dependencies
+        run: npx playwright install --with-deps chromium
+
       # Proves the fresh-database path: a schema that does not exist yet ends
       # up complete, and re-applying is harmless.
       - name: Migrate
@@ -96,16 +100,32 @@ jobs:
       - name: Seed the demo account the API suite signs in as
         run: npm run seed
 
-      - name: Start the API
+      - name: Database constraints and transactions
+        run: npm run test:db
+
+      - name: API, settings, debts, shared living and browser suites
+        shell: bash
         run: |
-          npm start &
+          export CLIENT_URL=$(node -p 'require("./scripts/frontend-config").frontendURL')
+          node apps/api/server.js > api.log 2>&1 &
+          api_pid=$!
+          cleanup() {
+            kill "$api_pid" 2>/dev/null || true
+            wait "$api_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+          ready=false
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:5000/api/health > /dev/null; then
-              echo "api up"; exit 0
+            kill -0 "$api_pid" 2>/dev/null || { cat api.log; exit 1; }
+            if curl --max-time 2 -sf http://localhost:5000/api/health > /dev/null; then
+              ready=true; break
             fi
             sleep 2
           done
-          echo "api did not start"; exit 1
+          if [ "$ready" != true ]; then cat api.log; exit 1; fi
+          # Playwright starts, waits for, and stops Vite through webServer.
+          npm run test:e2e
 
-      - name: API and settings suites
-        run: npm run test:e2e
+      - name: Check generated browser output is ignored by the scanner
+        if: always()
+        run: npm run check:dead

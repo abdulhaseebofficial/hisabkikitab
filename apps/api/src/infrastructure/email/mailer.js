@@ -1,10 +1,8 @@
 /**
  * Tiny mail helper. If SMTP settings are absent (the normal case in local dev
- * and in a college demo) it logs the message instead of failing, so the
- * forgot-password flow is always testable.
+ * and in a college demo) it reports non-delivery without logging message bodies
+ * that may contain password-reset tokens.
  */
-
-const { isDevelopment } = require('../../shared/config/validateEnv');
 
 let transporter = null;
 
@@ -29,32 +27,23 @@ const sendMail = async ({ to, subject, text, html }) => {
   const tx = getTransporter();
 
   if (!tx) {
-    // Printing the body is how the reset flow stays testable with no SMTP, but
-    // that body carries a password-reset link. Outside local development the
-    // logs are somewhere other people can read, and a link in them is an
-    // account-takeover primitive - so say only that delivery failed.
-    if (!isDevelopment()) {
-      console.error(
-        `[mail] NOT DELIVERED to ${to} ("${subject}") - no SMTP configured. ` +
-          'Password reset cannot work until SMTP_HOST and SMTP_USER are set.'
-      );
-      return { delivered: false };
-    }
-
-    console.log('\n[mail] SMTP not configured - message logged instead of sent');
-    console.log(`[mail] to: ${to}`);
-    console.log(`[mail] subject: ${subject}`);
-    console.log(`[mail] body:\n${text}\n`);
+    console.warn('[mail] NOT DELIVERED - SMTP is not configured.');
     return { delivered: false };
   }
 
-  await tx.sendMail({
-    from: process.env.MAIL_FROM || 'Hisab Ki Kitab <no-reply@hisabkikitab.app>',
-    to,
-    subject,
-    text,
-    html: html || `<p>${text.replace(/\n/g, '<br/>')}</p>`,
-  });
+  try {
+    await tx.sendMail({
+      from: process.env.MAIL_FROM || 'Hisab Ki Kitab <no-reply@hisabkikitab.app>',
+      to,
+      subject,
+      text,
+      html: html || `<p>${text.replace(/\n/g, '<br/>')}</p>`,
+    });
+  } catch {
+    // SMTP responses can echo authentication details. The global error handler
+    // logs thrown errors, so do not propagate the provider's raw error or cause.
+    throw new Error('Email delivery failed');
+  }
 
   return { delivered: true };
 };

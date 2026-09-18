@@ -60,7 +60,7 @@ const exportReport = asyncHandler(async (req, res) => {
     ];
 
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="hisab-ki-kitab-${label}.csv"`);
+    res.setHeader('Content-Disposition', `attachment; filename="hisabkikitab-${label}.csv"`);
     // UTF-8 BOM so Excel renders currency symbols correctly.
     return res.send('\uFEFF' + toCsv(rows));
   }
@@ -68,7 +68,7 @@ const exportReport = asyncHandler(async (req, res) => {
   // ---------- PDF ----------
   const doc = new PDFDocument({ size: 'A4', margin: 48 });
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="hisab-ki-kitab-${label}.pdf"`);
+  res.setHeader('Content-Disposition', `attachment; filename="hisabkikitab-${label}.pdf"`);
   doc.pipe(res);
 
   const money = (n) => `${cur} ${round2(n).toLocaleString('en-IN')}`;

@@ -11,9 +11,9 @@ url.searchParams.set('options', `-c search_path=${schema}`);
 for (const key of ['DATABASE_URL', 'POSTGRES_URL', 'DIRECT_URL', 'POSTGRES_URL_NON_POOLING']) process.env[key] = url.toString();
 process.env.NODE_ENV = process.env.HW_E2E_NODE_ENV || 'test';
 process.env.PORT = '5000';
-process.env.CLIENT_URL = 'http://localhost:5173';
+process.env.CLIENT_URL = require('./frontend-config').frontendURL;
 process.env.HW_API = 'http://localhost:5000/api';
 process.env.API_URL = 'http://localhost:5000';
 process.env.VITE_API_URL = '/api';
 // Tests must not send mail or spend third-party API quotas.
-for (const key of ['GEMINI_API_KEY', 'ANTHROPIC_API_KEY', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS']) process.env[key] = '';
+for (const key of ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_CLIENT_ID', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS']) process.env[key] = '';

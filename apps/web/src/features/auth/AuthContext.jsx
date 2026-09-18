@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import toast from 'react-hot-toast';
 import authService from './api/authApi';
 import { setSessionExpiredHandler, getErrorMessage, bumpSessionEpoch } from '../../shared/api/client';
+import { trackEvent } from '../../shared/analytics/analytics';
 
 const AuthContext = createContext(null);
 
@@ -77,6 +78,7 @@ export function AuthProvider({ children }) {
     const loggedIn = await authService.login(credentials);
     setUser(loggedIn);
     setLoading(false);
+    trackEvent('login_completed', { method: 'password' });
     toast.success(`Welcome back, ${loggedIn.name.split(' ')[0]}!`);
     return loggedIn;
   }, []);
@@ -87,6 +89,7 @@ export function AuthProvider({ children }) {
     const created = await authService.register(payload);
     setUser(created);
     setLoading(false);
+    trackEvent('sign_up_completed', { method: 'password' });
     toast.success('Account created. Let us set things up.');
     return created;
   }, []);
@@ -99,6 +102,7 @@ export function AuthProvider({ children }) {
   const loginWithGoogle = useCallback(async (idToken) => {
     const result = await authService.google(idToken);
     setUser(result.user);
+    trackEvent(result.created ? 'sign_up_completed' : 'login_completed', { method: 'google' });
     toast.success(result.created ? 'Account created. Let us set things up.' : 'Welcome back.');
     return result;
   }, []);
@@ -107,6 +111,7 @@ export function AuthProvider({ children }) {
     sessionVersion.current += 1;
     bumpSessionEpoch();
     await authService.logout();
+    trackEvent('logout_completed');
     setUser(null);
     toast.success('Logged out');
   }, []);

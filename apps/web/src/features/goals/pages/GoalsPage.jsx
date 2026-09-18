@@ -17,6 +17,7 @@ import { useAuth } from '../../auth';
 import goalService from '../api/goalsApi';
 import { cn, formatMoney } from '../../../shared/utils/format';
 import useT from '../../../shared/i18n/I18nProvider';
+import { trackEvent } from '../../../shared/analytics/analytics';
 
 // Keys, so the tab a person is on survives a language change.
 const TABS = [
@@ -39,10 +40,12 @@ export default function Goals() {
   const { data, loading, error, reload } = useAsync(load, [tab]);
 
   const submit = (values) => {
+    const eventName = editing ? 'goal_updated' : 'goal_created';
     const payload = { ...values, deadline: values.deadline || null };
     return run(() => (editing ? goalService.update(editing._id, payload) : goalService.create(payload)), {
       success: editing ? 'Goal updated' : 'Goal created. Now go fund it!',
       onDone: () => {
+        trackEvent(eventName);
         setFormOpen(false);
         setEditing(null);
         reload();
@@ -56,6 +59,7 @@ export default function Goals() {
     run(() => goalService.contribute(contributing._id, amount), {
       onDone: (result) => {
         if (result.justCompleted) {
+          trackEvent('goal_completed');
           toast.success(`Goal complete! You saved the full amount for "${result.goal.title}"`, {
             icon: '\uD83C\uDF89',
             duration: 5000,

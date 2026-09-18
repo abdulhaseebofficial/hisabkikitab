@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Download } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -19,6 +20,7 @@ import AuditChanges from "../components/AuditChanges";
 import ReceiptControls from "../components/ReceiptControls";
 import SharePreview from "../components/SharePreview";
 import LedgerForm from "../components/LedgerForm";
+import { trackEvent } from "../../../shared/analytics/analytics";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const moneyField = (key = "amount") => ({
@@ -57,9 +59,10 @@ export default function SharedLivingPage({ userId }) {
     [loading, setLoading] = useState(true);
   const [dialog, setDialog] = useState(null),
     [invite, setInvite] = useState(null),
-    [tab, setTab] = useState("overview"),
+    [tab, setTab] = useState("dashboard"),
     [day, setDay] = useState(today());
   const [version, setVersion] = useState(0);
+  const [groceryPerHead, setGroceryPerHead] = useState("8000");
   useEffect(() => {
     if (!userId || !spaces.some((s) => s.id === spaceId)) return;
     try { localStorage.setItem(`shared-living:${userId}`, JSON.stringify({ spaceId, month })); } catch { /* Storage is optional. */ }
@@ -112,6 +115,11 @@ export default function SharedLivingPage({ userId }) {
   const selected = spaces.find((s) => s.id === spaceId),
     admin = selected?.role === "admin",
     writable = admin && data && !data.period.closed;
+  useEffect(() => {
+    if (!data?.summary?.activeMembers) return;
+    const total = Number(data.period.food_budget_minor || 0) / 100;
+    if (total > 0) setGroceryPerHead((total / data.summary.activeMembers).toFixed(2));
+  }, [data]);
   const base = `/spaces/${spaceId}`,
     periodPath = `${base}/months/${month}`;
   const categoryLabel = useCallback(
@@ -122,6 +130,31 @@ export default function SharedLivingPage({ userId }) {
     [data, t],
   );
   const format = (value) => `${selected?.currency || ""} ${value}`;
+  const downloadReport = () => {
+    if (!data || !selected) return;
+    const csvCell = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+    const rows = [
+      ["Hisab Ki Kitab - Shared Living report"],
+      ["Space", selected.name], ["Month", month], ["Currency", selected.currency], [],
+      ["Summary", "Amount"],
+      ...stats.slice(0, 7).map((key) => [t(`shared.${key}`), data.summary[key]]),
+      [], ["Food expenses"], ["Date", "Category", "Amount", "Note"],
+      ...data.expenses.map((row) => [row.date, categoryLabel(row.category_id), minor(row.amount_minor), row.note]),
+      [], ["Bills"], ["Name", "Date", "Due date", "Amount", "Paid"],
+      ...data.bills.map((row) => [row.name, row.date, row.due_date, minor(row.amount_minor), row.paid ? "Yes" : "No"]),
+      [], ["Contributions"], ["Date", "Member", "Amount", "Method"],
+      ...data.payments.map((row) => [row.date, data.summary.members.find((m) => m.id === row.member_id)?.name || "", minor(row.amount_minor), row.method]),
+    ];
+    const blob = new Blob(["\uFEFF" + rows.map((row) => row.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `hisabkikitab-shared-${month}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
   const run = async (fn) => {
     if (pending.current) return null;
     pending.current = true;
@@ -322,6 +355,7 @@ export default function SharedLivingPage({ userId }) {
       if (dialog.kind === "join") {
         const joined = await api.join(body);
         setSpaceId(joined.space_id);
+        trackEvent("shared_group_joined", { role: "viewer" });
         return joined;
       }
       if (dialog.method === 'post' && ['expenses', 'bills', 'payments'].includes(dialog.kind)) {
@@ -334,6 +368,15 @@ export default function SharedLivingPage({ userId }) {
       if (dialog.kind === "space" && dialog.method === "post") {
         setSpaceId(result.id);
         setMonth(body.month);
+        trackEvent("shared_group_created", { role: "admin" });
+      } else if (dialog.method === "post") {
+        const event = {
+          expenses: "shared_expense_created",
+          bills: "shared_bill_created",
+          payments: "contribution_added",
+          member: "shared_member_added",
+        }[dialog.kind];
+        if (event) trackEvent(event, { role: admin ? "admin" : "viewer" });
       }
       return result;
     });
@@ -341,6 +384,7 @@ export default function SharedLivingPage({ userId }) {
     const d = new Date(`${month}-01T00:00:00Z`);
     d.setUTCMonth(d.getUTCMonth() + delta);
     setMonth(d.toISOString().slice(0, 7));
+    trackEvent("shared_month_changed", { role: admin ? "admin" : "viewer" });
   };
   const stats = [
     "budget",
@@ -358,6 +402,20 @@ export default function SharedLivingPage({ userId }) {
     "foodPerPerson",
     "billsPerPerson",
   ];
+  const planKinds = ["rent", "cook", "electricity", "gas", "internet", "water", "maintenance", "groceries"];
+  const planBills = data?.bills || [];
+  const planMembers = data?.summary?.members || [];
+  const planRows = planMembers.map((member) => {
+    const shares = (data?.shares || []).filter((share) => share.member_id === member.id && share.bill_id);
+    const amounts = Object.fromEntries(planKinds.map((kind) => [kind, 0]));
+    for (const share of shares) {
+      const bill = planBills.find((row) => row.id === share.bill_id);
+      const category = data.categories.find((row) => row.id === bill?.category_id);
+      const key = category?.stable_key || "";
+      if (key in amounts) amounts[key] += Number(share.amount_minor || 0);
+    }
+    return { ...member, amounts, total: Object.values(amounts).reduce((sum, value) => sum + value, 0) };
+  });
   return (
     <div className="space-y-5">
       <PageHeader
@@ -439,7 +497,32 @@ export default function SharedLivingPage({ userId }) {
         </Card>
       )}
       {loading && <p role="status">{t("shared.loading")}</p>}
-      {!loading && !error && !spaces.length && <Card>{t("shared.emptySpaces")}</Card>}
+      {!loading && !error && !spaces.length && (
+        <Card>
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">{t("shared.emptySpaces")}</h2>
+              <p className="mt-1 max-w-xl text-sm text-slate-500">
+                {t("shared.subtitle")}
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <Button onClick={() => openSpace()}>{t("shared.createSpace")}</Button>
+              <Button
+                variant="secondary"
+                onClick={() => setDialog({
+                  kind: "join",
+                  title: "join",
+                  initial: {},
+                  fields: [required("code")],
+                })}
+              >
+                {t("shared.join")}
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
       {admin && spaceId && !data && !loading && error === "shared.noMonth" && (
         <Button
           onClick={() =>
@@ -459,12 +542,12 @@ export default function SharedLivingPage({ userId }) {
       {data && (
         <>
           <div
-            className="flex flex-wrap gap-2"
+            className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1"
             role="tablist"
             aria-label={t("shared.sections")}
           >
             {[
-              "overview",
+              "dashboard",
               "daily",
               "bills",
               "members",
@@ -496,12 +579,30 @@ export default function SharedLivingPage({ userId }) {
           {data.period.closed && (
             <p className="text-sm">{t("shared.closed")}</p>
           )}
-          {tab === "overview" && (
+          {tab === "dashboard" && (
             <>
               <Card>
-                <p>
-                  {t("shared.activeMembers")}: {data.summary.activeMembers}
-                </p>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-lg font-semibold">{selected.name}</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {t("shared.activeMembers")}: {data.summary.activeMembers} · {month}
+                    </p>
+                  </div>
+                  {writable && (
+                    <div className="flex flex-wrap gap-2">
+                      <Button onClick={() => openFinancial("expenses")}>
+                        {t("shared.add_expenses")}
+                      </Button>
+                      <Button variant="secondary" onClick={() => openFinancial("payments")}>
+                        {t("shared.add_payments")}
+                      </Button>
+                    </div>
+                  )}
+                  <Button variant="secondary" icon={Download} onClick={downloadReport}>
+                    {t("shared.downloadReport")}
+                  </Button>
+                </div>
                 <p className="mt-2 text-sm text-slate-500">
                   {t("shared.cashExplanation")}
                 </p>
@@ -518,6 +619,54 @@ export default function SharedLivingPage({ userId }) {
                   </Card>
                 ))}
               </div>
+              <Card>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 className="font-semibold">{t("shared.monthlyPlan")}</h2>
+                    <p className="mt-1 text-sm text-slate-500">{t("shared.monthlyPlanHint")}</p>
+                  </div>
+                  {admin && writable && (
+                    <div className="flex items-end gap-2">
+                      <Input
+                        label={t("shared.groceryPerHead")}
+                        inputMode="decimal"
+                        value={groceryPerHead}
+                        onChange={(event) => setGroceryPerHead(event.target.value)}
+                      />
+                      <Button
+                        variant="secondary"
+                        disabled={busy || !/^\d+(\.\d{1,2})?$/.test(groceryPerHead)}
+                        onClick={() => run(() => api.save("put", periodPath, {
+                          food_budget: (Number(groceryPerHead) * Math.max(1, planMembers.length)).toFixed(2),
+                        }))}
+                      >
+                        {t("shared.save")}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-4 overflow-x-auto">
+                  <table className="min-w-full text-left text-sm">
+                    <thead className="text-xs uppercase text-slate-500">
+                      <tr>
+                        <th className="pb-2 pr-4">{t("shared.member")}</th>
+                        {planKinds.map((kind) => <th className="pb-2 pr-4" key={kind}>{t(`shared.categories.${kind}`)}</th>)}
+                        <th className="pb-2">{t("shared.total")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {planRows.map((row) => (
+                        <tr className="border-t border-slate-200 dark:border-slate-700" key={row.id}>
+                          <td className="py-3 pr-4 font-medium">{row.name}</td>
+                          {planKinds.map((kind) => <td className="py-3 pr-4" key={kind}>{format(minor(row.amounts[kind]))}</td>)}
+                          <td className="py-3 font-semibold">{format(minor(row.total))}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {!planRows.length && <p className="py-3 text-sm text-slate-500">{t("shared.empty")}</p>}
+                </div>
+              </Card>
               <Card>
                 <h2 className="mb-4 font-semibold">{t("shared.dailyChart")}</h2>
                 <div className="h-64 min-w-0">
@@ -551,7 +700,7 @@ export default function SharedLivingPage({ userId }) {
                 <h2 className="font-semibold">
                   {t("shared.categoryBreakdown")}
                 </h2>
-                {data.summary.categories.map((c) => (
+                {data.summary.categories.length ? data.summary.categories.map((c) => (
                   <p
                     className="mt-2 flex justify-between gap-3"
                     key={c.category_id}
@@ -559,11 +708,11 @@ export default function SharedLivingPage({ userId }) {
                     <span>{categoryLabel(c.category_id)}</span>
                     <span>{format(c.amount)}</span>
                   </p>
-                ))}
+                )) : <p className="mt-3 text-sm text-slate-500">{t("shared.empty")}</p>}
               </Card>
               <Card>
                 <h2 className="font-semibold">{t("shared.recentExpenses")}</h2>
-                {data.expenses
+                {data.expenses.length ? data.expenses
                   .slice(-5)
                   .reverse()
                   .map((e) => (
@@ -571,17 +720,39 @@ export default function SharedLivingPage({ userId }) {
                       {e.date} · {categoryLabel(e.category_id)} ·{" "}
                       {format(minor(e.amount_minor))}
                     </p>
-                  ))}
+                  )) : <p className="mt-3 text-sm text-slate-500">{t("shared.empty")}</p>}
+              </Card>
+              <Card>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 className="font-semibold">{t("shared.groceryLog")}</h2>
+                    <p className="mt-1 text-sm text-slate-500">{t("shared.groceryLogHint")}</p>
+                  </div>
+                  <Button variant="secondary" onClick={() => setTab("daily")}>
+                    {t("shared.viewAll")}
+                  </Button>
+                </div>
+                <div className="mt-3 divide-y divide-slate-200 dark:divide-slate-700">
+                  {data.expenses.length ? [...data.expenses].reverse().map((expense) => (
+                    <div className="flex flex-wrap items-center justify-between gap-3 py-3" key={expense.id}>
+                      <div className="min-w-0">
+                        <p className="font-medium">{categoryLabel(expense.category_id)}</p>
+                        <p className="text-sm text-slate-500">{expense.date}{expense.note ? ` · ${expense.note}` : ""}</p>
+                      </div>
+                      <p className="font-semibold">{format(minor(expense.amount_minor))}</p>
+                    </div>
+                  )) : <p className="py-3 text-sm text-slate-500">{t("shared.empty")}</p>}
+                </div>
               </Card>
               <Card>
                 <h2 className="font-semibold">{t("shared.unpaidBills")}</h2>
-                {data.bills
+                {data.bills.filter((b) => !b.paid).length ? data.bills
                   .filter((b) => !b.paid)
                   .map((b) => (
                     <p className="mt-2" key={b.id}>
                       {b.name} · {b.due_date} · {format(minor(b.amount_minor))}
                     </p>
-                  ))}
+                  )) : <p className="mt-3 text-sm text-slate-500">{t("shared.empty")}</p>}
               </Card>
               <Card>
                 <h2 className="font-semibold">{t("shared.comparisons")}</h2>

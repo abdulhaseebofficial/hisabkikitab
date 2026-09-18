@@ -39,7 +39,7 @@ const { createMemoryStore, createPostgresStore } = require('../../infrastructure
  * they were. Nothing about the subject is logged either.
  */
 
-const HASH_SALT = process.env.RATE_LIMIT_SALT || 'hisab-ki-kitab-rate-limit';
+const HASH_SALT = process.env.RATE_LIMIT_SALT || 'hisabkikitab-rate-limit';
 
 /**
  * Which store to use.

@@ -7,6 +7,7 @@ import LanguageProvider from './providers/LanguageProvider';
 import ProtectedRoute, { PublicOnlyRoute } from './routes/ProtectedRoute';
 import AppLayout from './layout/AppLayout';
 import { PageSpinner } from '../shared/components/ui/Spinner';
+import AnalyticsObserver from './providers/AnalyticsObserver';
 
 // Auth screens load eagerly - they are the first thing most visitors see.
 import Login from '../features/auth/pages/LoginPage';
@@ -33,6 +34,7 @@ export default function App() {
       <BrowserRouter>
         <AuthProvider>
           <LanguageProvider>
+            <AnalyticsObserver />
             <Suspense fallback={<PageSpinner />}>
               <Routes>
                 {/* Signed out only */}

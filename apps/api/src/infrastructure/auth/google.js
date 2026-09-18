@@ -59,8 +59,9 @@ const verify = async (idToken) => {
   try {
     const ticket = await client.verifyIdToken({ idToken, audience });
     payload = ticket.getPayload();
-  } catch (err) {
-    return { ok: false, reason: `token rejected by Google: ${err.message}` };
+  } catch {
+    // Library errors can include the supplied ID token; this reason is logged.
+    return { ok: false, reason: 'token verification failed' };
   }
 
   return checkClaims(payload);

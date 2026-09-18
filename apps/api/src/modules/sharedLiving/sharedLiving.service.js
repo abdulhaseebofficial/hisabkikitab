@@ -12,6 +12,7 @@ const DEFAULTS = {
     "vegetables",
     "meat",
     "milk",
+    "tea",
     "groceries",
     "other",
   ],

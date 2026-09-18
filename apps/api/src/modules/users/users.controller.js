@@ -46,7 +46,7 @@ const deleteCategory = asyncHandler(async (req, res) => {
  */
 const exportData = asyncHandler(async (req, res) => {
   const dump = await users.exportEverything(req.user);
-  res.setHeader('Content-Disposition', 'attachment; filename="hisab-ki-kitab-data.json"');
+  res.setHeader('Content-Disposition', 'attachment; filename="hisabkikitab-data.json"');
   res.json(dump);
 });
 

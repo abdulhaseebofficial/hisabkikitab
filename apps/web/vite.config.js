@@ -1,11 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import frontendConfig from '../../scripts/frontend-config.js';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5173,
+    port: frontendConfig.frontendPort,
+    strictPort: true,
     // Proxy /api during development so the browser sees one origin and the
     // httpOnly refresh cookie works without any CORS configuration.
     proxy: {

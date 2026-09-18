@@ -206,7 +206,7 @@ const withFallback = async (label, run, fallback) => {
     const result = await run();
     return { ...result, aiPowered: true };
   } catch (err) {
-    console.error(`[ai] ${label} failed:`, err.message);
+    console.error(`[ai] ${label} failed; using the built-in advisor`);
     return { ...fallback(), aiPowered: false, reason: 'api_error' };
   }
 };

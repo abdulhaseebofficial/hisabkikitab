@@ -67,20 +67,27 @@ test(
         server = app.listen(0, "127.0.0.1", resolve);
       });
       const request = async (method, url, body, who = 0) => {
-        const response = await fetch(
-          `http://127.0.0.1:${server.address().port}/api${url}`,
-          {
-            method,
-            headers: {
-              "Content-Type": "application/json",
-              ...(who === null
-                ? {}
-                : { Authorization: `Bearer ${tokens[who]}` }),
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 15000);
+        try {
+          const response = await fetch(
+            `http://127.0.0.1:${server.address().port}/api${url}`,
+            {
+              method,
+              headers: {
+                "Content-Type": "application/json",
+                ...(who === null
+                  ? {}
+                  : { Authorization: `Bearer ${tokens[who]}` }),
+              },
+              ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+              signal: controller.signal,
             },
-            ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-          },
-        );
-        return { status: response.status, ...(await response.json()) };
+          );
+          return { status: response.status, ...(await response.json()) };
+        } finally {
+          clearTimeout(timeout);
+        }
       };
       const call = async (method, url, body, who = 0) => {
         const r = await request(method, `/shared-living${url}`, body, who);

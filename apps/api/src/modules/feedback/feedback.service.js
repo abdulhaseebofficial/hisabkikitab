@@ -42,7 +42,7 @@ const submit = async (user, { type, rating, message, page }) => {
     }
   } catch (err) {
     // Logged, never surfaced - the feedback itself was already stored.
-    console.error('[feedback] could not e-mail the developer:', err.message);
+    console.error('[feedback] could not e-mail the developer');
   }
 
   return feedback;

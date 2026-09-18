@@ -19,7 +19,12 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..').split(path.sep).join('/');
-const SKIP = new Set(['node_modules', '.git', 'dist', '.vercel', 'coverage']);
+// Generated output only: shared by entry discovery, reachability and empty-dir checks.
+const SKIP = new Set([
+  'node_modules', '.git', 'dist', 'build', '.vercel', 'coverage', '.nyc_output',
+  'test-results', 'playwright-report', 'blob-report',
+  '.cache', '.vite', '.vite-temp', '.vitest', '.turbo',
+]);
 const CODE = ['.js', '.jsx', '.mjs', '.cjs'];
 
 /**

@@ -100,7 +100,7 @@ test('create, manage, contribute, split, join read-only and restore the group', 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('shared-living.png'), fullPage: true });
 
-  const viewer = await browser.newContext({ baseURL: process.env.BROWSER_BASE_URL || 'http://localhost:5175', viewport: info.project.use.viewport });
+  const viewer = await browser.newContext({ baseURL: info.project.use.baseURL, viewport: info.project.use.viewport });
   const reader = await viewer.newPage();
   try {
     const viewerEmail = `viewer-${crypto.randomUUID()}@example.test`;

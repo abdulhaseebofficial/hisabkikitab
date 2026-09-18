@@ -109,7 +109,7 @@ reaches the browser.
 
 ### Everything else
 - JWT auth with access + refresh tokens, silent refresh, bcrypt password hashing
-- Forgot-password flow (emails the link, or logs it when SMTP is not configured)
+- Forgot-password flow (emails the link; optional explicit development reset link when SMTP is unavailable)
 - First-run onboarding wizard
 - In-app notification tray: overspending, bills due, goal deadlines, log reminders
 - Light / dark / system theme
@@ -213,8 +213,8 @@ reason.
 ### 1. Install
 
 ```bash
-git clone <your-repo-url> hisab-ki-kitab
-cd hisab-ki-kitab
+git clone <your-repo-url> hisabkikitab
+cd hisabkikitab
 npm install              # one install for every workspace
 ```
 
@@ -290,6 +290,36 @@ The login screen has a **Try the demo account** button that fills these in.
 
 ---
 
+## Google Analytics 4 (optional)
+
+The Vite frontend reads one public configuration value:
+
+```bash
+VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+```
+
+Leave it unset to disable analytics. GA4 is enabled automatically only in a
+production build; deliberate local testing additionally requires
+`VITE_GA_ENABLE_LOCAL=true`, and automated tests never contact Google. On
+Vercel, add `VITE_GA_MEASUREMENT_ID` to the frontend's Production environment
+and redeploy so Vite can include it at build time.
+
+The centralized helper is in
+`apps/web/src/shared/analytics/analytics.js`, with React Router page tracking in
+`apps/web/src/app/providers/AnalyticsObserver.jsx`. It records sanitized SPA page paths, authentication
+successes, finance mode/language changes, and successful expense, income,
+budget, goal, debt, and Shared Living actions. User properties are limited to
+`finance_mode` and `app_language`.
+
+Analytics never receives names, email addresses, IDs, join/reset codes, notes,
+descriptions, amounts, API payloads, or other ledger content. Event parameters
+are allowlisted and advertising signals are disabled. To verify a deployment,
+open GA4 **Realtime** or **Admin > DebugView**, navigate between screens, and
+confirm the sanitized `page_view` and custom events. Local DebugView testing
+requires the local-enable flag above and a browser GA debugger/debug-mode setup.
+
+---
+
 ## Testing
 
 ```bash
@@ -302,15 +332,41 @@ Or one at a time:
 npm run check:boundaries   # the layering rules
 npm run check:dead         # files and exports nothing reaches
 npm run test:unit          # pure logic, no database, no server
+npm run test:web           # frontend/component tests
 npm run test:migrations    # fresh-database and re-apply paths
+npm run test:db            # constraints, transactions and Shared Living database tests
 npm run test:e2e           # API/database journey (use scripts/e2e-environment.js)
-npm run test:browser       # Playwright browser journey (API and web must be running)
+npm run test:browser       # running API required; Playwright manages the frontend
 npm run build              # production build
 ```
 
-The end-to-end suites are dependency-free — Node 18's built-in `fetch` is all
-they need — and the unit tests use Node's own runner, so a fresh clone can run
-all of it with nothing extra installed.
+The API suites use Node's built-in `fetch`; browser tests require Chromium:
+
+```bash
+npx playwright install chromium  # CI uses --with-deps for Linux system libraries
+node scripts/e2e-environment.js setup   # create/migrate/seed an isolated schema
+node scripts/e2e-environment.js check   # validates everything; starts/stops its API
+node scripts/e2e-environment.js cleanup
+```
+
+Use `node scripts/e2e-environment.js dev` separately only when you want to
+explore the isolated app manually; stop that process before running `check`.
+
+The launcher reads `apps/api/.env` and stores only the schema name in ignored
+`.env.e2e.local`. It disables external AI, Google login and email for these tests.
+Use a development/test database whose role can create and drop schemas.
+
+`scripts/frontend-config.js` supplies Vite and Playwright's default port, `5173`.
+Set `FRONTEND_PORT` in the shell for both development and tests to choose another
+port (PowerShell: `$env:FRONTEND_PORT = '5180'`; bash: `export FRONTEND_PORT=5180`).
+Vite fails if that port is occupied instead of silently choosing another one.
+Playwright reuses a running local frontend, or starts and stops one automatically;
+CI always starts its own. `BROWSER_BASE_URL` targets an already-running frontend
+and disables automatic frontend startup. For an alternate API, configure
+`VITE_API_PROXY_TARGET`, `HW_API` (including `/api`) and `API_URL` (origin).
+Normal API development also needs `CLIENT_URL` to allow the chosen frontend
+origin; the isolated launcher sets it automatically. CI migrates and seeds its
+throwaway Postgres, health-checks the API, then runs the same `npm run test:e2e`.
 
 | Suite | Covers |
 |---|---|
@@ -610,13 +666,15 @@ telling you one of the three required variables above is not set.
 ### Split across two hosts
 
 **Frontend → Vercel or Netlify**
-- Build command `npm run build`, output directory `dist`, root `frontend`
+- Repository root as the working directory; install `npm ci`, build
+  `npm run build`, publish output directory `apps/web/dist`
 - Set `VITE_API_URL` to the deployed API URL, e.g.
-  `https://hisab-ki-kitab-api.onrender.com/api`
+  `https://hisabkikitab-api.onrender.com/api`
 - Add a SPA rewrite so deep links work: `/* → /index.html`
 
 **Backend → Render or Railway**
-- Root `backend`, build `npm install`, start `npm start`
+- Repository root as the working directory; install `npm ci`, start `npm start`
+  (runs the `apps/api` workspace). Keep `packages/contracts` available to both apps.
 - Set every variable from `apps/api/.env.example`
 - Set `CLIENT_URL` to the deployed frontend origin (comma-separate several)
 - `NODE_ENV=production` - this makes the refresh cookie `secure: true`
@@ -628,7 +686,10 @@ telling you one of the three required variables above is not set.
 - On Vercel, `vercel integration add neon` provisions one and sets
   `DATABASE_URL` for you. Elsewhere, create a database and paste its connection
   string into `DATABASE_URL` - the schema is applied automatically on first
-  connect, or run `npm run migrate --prefix backend` yourself
+  connect, or run `npm run migrate` from the repository root with `apps/api/.env`.
+  With hosted environment variables, the same command uses those variables.
+  To use a locally pulled `.env.production.local`, run `npm run migrate:deployed`.
+  Migration SQL lives in `database/migrations`; do not run the demo seed in production.
 
 ---
 

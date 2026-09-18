@@ -7,6 +7,17 @@ build/
 coverage/
 test-results/
 playwright-report/
+blob-report/
+.nyc_output/
+.cache/
+.vite/
+.vite-temp/
+.vitest/
+.turbo/
+
+# Confirmed unrelated editor scratch files (do not ignore arbitrary C++ sources).
+/tempCodeRunnerFile.*
+/database/migrations/Untitled-1.cpp
 
 # Environment files.
 #
