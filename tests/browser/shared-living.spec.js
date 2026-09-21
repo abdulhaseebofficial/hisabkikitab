@@ -56,6 +56,8 @@ test('create, manage, contribute, split, join read-only and restore the group', 
   await dialog.getByLabel(s.residents, { exact: true }).fill('2');
   await dialog.getByRole('button', { name: s.save, exact: true }).click();
   await expect(page.getByText(s.admin, { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Switch to dark mode', exact: true }).click();
+  await expect(page.locator('html')).toHaveClass(/dark/);
   const code = await page.getByLabel(s.code, { exact: true }).inputValue();
   expect(code).toMatch(/^[\w-]{43}$/);
   await page.getByRole('button', { name: s.dismiss, exact: true }).click();
@@ -129,6 +131,12 @@ test('create, manage, contribute, split, join read-only and restore the group', 
   await expect(page.getByRole('tablist')).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('shared-living.png'), fullPage: true });
+  const menu = page.getByRole('button', { name: words.common.openMenu, exact: true });
+  if (await menu.isVisible()) {
+    await menu.click();
+    await page.screenshot({ path: info.outputPath('shared-living-menu.png'), fullPage: true });
+    await page.getByRole('button', { name: words.nav.closeMenu, exact: true }).click();
+  }
 
   const viewer = await browser.newContext({ baseURL: info.project.use.baseURL, viewport: info.project.use.viewport });
   const reader = await viewer.newPage();

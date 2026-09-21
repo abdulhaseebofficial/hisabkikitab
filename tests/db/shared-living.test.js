@@ -134,7 +134,8 @@ test(
             crypto.createHash("sha256").update(code).digest("hex"),
           );
           const dash = await call("GET", monthPath);
-          assert.equal(dash.categories.length, 18);
+          assert.equal(dash.categories.length, 19);
+          assert.ok(dash.categories.some((category) => category.stable_key === 'tea' && category.kind === 'food'));
           food = dash.categories.find((c) => c.kind === "food").id;
           billCategory = dash.categories.find((c) => c.kind === "bill").id;
           other = await call(
