@@ -129,3 +129,11 @@ jobs:
       - name: Check generated browser output is ignored by the scanner
         if: always()
         run: npm run check:dead
+
+      - name: Save browser regression screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-regressions
+          path: test-results/browser/
+          retention-days: 7
