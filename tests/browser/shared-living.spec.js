@@ -95,7 +95,7 @@ test('create, manage, contribute, split, join read-only and restore the group', 
   await dialog.getByRole('button', { name: s.save, exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.getByRole('heading', { name: 'Rent', exact: true })).toBeVisible();
-  await tab(s.overview);
+  await tab(words.nav.dashboard);
   await expect(page.getByText('PKR 969.99', { exact: true })).toBeVisible();
   await expect(page.getByText('PKR 64.99', { exact: true })).toBeVisible();
   await tab(s.daily);
@@ -109,7 +109,7 @@ test('create, manage, contribute, split, join read-only and restore the group', 
   await expect(page.getByRole('region', { name: s.daily })).toBeVisible();
   await expect(page.getByLabel(s.month, { exact: true })).toHaveValue('2024-02');
   await expect(page.getByText(s.admin, { exact: true })).toBeVisible();
-  await tab(s.overview);
+  await tab(words.nav.dashboard);
   await expect(page.getByText('PKR 969.99', { exact: true })).toBeVisible();
   const reportPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: s.downloadReport, exact: true }).click();
@@ -123,7 +123,7 @@ test('create, manage, contribute, split, join read-only and restore the group', 
   await expect(page.getByRole('region', { name: s.activity })).toBeVisible();
   await tab(words.nav.settings);
   await expect(page).toHaveURL(/\/settings$/);
-  await tab(s.overview);
+  await tab(words.nav.dashboard);
   await expect(page.getByLabel(s.month, { exact: true })).toHaveValue('2024-02');
   await expect(page.getByText('PKR 969.99', { exact: true })).toBeVisible();
   await expect(page.getByRole('tablist')).toHaveCount(0);
@@ -161,7 +161,7 @@ test('create, manage, contribute, split, join read-only and restore the group', 
     }
     await reader.reload();
     await expect(reader.getByText(s.viewOnly, { exact: true })).toBeVisible();
-    await navigateSection(reader, words, s.overview);
+    await navigateSection(reader, words, words.nav.dashboard);
     await expect(reader.getByText('PKR 969.99', { exact: true })).toBeVisible();
     const snapshot = await reader.request.get('/api/shared-living/spaces');
     const group = (await snapshot.json()).data[0];
