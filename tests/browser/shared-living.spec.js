@@ -15,8 +15,13 @@ const registerAccount = async (account) => {
 
 const navigateSection = async (page, words, name) => {
   const menu = page.getByRole('button', { name: words.common.openMenu, exact: true });
-  if (await menu.isVisible()) await menu.click();
+  if (page.viewportSize().width < 1024) {
+    // Settings is lazy-loaded: wait for the shell to return before opening its drawer.
+    await expect(menu).toBeVisible();
+    await menu.click();
+  }
   const link = page.locator('aside:visible').getByRole('link', { name });
+  await expect(link).toBeVisible();
   await link.focus();
   await link.press('Enter');
   await expect(page.getByRole('button', { name: words.nav.closeMenu, exact: true })).toHaveCount(0);
