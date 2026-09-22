@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
-import { FileBarChart, HandCoins, LayoutDashboard, PieChart, Receipt, Settings, Sparkles, Target, Wallet, X } from 'lucide-react';
+import { Link, matchPath, useLocation } from 'react-router-dom';
+import { FileBarChart, HandCoins, History, LayoutDashboard, PieChart, Receipt, Settings, Settings2, Sparkles, Target, Users, Utensils, Wallet, X } from 'lucide-react';
+import { sharedSection, sharedSectionSearch } from '../../features/sharedLiving';
 import useT from '../../shared/i18n/I18nProvider';
 import { cn } from '../../shared/utils/format';
 
@@ -29,29 +30,49 @@ export const MOBILE_NAV_ITEMS = NAV_ITEMS.filter((item) =>
   ['/dashboard', '/expenses', '/goals', '/advisor'].includes(item.to)
 );
 
+const SHARED_NAV_ITEMS = [
+  { section: 'dashboard', key: 'nav.dashboard', icon: LayoutDashboard },
+  { section: 'daily', key: 'shared.daily', icon: Utensils },
+  { section: 'bills', key: 'shared.bills', icon: Receipt },
+  { section: 'members', key: 'shared.members', icon: Users },
+  { section: 'payments', key: 'shared.payments', icon: Wallet },
+  { section: 'manage', key: 'shared.manageSpace', icon: Settings2 },
+  { section: 'activity', key: 'shared.activity', icon: History },
+  { to: '/settings', key: 'nav.settings', icon: Settings },
+];
+
 function NavItems({ onNavigate, mode }) {
-  const items = mode === 'shared_living' ? NAV_ITEMS.filter((item) => ['/dashboard', '/settings'].includes(item.to)) : NAV_ITEMS;
+  const shared = mode === 'shared_living';
+  const items = shared ? SHARED_NAV_ITEMS : NAV_ITEMS;
+  const location = useLocation();
   const { t } = useT();
 
   return (
-    <nav className="space-y-1">
-      {items.map(({ to, key, icon: Icon }) => (
-        <NavLink
-          key={to}
-          to={to}
-          onClick={onNavigate}
-          className={({ isActive }) => cn('hw-nav-item', isActive && 'hw-nav-item-active')}
-        >
-          {({ isActive }) => (
-            <>
-              <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
-              {t(`nav.${key}`)}
-              {/* Announced by screen readers; "active" styling alone says nothing. */}
-              {isActive && <span className="sr-only">{t('nav.currentPage')}</span>}
-            </>
-          )}
-        </NavLink>
-      ))}
+    <nav aria-label={t('nav.mainNavigation')} className={shared ? 'flex flex-1 flex-col gap-1' : 'space-y-1'}>
+      {items.map(({ to, key, section, icon: Icon }) => {
+        const destination = section ? `/dashboard${sharedSectionSearch(location.search, section)}` : to;
+        const isActive = section
+          ? location.pathname === '/dashboard' && sharedSection(location.search) === section
+          : !!matchPath({ path: to, end: false }, location.pathname);
+        const link = (
+          <Link
+            key={section || to}
+            to={destination}
+            onClick={onNavigate}
+            aria-current={isActive ? 'page' : undefined}
+            className={cn('hw-nav-item', isActive && 'hw-nav-item-active')}
+          >
+            <Icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
+            {t(shared ? key : `nav.${key}`)}
+            {isActive && <span className="sr-only">{t('nav.currentPage')}</span>}
+          </Link>
+        );
+        return shared && to === '/settings' ? (
+          <div key={to} className="mt-auto pt-4">
+            <div className="border-t border-slate-200 pt-3 dark:border-slate-800">{link}</div>
+          </div>
+        ) : link;
+      })}
     </nav>
   );
 }
@@ -89,7 +110,7 @@ export default function Sidebar({ open, onClose, mode }) {
         overflow-y-auto is the escape hatch for a viewport shorter than the nav
         list, so a small laptop still reaches Settings.
       */}
-      <aside className="hidden w-60 shrink-0 overflow-y-auto border-r border-slate-200 bg-canvas-card px-3 py-4 lg:block lg:h-full dark:border-slate-800 dark:bg-canvas-darkCard">
+      <aside className={cn('hidden w-60 shrink-0 overflow-y-auto border-r border-slate-200 bg-canvas-card px-3 py-4 lg:h-full dark:border-slate-800 dark:bg-canvas-darkCard', mode === 'shared_living' ? 'lg:flex lg:flex-col' : 'lg:block')}>
         <NavItems mode={mode} />
       </aside>
 
@@ -97,7 +118,7 @@ export default function Sidebar({ open, onClose, mode }) {
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-          <aside className="relative z-10 h-full w-64 animate-slide-up overflow-y-auto border-r border-slate-200 bg-canvas-card px-3 py-4 dark:border-slate-800 dark:bg-canvas-darkCard">
+          <aside className="relative z-10 flex h-full w-64 flex-col animate-slide-up overflow-y-auto border-r border-slate-200 bg-canvas-card px-3 py-4 dark:border-slate-800 dark:bg-canvas-darkCard">
             <div className="mb-4 flex items-center justify-between px-2">
               <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">Menu</span>
               <button

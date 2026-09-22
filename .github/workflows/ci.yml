@@ -16,7 +16,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install
@@ -67,7 +67,7 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql://hisabkikitab:hisabkikitab@localhost:5432/hisabkikitab_test
+      DATABASE_URL: postgresql://hisabkikitab:hisabkikitab@localhost:5432/hisabkikitab_test?sslmode=disable
       NODE_ENV: test
       # Not secrets: this database exists for the length of one job.
       JWT_ACCESS_SECRET: ci-access-secret-long-enough-to-pass-validation-000000
@@ -80,7 +80,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install
@@ -129,3 +129,11 @@ jobs:
       - name: Check generated browser output is ignored by the scanner
         if: always()
         run: npm run check:dead
+
+      - name: Save browser regression screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-regressions
+          path: test-results/browser/
+          retention-days: 7

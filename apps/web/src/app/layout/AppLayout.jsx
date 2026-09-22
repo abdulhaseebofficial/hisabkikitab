@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Navigate, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import Navbar from './Navbar';
 import Sidebar, { MOBILE_NAV_ITEMS } from './Sidebar';
@@ -16,6 +16,7 @@ import { expensesApi as expenseService } from '../../features/expenses';
 import { QuickAddProvider } from '../../shared/hooks/useQuickAdd';
 import useShortcutKey from '../../shared/hooks/useShortcutKey';
 import { cn } from '../../shared/utils/format';
+import { sharedSection } from '../../features/sharedLiving';
 
 /**
  * The quick-add form is its own component so `useCategories` only fires its
@@ -107,7 +108,7 @@ export default function AppLayout() {
       >
         <ul className="mx-auto flex max-w-md items-end">
           {mobileItems.slice(0, 2).map((item) => (
-            <MobileTab key={item.to} item={item} />
+            <MobileTab key={item.to} item={item} shared={shared} />
           ))}
 
           {!shared && <li className="flex flex-1 justify-center">
@@ -145,13 +146,16 @@ export default function AppLayout() {
   );
 }
 
-function MobileTab({ item: { to, key, icon: Icon } }) {
+function MobileTab({ item: { to, key, icon: Icon }, shared = false }) {
   const { t } = useT();
+  const location = useLocation();
+  const isActive = location.pathname === to && (!shared || sharedSection(location.search) === 'dashboard');
   return (
     <li className="flex-1">
-      <NavLink
+      <Link
         to={to}
-        className={({ isActive }) =>
+        aria-current={isActive ? 'page' : undefined}
+        className={
           cn(
             // min-h-[52px] keeps every tap target above the 44px guideline.
             'flex min-h-[52px] flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition',
@@ -159,14 +163,12 @@ function MobileTab({ item: { to, key, icon: Icon } }) {
           )
         }
       >
-        {({ isActive }) => (
           <>
             <Icon className="h-5 w-5" aria-hidden="true" />
             {t(`nav.${key}`)}
             {isActive && <span className="sr-only">(current page)</span>}
           </>
-        )}
-      </NavLink>
+      </Link>
     </li>
   );
 }

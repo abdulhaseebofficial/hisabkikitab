@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Download } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { sharedSection, sharedSectionSearch } from "../navigation";
 import {
   ResponsiveContainer,
   BarChart,
@@ -46,6 +48,9 @@ const remembered = (userId) => {
   } catch { return {}; }
 };
 export default function SharedLivingPage({ userId }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = sharedSection(searchParams);
+  const setTab = (section) => setSearchParams(sharedSectionSearch(searchParams, section));
   const { t, language } = useT();
   const [preference] = useState(() => remembered(userId));
   const pending = useRef(false);
@@ -59,7 +64,6 @@ export default function SharedLivingPage({ userId }) {
     [loading, setLoading] = useState(true);
   const [dialog, setDialog] = useState(null),
     [invite, setInvite] = useState(null),
-    [tab, setTab] = useState("dashboard"),
     [day, setDay] = useState(today());
   const [version, setVersion] = useState(0);
   const [groceryPerHead, setGroceryPerHead] = useState("8000");
@@ -541,41 +545,7 @@ export default function SharedLivingPage({ userId }) {
       )}
       {data && (
         <>
-          <div
-            className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1"
-            role="tablist"
-            aria-label={t("shared.sections")}
-          >
-            {[
-              "dashboard",
-              "daily",
-              "bills",
-              "members",
-              "payments",
-              "manage",
-              "activity",
-            ].map((key) => (
-              <Button
-                key={key}
-                role="tab"
-                id={`shared-tab-${key}`}
-                aria-controls="shared-panel"
-                tabIndex={tab === key ? 0 : -1}
-                onKeyDown={(event) => {
-                  const tabs = [...event.currentTarget.parentElement.querySelectorAll('[role="tab"]')];
-                  const index = tabs.indexOf(event.currentTarget);
-                  const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : event.key === 'ArrowLeft' ? (index + tabs.length - 1) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : null;
-                  if (next !== null) { event.preventDefault(); tabs[next].focus(); tabs[next].click(); }
-                }}
-                aria-selected={tab === key}
-                variant={tab === key ? "primary" : "secondary"}
-                onClick={() => setTab(key)}
-              >
-                {t(`shared.${key}`)}
-              </Button>
-            ))}
-          </div>
-          <div id="shared-panel" role="tabpanel" aria-labelledby={`shared-tab-${tab}`} className="space-y-5 min-w-0 break-words">
+          <div id="shared-panel" role="region" aria-label={t(`shared.${tab}`)} className="space-y-5 min-w-0 break-words">
           {data.period.closed && (
             <p className="text-sm">{t("shared.closed")}</p>
           )}

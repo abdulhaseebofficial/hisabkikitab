@@ -13,6 +13,20 @@ const registerAccount = async (account) => {
   return { status: result.status, body: await result.text() };
 };
 
+const navigateSection = async (page, words, name) => {
+  const menu = page.getByRole('button', { name: words.common.openMenu, exact: true });
+  if (page.viewportSize().width < 1024) {
+    // Settings is lazy-loaded: wait for the shell to return before opening its drawer.
+    await expect(menu).toBeVisible();
+    await menu.click();
+  }
+  const link = page.locator('aside:visible').getByRole('link', { name });
+  await expect(link).toBeVisible();
+  await link.focus();
+  await link.press('Enter');
+  await expect(page.getByRole('button', { name: words.nav.closeMenu, exact: true })).toHaveCount(0);
+};
+
 test('create, manage, contribute, split, join read-only and restore the group', async ({ page, browser }, info) => {
   const language = info.project.name.includes('roman') ? 'roman_ur' : 'en';
   const words = language === 'en' ? en : ur;
@@ -38,7 +52,7 @@ test('create, manage, contribute, split, join read-only and restore the group', 
   }
   await page.getByRole('button', { name: s.finishSetup }).click();
   await expect(page.getByText(s.emptySpaces)).toBeVisible();
-  await page.getByRole('button', { name: s.createSpace, exact: true }).click();
+  await page.getByRole('button', { name: s.createSpace, exact: true }).first().click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel(s.name, { exact: true }).fill('Browser Flat');
   await dialog.getByLabel(s.budget, { exact: true }).fill('1000');
@@ -47,10 +61,12 @@ test('create, manage, contribute, split, join read-only and restore the group', 
   await dialog.getByLabel(s.residents, { exact: true }).fill('2');
   await dialog.getByRole('button', { name: s.save, exact: true }).click();
   await expect(page.getByText(s.admin, { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Switch to dark mode', exact: true }).click();
+  await expect(page.locator('html')).toHaveClass(/dark/);
   const code = await page.getByLabel(s.code, { exact: true }).inputValue();
   expect(code).toMatch(/^[\w-]{43}$/);
   await page.getByRole('button', { name: s.dismiss, exact: true }).click();
-  const tab = async (name) => { await page.getByRole('tab', { name, exact: true }).click(); };
+  const tab = (name) => navigateSection(page, words, name);
   await tab(s.members);
   for (const name of ['Ali', 'Bilal']) {
     await page.getByRole('button', { name: s.addMember, exact: true }).click();
@@ -86,19 +102,46 @@ test('create, manage, contribute, split, join read-only and restore the group', 
   await dialog.getByRole('button', { name: s.save, exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.getByRole('heading', { name: 'Rent', exact: true })).toBeVisible();
-  await tab(s.overview);
+  await tab(words.nav.dashboard);
   await expect(page.getByText('PKR 969.99', { exact: true })).toBeVisible();
   await expect(page.getByText('PKR 64.99', { exact: true })).toBeVisible();
-  // Keyboard navigation and a correctly labelled active panel.
-  await page.getByRole('tab', { name: s.overview, exact: true }).focus();
-  await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('tabpanel', { name: s.daily })).toBeVisible();
+  await tab(s.daily);
+  await expect(page.getByRole('region', { name: s.daily })).toBeVisible();
+  await expect(page).toHaveURL(/section=daily/);
+  await page.goBack();
+  await expect(page.getByRole('region', { name: s.dashboard })).toBeVisible();
+  await page.goForward();
+  await expect(page.getByRole('region', { name: s.daily })).toBeVisible();
   await page.reload();
+  await expect(page.getByRole('region', { name: s.daily })).toBeVisible();
   await expect(page.getByLabel(s.month, { exact: true })).toHaveValue('2024-02');
   await expect(page.getByText(s.admin, { exact: true })).toBeVisible();
+  await tab(words.nav.dashboard);
   await expect(page.getByText('PKR 969.99', { exact: true })).toBeVisible();
+  const reportPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: s.downloadReport, exact: true }).click();
+  expect((await reportPromise).suggestedFilename()).toContain('2024-02.csv');
+  await tab(s.manageSpace);
+  await page.getByRole('button', { name: s.closeMonth, exact: true }).click();
+  await expect(page.getByRole('button', { name: s.reopenMonth, exact: true })).toBeVisible();
+  await page.getByRole('button', { name: s.reopenMonth, exact: true }).click();
+  await expect(page.getByRole('button', { name: s.closeMonth, exact: true })).toBeVisible();
+  await tab(s.activity);
+  await expect(page.getByRole('region', { name: s.activity })).toBeVisible();
+  await tab(words.nav.settings);
+  await expect(page).toHaveURL(/\/settings$/);
+  await tab(words.nav.dashboard);
+  await expect(page.getByLabel(s.month, { exact: true })).toHaveValue('2024-02');
+  await expect(page.getByText('PKR 969.99', { exact: true })).toBeVisible();
+  await expect(page.getByRole('tablist')).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('shared-living.png'), fullPage: true });
+  const menu = page.getByRole('button', { name: words.common.openMenu, exact: true });
+  if (await menu.isVisible()) {
+    await menu.click();
+    await page.screenshot({ path: info.outputPath('shared-living-menu.png'), fullPage: true });
+    await page.getByRole('button', { name: words.nav.closeMenu, exact: true }).click();
+  }
 
   const viewer = await browser.newContext({ baseURL: info.project.use.baseURL, viewport: info.project.use.viewport });
   const reader = await viewer.newPage();
@@ -114,7 +157,7 @@ test('create, manage, contribute, split, join read-only and restore the group', 
     response = await reader.request.post('/api/profile/onboarding', { data: { financeMode: 'shared_living', language, currency: 'PKR', monthlyIncome: 0 } });
     expect(response.status()).toBe(200);
     await reader.goto('/dashboard');
-    await reader.getByRole('button', { name: s.join, exact: true }).click();
+    await reader.getByRole('button', { name: s.join, exact: true }).first().click();
     await reader.getByRole('dialog').getByLabel(s.code, { exact: true }).fill('invalid');
     await reader.getByRole('dialog').getByRole('button', { name: s.save, exact: true }).click();
     await expect(reader.getByRole('dialog').getByRole('alert')).toHaveText(s.invalidCode);
@@ -123,14 +166,15 @@ test('create, manage, contribute, split, join read-only and restore the group', 
     await expect(reader.getByRole('dialog')).not.toBeVisible();
     await reader.getByLabel(s.month, { exact: true }).fill('2024-02');
     await expect(reader.getByText(s.viewOnly, { exact: true })).toBeVisible();
-    for (const name of [s.daily, s.bills, s.members, s.payments, s.manage]) {
-      await reader.getByRole('tab', { name, exact: true }).click();
+    for (const name of [s.daily, s.bills, s.members, s.payments, s.manageSpace]) {
+      await navigateSection(reader, words, name);
       for (const forbidden of [s.add_expenses, s.add_bills, s.addMember, s.add_payments, s.edit, s.remove, s.preview, s.regenerate, s.disableCode, s.closeMonth, s.editBudget]) {
         await expect(reader.getByRole('button', { name: forbidden, exact: true })).toHaveCount(0);
       }
     }
     await reader.reload();
     await expect(reader.getByText(s.viewOnly, { exact: true })).toBeVisible();
+    await navigateSection(reader, words, words.nav.dashboard);
     await expect(reader.getByText('PKR 969.99', { exact: true })).toBeVisible();
     const snapshot = await reader.request.get('/api/shared-living/spaces');
     const group = (await snapshot.json()).data[0];
