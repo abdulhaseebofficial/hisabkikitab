@@ -16,7 +16,7 @@ const registerAccount = async (account) => {
 const navigateSection = async (page, words, name) => {
   const menu = page.getByRole('button', { name: words.common.openMenu, exact: true });
   if (await menu.isVisible()) await menu.click();
-  const link = page.getByRole('link', { name }).last();
+  const link = page.locator('aside:visible').getByRole('link', { name });
   await link.focus();
   await link.press('Enter');
   await expect(page.getByRole('button', { name: words.nav.closeMenu, exact: true })).toHaveCount(0);
