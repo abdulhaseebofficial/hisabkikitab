@@ -1,5 +1,25 @@
 # Shared Living continuation
 
+## UI verification checkpoint - 2026-09-22
+
+Resumed from the existing uncommitted frontend changes and verified:
+
+- Route loading keeps app navigation visible and uses a translated spinner label.
+- The mobile drawer focuses the current section, traps Tab navigation, closes on
+  Escape and restores focus to its opener.
+- Shared Living includes loading skeletons, retry controls, section headings and
+  empty states with English and Roman Urdu strings.
+
+Validation: all 239 web tests across 17 files passed; the production build,
+boundary, shadowing, dead-code and diff whitespace checks passed. Vitest emitted
+Vite plugin deprecation warnings but no test failures. On this Windows machine,
+use `npm.cmd` because PowerShell blocks the `npm.ps1` launcher.
+
+These changes remain uncommitted. Browser E2E and database suites were not rerun
+for this frontend checkpoint; no deployment was performed.
+
+## Earlier Shared Living implementation
+
 Verification resumed on 2026-09-08 from the existing local implementation. No
 deployment, push or pull request was performed.
 

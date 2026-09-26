@@ -26,7 +26,7 @@ export default function DebtRow({ debt, currency, onOpen }) {
         settled && 'opacity-70'
       )}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
             {debt.personName}
@@ -42,11 +42,11 @@ export default function DebtRow({ debt, currency, onOpen }) {
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
-          <div className="text-right">
+        <div className="flex w-full min-w-0 items-center justify-between gap-2 sm:w-auto">
+          <div className="min-w-0 sm:text-right">
             <p
               className={cn(
-                'text-sm font-bold tabular-nums',
+                'break-words text-base font-bold tabular-nums',
                 settled ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-slate-100'
               )}
             >

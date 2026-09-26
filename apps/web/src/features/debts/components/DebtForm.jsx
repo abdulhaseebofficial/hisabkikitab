@@ -49,7 +49,7 @@ const asDateInput = (value) => (value ? new Date(value).toISOString().slice(0, 1
  * The amount is not editable below what has already been paid - the server
  * refuses it - so the hint says so before the student tries.
  */
-export default function DebtForm({ open, onClose, onSubmit, debt = null, currency = 'PKR' }) {
+export default function DebtForm({ open, onClose, onSubmit, debt = null, currency = 'PKR', defaultKind = 'BORROWED' }) {
   const { categories } = useCategories();
   const editing = Boolean(debt);
 
@@ -62,7 +62,7 @@ export default function DebtForm({ open, onClose, onSubmit, debt = null, currenc
   } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
-      kind: debt?.kind || 'BORROWED',
+      kind: debt?.kind || defaultKind,
       personName: debt?.personName || '',
       originalAmount: debt?.originalAmount ?? '',
       transactionDate: asDateInput(debt?.transactionDate) || asDateInput(new Date()),
@@ -160,6 +160,9 @@ export default function DebtForm({ open, onClose, onSubmit, debt = null, currenc
           />
         </div>
 
+        <details open={editing || Boolean(errors.purpose)} className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+          <summary className="cursor-pointer text-sm font-medium text-slate-600 dark:text-slate-300">{t('udhaar.optionalDetails')}</summary>
+          <div className="mt-4 space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <Input
             label={t('udhaar.personContact')}
@@ -202,7 +205,10 @@ export default function DebtForm({ open, onClose, onSubmit, debt = null, currenc
           {...register('note')}
         />
 
-        <div className="flex justify-end gap-2 pt-1">
+          </div>
+        </details>
+
+        <div className="flex justify-end gap-2 pt-1 [&>button]:flex-1 sm:[&>button]:flex-none">
           <Button variant="ghost" onClick={onClose}>
             {t('common.cancel')}
           </Button>

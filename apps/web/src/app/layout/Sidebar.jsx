@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { Link, matchPath, useLocation } from 'react-router-dom';
 import { FileBarChart, HandCoins, History, LayoutDashboard, PieChart, Receipt, Settings, Settings2, Sparkles, Target, Users, Utensils, Wallet, X } from 'lucide-react';
 import { sharedSection, sharedSectionSearch } from '../../features/sharedLiving';
@@ -83,6 +83,10 @@ function NavItems({ onNavigate, mode }) {
  */
 export default function Sidebar({ open, onClose, mode }) {
   const { t } = useT();
+  const drawerRef = useRef(null);
+  const closeRef = useRef(onClose);
+  const titleId = useId();
+  closeRef.current = onClose;
   /*
    * While the drawer is open the page behind it must not scroll: on a phone,
    * dragging the overlay otherwise moves the page underneath and the student
@@ -93,9 +97,37 @@ export default function Sidebar({ open, onClose, mode }) {
   useEffect(() => {
     if (!open) return undefined;
     const previous = document.body.style.overflow;
+    const opener = document.activeElement;
+    const drawer = drawerRef.current;
     document.body.style.overflow = 'hidden';
+    drawer.querySelector('[aria-current="page"]')?.focus();
+    if (!drawer.contains(document.activeElement)) drawer.querySelector('button')?.focus();
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeRef.current();
+      }
+      if (event.key !== 'Tab') return;
+      const items = [...drawer.querySelectorAll('a[href], button:not([disabled])')];
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !drawer.contains(document.activeElement))) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !drawer.contains(document.activeElement))) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    const desktop = window.matchMedia?.('(min-width: 1024px)');
+    const onResize = () => { if (desktop?.matches) closeRef.current(); };
+    document.addEventListener('keydown', onKeyDown);
+    desktop?.addEventListener('change', onResize);
     return () => {
       document.body.style.overflow = previous;
+      document.removeEventListener('keydown', onKeyDown);
+      desktop?.removeEventListener('change', onResize);
+      if (opener?.isConnected) opener.focus();
     };
   }, [open]);
 
@@ -118,9 +150,9 @@ export default function Sidebar({ open, onClose, mode }) {
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-          <aside className="relative z-10 flex h-full w-64 flex-col animate-slide-up overflow-y-auto border-r border-slate-200 bg-canvas-card px-3 py-4 dark:border-slate-800 dark:bg-canvas-darkCard">
+          <aside ref={drawerRef} role="dialog" aria-modal="true" aria-labelledby={titleId} className="relative z-10 flex h-full w-64 flex-col animate-slide-up overflow-y-auto border-r border-slate-200 bg-canvas-card px-3 py-4 dark:border-slate-800 dark:bg-canvas-darkCard">
             <div className="mb-4 flex items-center justify-between px-2">
-              <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">Menu</span>
+              <span id={titleId} className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t('nav.mainNavigation')}</span>
               <button
                 type="button"
                 onClick={onClose}

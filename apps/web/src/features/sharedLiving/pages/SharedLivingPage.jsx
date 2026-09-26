@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download } from "lucide-react";
+import { Download, History, Receipt, Users, Utensils, Wallet } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { sharedSection, sharedSectionSearch } from "../navigation";
 import {
@@ -16,6 +16,8 @@ import Input from "../../../shared/components/ui/Input";
 import Select from "../../../shared/components/ui/Select";
 import Modal from "../../../shared/components/ui/Modal";
 import PageHeader from "../../../shared/components/ui/PageHeader";
+import EmptyState from "../../../shared/components/ui/EmptyState";
+import { SkeletonCard } from "../../../shared/components/ui/Skeleton";
 import useT from "../../../shared/i18n/I18nProvider";
 import api from "../api/sharedLivingApi";
 import AuditChanges from "../components/AuditChanges";
@@ -444,12 +446,19 @@ export default function SharedLivingPage({ userId }) {
         </div>
       </PageHeader>
       {error && (
-        <p
+        <div
           role="alert"
           className="rounded-xl border border-red-300 p-3 text-sm"
         >
-          {t(error.startsWith("shared.") ? error : "shared.error")}
-        </p>
+          <p>{t(error.startsWith("shared.") ? error : "shared.error")}</p>
+          {!dialog && !loading && !busy && error === 'shared.error' && (
+            <Button className="mt-3" variant="secondary" onClick={() => {
+              setError('');
+              setLoading(true);
+              reload();
+            }}>{t('common.retry')}</Button>
+          )}
+        </div>
       )}
       {invite && (
         <Card>
@@ -500,7 +509,12 @@ export default function SharedLivingPage({ userId }) {
           </p>
         </Card>
       )}
-      {loading && <p role="status">{t("shared.loading")}</p>}
+      {loading && (
+        <div role="status" className="space-y-3">
+          <p>{t("shared.loading")}</p>
+          <SkeletonCard />
+        </div>
+      )}
       {!loading && !error && !spaces.length && (
         <Card>
           <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -546,6 +560,11 @@ export default function SharedLivingPage({ userId }) {
       {data && (
         <>
           <div id="shared-panel" role="region" aria-label={t(`shared.${tab}`)} className="space-y-5 min-w-0 break-words">
+          {tab !== 'dashboard' && (
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              {t(`shared.${tab === 'manage' ? 'manageSpace' : tab}`)}
+            </h2>
+          )}
           {data.period.closed && (
             <p className="text-sm">{t("shared.closed")}</p>
           )}
@@ -751,6 +770,7 @@ export default function SharedLivingPage({ userId }) {
                   </Button>
                 )}
               </div>
+              {!data.expenses.length && <Card><EmptyState icon={Utensils} title={t('shared.emptyFoodTitle')} message={t('shared.emptyFoodHint')} /></Card>}
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {data.summary.daily.map((d) => (
                   <Card key={d.date}>
@@ -870,7 +890,7 @@ export default function SharedLivingPage({ userId }) {
                   </Card>
                 ))}
               </div>
-              {!data[tab].length && <Card>{t("shared.empty")}</Card>}
+              {!data[tab].length && <Card><EmptyState icon={tab === 'bills' ? Receipt : Wallet} title={t(`shared.${tab === 'bills' ? 'emptyBillsTitle' : 'emptyPaymentsTitle'}`)} message={t(`shared.${tab === 'bills' ? 'emptyBillsHint' : 'emptyPaymentsHint'}`)} /></Card>}
             </>
           )}
           {tab === "members" && (
@@ -880,6 +900,7 @@ export default function SharedLivingPage({ userId }) {
                   {t("shared.addMember")}
                 </Button>
               )}
+              {!data.summary.members.length && <Card><EmptyState icon={Users} title={t('shared.emptyMembersTitle')} message={t(admin ? 'shared.emptyMembersAdminHint' : 'shared.emptyMembersHint')} /></Card>}
               <div className="grid gap-3 sm:grid-cols-2">
                 {data.summary.members.map((m) => (
                   <Card key={m.id}>
@@ -1098,6 +1119,7 @@ export default function SharedLivingPage({ userId }) {
           )}
           {tab === "activity" && (
             <div className="space-y-3">
+              {!data.activity.length && <Card><EmptyState icon={History} title={t('shared.emptyActivityTitle')} message={t('shared.emptyActivityHint')} /></Card>}
               {data.activity.map((a) => (
                 <Card key={a.id}>
                   <p>

@@ -12,14 +12,13 @@ import useDebounce from '../../../shared/hooks/useDebounce';
 import useT from '../../../shared/i18n/I18nProvider';
 import { useAuth } from '../../auth';
 import debtsApi from '../api/debtsApi';
-import DebtSummaryCards from '../components/DebtSummaryCards';
 import DebtFilters from '../components/DebtFilters';
 import DebtRow from '../components/DebtRow';
 import DebtForm from '../components/DebtForm';
 import DebtDetail from '../components/DebtDetail';
 
 /** Still-open records first: a settled debt is history, not a to-do. */
-const DEFAULT_FILTERS = { kind: '', status: 'OUTSTANDING', sort: 'newest', search: '', page: 1 };
+const DEFAULT_FILTERS = { kind: 'LENT', status: 'OUTSTANDING', sort: 'newest', search: '', page: 1 };
 
 /**
  * Udhaar: who owes whom.
@@ -148,13 +147,11 @@ export default function DebtsPage() {
     <div className="space-y-5">
       <PageHeader title={t('udhaar.title')} subtitle={t('udhaar.subtitle')}>
         <Button icon={Plus} onClick={() => { setEditing(null); setFormOpen(true); }}>
-          Add record
+          {t('udhaar.addRecord')}
         </Button>
       </PageHeader>
 
-      <DebtSummaryCards summary={summary} currency={currency} loading={summaryLoading} />
-
-      <DebtFilters filters={filters} onChange={setFilters} />
+      <DebtFilters filters={filters} onChange={setFilters} summary={summary} currency={currency} loading={summaryLoading} />
 
       {listError ? (
         <EmptyState
@@ -190,7 +187,7 @@ export default function DebtsPage() {
       )}
 
       {pagination && pagination.pages > 1 && (
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs text-slate-500 dark:text-slate-400">
             Page {pagination.page} of {pagination.pages} - {pagination.total} record(s)
           </p>
@@ -213,13 +210,14 @@ export default function DebtsPage() {
         </div>
       )}
 
-      <DebtForm
+      {formOpen && <DebtForm
+        defaultKind={filters.kind}
         open={formOpen}
         onClose={() => { setFormOpen(false); setEditing(null); }}
         onSubmit={saveRecord}
         debt={editing}
         currency={currency}
-      />
+      />}
 
       <DebtDetail
         open={Boolean(openId) && !detailLoading}

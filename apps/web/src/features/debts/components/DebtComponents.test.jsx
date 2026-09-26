@@ -130,7 +130,7 @@ describe('DebtFilters', () => {
     render(<DebtFilters filters={filters} onChange={onChange} />);
 
     const direction = screen.getByRole('group', { name: /direction/i });
-    await userEvent.click(within(direction).getByRole('button', { name: /owed to you/i }));
+    await userEvent.click(within(direction).getByRole('button', { name: /to collect/i }));
 
     // Staying on page 3 of a freshly narrowed list shows an empty screen that
     // looks like "no records" but really means "no records here".
@@ -231,7 +231,7 @@ describe('DebtWidget', () => {
 
   it('says so plainly when nothing is owed either way', () => {
     withRouter(<DebtWidget debts={{ payable: 0, receivable: 0, netBalance: 0, dueSoon: [] }} />);
-    expect(screen.getByText(/nothing borrowed, nothing lent/i)).toBeInTheDocument();
+    expect(screen.getByText(/nothing to pay or collect/i)).toBeInTheDocument();
   });
 
   it('shows the position and links through to the full page', () => {
@@ -240,8 +240,8 @@ describe('DebtWidget', () => {
     );
 
     expect(screen.getByText(/in your favour/i)).toBeInTheDocument();
-    // English reads 'Loans'; Roman Urdu keeps 'Udhaar', which is the word.
-    expect(screen.getByRole('link', { name: /open loans/i })).toHaveAttribute('href', '/debts');
+    // The dashboard link uses the English section name.
+    expect(screen.getByRole('link', { name: /open lending & borrowing/i })).toHaveAttribute('href', '/debts');
   });
 
   it('lists at most three upcoming records so the dashboard stays readable', () => {

@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -36,7 +36,7 @@ describe('the desktop rail', () => {
 
   it('still lists every screen', () => {
     withRouter(<Sidebar open={false} onClose={() => {}} />);
-    for (const label of ['Dashboard', 'Expenses', 'Income', 'Goals', 'Loans', 'Budget', 'AI Advisor', 'Reports', 'Settings']) {
+    for (const label of ['Dashboard', 'Expenses', 'Income', 'Goals', 'Lending & Borrowing', 'Budget', 'AI Advisor', 'Reports', 'Settings']) {
       expect(screen.getAllByText(label).length).toBeGreaterThan(0);
     }
   });
@@ -99,6 +99,30 @@ describe('the mobile drawer', () => {
     const links = screen.getAllByText('Goals');
     await userEvent.click(links[links.length - 1]);
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('focuses the current section and keeps keyboard navigation inside the drawer', async () => {
+    render(<MemoryRouter initialEntries={['/dashboard?section=bills']}><Sidebar mode="shared_living" open onClose={() => {}} /></MemoryRouter>);
+    const drawer = within(screen.getByRole('dialog'));
+    expect(drawer.getByRole('link', { name: /Bills/ })).toHaveFocus();
+    drawer.getByRole('link', { name: 'Settings' }).focus();
+    await userEvent.tab();
+    expect(drawer.getByRole('button', { name: /close menu/i })).toHaveFocus();
+    await userEvent.tab({ shift: true });
+    expect(drawer.getByRole('link', { name: 'Settings' })).toHaveFocus();
+  });
+
+  it('closes on Escape and restores focus to the menu opener', async () => {
+    const opener = document.createElement('button');
+    document.body.appendChild(opener);
+    opener.focus();
+    const onClose = vi.fn();
+    const { unmount } = withRouter(<Sidebar open onClose={onClose} />);
+    await userEvent.keyboard('{Escape}');
+    expect(onClose).toHaveBeenCalledOnce();
+    unmount();
+    expect(opener).toHaveFocus();
+    opener.remove();
   });
 });
 

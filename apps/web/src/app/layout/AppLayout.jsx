@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { Suspense, useCallback, useState } from 'react';
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import Navbar from './Navbar';
@@ -17,6 +17,7 @@ import { QuickAddProvider } from '../../shared/hooks/useQuickAdd';
 import useShortcutKey from '../../shared/hooks/useShortcutKey';
 import { cn } from '../../shared/utils/format';
 import { sharedSection } from '../../features/sharedLiving';
+import { PageSpinner } from '../../shared/components/ui/Spinner';
 
 /**
  * The quick-add form is its own component so `useCategories` only fires its
@@ -93,7 +94,9 @@ export default function AppLayout() {
         <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 lg:h-full lg:overflow-y-auto">
           {/* pb-28 leaves room for the mobile tab bar and its raised button */}
           <div className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-10">
-            {shared && !['/dashboard', '/settings'].includes(location.pathname) ? <Navigate to="/dashboard" replace /> : <Outlet />}
+            <Suspense fallback={<PageSpinner label={t('common.loading')} />}>
+              {shared && !['/dashboard', '/settings'].includes(location.pathname) ? <Navigate to="/dashboard" replace /> : <Outlet />}
+            </Suspense>
           </div>
           <div className="hidden lg:block">
             <Footer onOpenFeedback={openFeedback} />

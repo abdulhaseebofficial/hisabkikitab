@@ -138,10 +138,10 @@ describe('the form', () => {
   });
 
   it('changes the person question with the direction, not with the language', () => {
-    // "Who lent it to you?" and "Who did you lend it to?" are different
+    // "Who lent it to you?" and "Who owes you money?" are different
     // questions, and getting them the wrong way round quietly files debts
     // backwards.
     inLanguage('en', <DebtForm open onClose={() => {}} onSubmit={() => {}} debt={{ kind: 'LENT' }} />);
-    expect(screen.getByLabelText('Who did you lend it to?')).toBeInTheDocument();
+    expect(screen.getByLabelText('Who owes you money?')).toBeInTheDocument();
   });
 });

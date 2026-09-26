@@ -191,6 +191,28 @@ describe("Shared Living UI", () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Unable to complete');
     expect(screen.queryByText('Create a space or enter a join code to begin.')).not.toBeInTheDocument();
   });
+  it('recovers from a failed space load with Try again without replaying any writes', async () => {
+    api.spaces.mockRejectedValueOnce(new Error('offline')).mockResolvedValue([fixture().space]);
+    api.month.mockResolvedValue(fixture());
+    render(<MemoryRouter><I18nProvider language="en"><SharedLivingPage /></I18nProvider></MemoryRouter>);
+    await userEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('Remaining Budget')).toBeInTheDocument();
+    expect(api.spaces).toHaveBeenCalledTimes(2);
+    expect(api.save).not.toHaveBeenCalled();
+    expect(api.join).not.toHaveBeenCalled();
+  });
+  it.each([
+    ['bills', 'Bills', 'No bills this month'],
+    ['payments', 'Contributions', 'No contributions this month'],
+    ['members', 'Members', 'No members added yet'],
+    ['activity', 'Activity History', 'No activity yet'],
+    ['daily', 'Daily Food', 'No food expenses this month'],
+  ])('explains the empty %s section without granting viewers write actions', async (section, heading, message) => {
+    setup('en', 'viewer', false, `/dashboard?section=${section}`);
+    expect(await screen.findByRole('heading', { name: heading, exact: true })).toBeInTheDocument();
+    expect(screen.getByText(message)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Add member|Add food expense|Add bill|Record contribution/ })).not.toBeInTheDocument();
+  });
   it('links every section without refetching or resetting the selected period, with back/forward support', async () => {
     setup();
     await screen.findByText('Remaining Budget');
