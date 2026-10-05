@@ -12,13 +12,12 @@ const expenses = require('../expenses/expenses.service');
 const analytics = require('../analytics/analytics.service');
 const { modeOf } = require('../../shared/categories');
 const { buildSnapshot, MONTH_NAMES } = analytics;
+const { decimalToMinor, apiToMinor, minorToApi, roundRatio, ratioPercent2 } = require('../../shared/finance/personalMoney');
 const {
   currentPeriod,
   previousPeriod,
-  startOfMonth,
-  endOfMonth,
-  round2,
-  changePercent,
+  startOfCalendarMonth,
+  endOfCalendarMonth,
 } = require('../../shared/utils/calculations');
 
 const periodFrom = (query = {}) => {
@@ -40,12 +39,15 @@ const compareCategories = (snapshot, previous) => {
     .map((category) => {
       const current = snapshot.byCategory[category] || 0;
       const before = previous.byCategory[category] || 0;
+      const currentMinor = apiToMinor(current);
+      const beforeMinor = apiToMinor(before);
       return {
         category,
         current,
         previous: before,
-        change: round2(current - before),
-        changePercent: changePercent(current, before),
+        change: minorToApi(currentMinor - beforeMinor),
+        changePercent: beforeMinor === 0n ? (currentMinor > 0n ? 100 : 0)
+          : ratioPercent2(currentMinor - beforeMinor, beforeMinor),
       };
     })
     .sort((a, b) => b.current - a.current);
@@ -58,8 +60,8 @@ const compareCategories = (snapshot, previous) => {
 const monthly = async (user, query) => {
   const period = periodFrom(query);
   const prev = previousPeriod(period);
-  const from = startOfMonth(period.year, period.month);
-  const to = endOfMonth(period.year, period.month);
+  const from = startOfCalendarMonth(period.year, period.month);
+  const to = endOfCalendarMonth(period.year, period.month);
 
   const [snapshot, prevSnapshot, biggest, incomeRows] = await Promise.all([
     buildSnapshot(user, period),
@@ -77,8 +79,7 @@ const monthly = async (user, query) => {
       income: snapshot.income,
       spent: snapshot.totalSpent,
       saved: snapshot.remaining,
-      savingsRate:
-        snapshot.income > 0 ? Math.round((snapshot.remaining / snapshot.income) * 100) : 0,
+      savingsRate: roundRatio(apiToMinor(snapshot.remaining), apiToMinor(snapshot.income)),
       dailyAverage: snapshot.dailyAverage,
       transactionCount: snapshot.expenseCount,
     },
@@ -87,13 +88,14 @@ const monthly = async (user, query) => {
     trend: snapshot.trend,
     highestCategory: snapshot.breakdown[0] || null,
     biggestExpense: biggest[0] || null,
-    incomeBySource: incomeRows.map((row) => ({ source: row.source, amount: round2(row.total) })),
+    incomeBySource: incomeRows.map((row) => ({ source: row.source, amount: minorToApi(row.totalMinor) })),
 
     comparison: {
       previousLabel: prevSnapshot.monthLabel,
       previousSpent: prevSnapshot.totalSpent,
-      change: round2(snapshot.totalSpent - prevSnapshot.totalSpent),
-      changePercent: changePercent(snapshot.totalSpent, prevSnapshot.totalSpent),
+      change: minorToApi(apiToMinor(snapshot.totalSpent) - apiToMinor(prevSnapshot.totalSpent)),
+      changePercent: prevSnapshot.totalSpent === 0 ? (snapshot.totalSpent > 0 ? 100 : 0)
+        : ratioPercent2(apiToMinor(snapshot.totalSpent) - apiToMinor(prevSnapshot.totalSpent), apiToMinor(prevSnapshot.totalSpent)),
       categories: compareCategories(snapshot, prevSnapshot),
     },
 
@@ -109,8 +111,8 @@ const monthly = async (user, query) => {
  */
 const exportData = async (user, query) => {
   const period = periodFrom(query);
-  const from = startOfMonth(period.year, period.month);
-  const to = endOfMonth(period.year, period.month);
+  const from = startOfCalendarMonth(period.year, period.month);
+  const to = endOfCalendarMonth(period.year, period.month);
 
   const [snapshot, rows] = await Promise.all([
     buildSnapshot(user, period),

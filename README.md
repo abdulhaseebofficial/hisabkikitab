@@ -1,4 +1,4 @@
-# Hisab Ki Kitab
+# Hisabki Kitab
 
 **Smart financial manager for university hostel students.**
 
@@ -15,7 +15,7 @@ Built as a full-stack MERN application with an AI advisor powered by the Claude 
 A hostel student in Pakistan gets a small, fixed amount of pocket money each month. It
 disappears into dozens of tiny transactions that nobody writes down, and by the 20th
 the money is gone with no idea where it went. Generic budgeting apps assume a salary,
-rent, and investments. Hisab Ki Kitab assumes Rs 25,000 a month, a mess bill, and a
+rent, and investments. Hisabki Kitab assumes Rs 25,000 a month, a mess bill, and a
 dhaba outside the gate that never closes.
 
 ---
@@ -24,16 +24,17 @@ dhaba outside the gate that never closes.
 
 ### Three ways to keep the books
 
-- **Shared Living mode** — shared food, bills, member contributions and balances
-  for a hostel room or flat. Choose it during setup or in Settings.
-- **Student mode** — pocket money, the mess bill, hostel fee, books, travel home
-- **Householder mode** — rent, electricity, gas, water, groceries, school fees,
-  family support, installments
+- **Student mode** — pocket money, mess fee, hostel fee, books, travel, and daily
+  expenses for a student life budget.
+- **Householder mode** — rent, electricity, gas, water, groceries, family support,
+  school fees, and installments for a household budget.
+- **Shared Living mode** — roommate / shared flat expenses, food costs, bills,
+  member contributions, and balances between people sharing a space.
 - Each record belongs to one mode. Switching shows the other set of books and
   **deletes nothing**: both stay, and switching back brings the first one right
-  where it was left
+  where it was left.
 - Categories, the dashboard wording and the AI advisor's persona all follow the
-  mode, so a householder is never advised to eat the mess food they paid for
+  mode, so a householder is never advised to eat the mess food they paid for.
 
 ### Shared Living
 
@@ -589,7 +590,7 @@ of the day is cached in memory per user per day.
 
 The system prompt, abbreviated:
 
-> You are Hisab Ki Kitab, a warm and practical money coach for a university student
+> You are Hisabki Kitab, a warm and practical money coach for a university student
 > living in a hostel. […] Be specific and numeric — refer to their real categories
 > and real amounts, never generic filler like "make a budget". Every tip must be
 > something they could do this week without a job, a credit card, or investing

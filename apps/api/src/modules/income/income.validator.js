@@ -1,5 +1,5 @@
 const { body } = require('express-validator');
-const { idParam, amount } = require('../../shared/validation/rules');
+const { idParam, amount, moneyValue } = require('../../shared/validation/rules');
 const catalogue = require('@hisabkikitab/contracts/catalogue');
 const { modeOf } = require('../../shared/categories');
 
@@ -43,7 +43,7 @@ const incomeValidators = {
 
   update: [
     idParam('id'),
-    body('amount').optional().isFloat({ gt: 0 }).toFloat(),
+    moneyValue(body('amount').optional(), { allowZero: false }),
     source(body('source').optional({ checkFalsy: true })),
     body('note').optional().trim().isLength({ max: 200 }),
     body('date').optional().isISO8601().toDate(),

@@ -10,7 +10,7 @@
 --    stable identifier Google promises. It is NOT the email: a person can
 --    change the email on their Google account, and matching on email alone is
 --    how accounts get taken over. Unique, so one Google account maps to exactly
---    one Hisab Ki Kitab account.
+--    one Hisabki Kitab account.
 --
 -- 3. The CHECK says an account must be reachable somehow - by password, or by
 --    Google, or by both. Without it, a bug could leave a row nobody can ever

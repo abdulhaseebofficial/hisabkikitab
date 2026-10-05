@@ -187,3 +187,29 @@ test('a resident-paid bill credits its payer without spending shared cash twice'
   assert.equal(result.members[1].credit, '20.00');
   assert.equal(result.outstanding, '10.00');
 });
+test('new shared spaces default to PKR and recurring bills can start at zero', () => {
+  assert.equal(v.space({ name: 'Flat 4' }).currency, 'PKR');
+  assert.equal(v.space({ name: 'Flat 4', organization_type: 'company' }).organization_name, '');
+  const bill = v.expense({ category_id: '00000000-0000-4000-8000-000000000001',
+    name: 'Electricity', date: '2026-10-03', due_date: '2026-10-10',
+    amount: '0', method: 'equal', recurring: true }, true);
+  assert.equal(bill.amount_minor, 0);
+  assert.equal(bill.recurring, true);
+  assert.throws(() => v.expense({ category_id: bill.category_id,
+    date: '2026-10-03', amount: '0', method: 'equal' }));
+});
+
+test('shared dashboard outstanding is actual spending less money paid, not a budget guess', () => {
+  const result = c.summary({ month: '2026-09', budget: 0, members,
+    expenses: [{ category_id: 'groceries', date: '2026-09-07', amount_minor: 300000,
+      split_pending: true }],
+    bills: [{ category_id: 'rent', amount_minor: 200000, paid: true, paid_by: 'a' },
+      { category_id: 'gas', amount_minor: 0, paid: false }],
+    payments: [{ member_id: 'b', amount_minor: 200000 }], shares: [],
+  }, '2026-09-10');
+  assert.equal(result.spent, '5000.00');
+  assert.equal(result.totalPaid, '4000.00');
+  assert.equal(result.settlementOutstanding, '1000.00');
+  assert.equal(result.unallocated, '3000.00');
+  assert.deepEqual(result.categories.map((row) => row.category_id).sort(), ['gas', 'groceries', 'rent']);
+});

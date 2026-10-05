@@ -16,6 +16,7 @@ const {
   ACCESS_COOKIE,
 } = require('./auth.tokens');
 const google = require('../../infrastructure/auth/google');
+const mailer = require('../../infrastructure/email/mailer');
 
 /**
  * Puts both tokens into httpOnly cookies.
@@ -47,7 +48,7 @@ const register = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: `Welcome to Hisab Ki Kitab, ${session.user.name.split(' ')[0]}!`,
+    message: `Welcome to Hisabki Kitab, ${session.user.name.split(' ')[0]}!`,
     data: { user: session.user, accessToken: session.accessToken },
   });
 });
@@ -58,6 +59,7 @@ const publicConfig = asyncHandler(async (_req, res) => {
     success: true,
     data: {
       google: google.isConfigured() ? { enabled: true, clientId: google.clientId() } : { enabled: false },
+      passwordReset: { enabled: mailer.isConfigured() },
     },
   });
 });
@@ -78,7 +80,7 @@ const googleSignIn = asyncHandler(async (req, res) => {
   res.status(session.created ? 201 : 200).json({
     success: true,
     message: session.created
-      ? `Welcome to Hisab Ki Kitab, ${session.user.name.split(' ')[0]}!`
+      ? `Welcome to Hisabki Kitab, ${session.user.name.split(' ')[0]}!`
       : `Welcome back, ${session.user.name.split(' ')[0]}.`,
     data: { user: session.user, accessToken: session.accessToken, created: session.created },
   });
@@ -138,7 +140,9 @@ const forgotPassword = asyncHandler(async (req, res) => {
   const extra = await auth.forgotPassword(req.body.email);
   res.json({
     success: true,
-    message: 'If that email is registered, a password reset link is on its way.',
+    message: extra.deliveryAvailable === false
+      ? 'Password reset by email is temporarily unavailable.'
+      : 'If that email is registered, a password reset link is on its way.',
     ...extra,
   });
 });

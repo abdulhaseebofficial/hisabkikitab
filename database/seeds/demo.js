@@ -233,11 +233,11 @@ const run = async () => {
   // Last month's fixed bills, already paid.
   for (const [amount, category, description, day] of [
     [35000, 'house_rent', 'Monthly house rent', 2],
-    [9500, 'electricity_bill', 'Bijli bill', 8],
-    [2200, 'gas_bill', 'Sui gas bill', 10],
-    [1400, 'water_bill', 'Water charges', 10],
-    [4500, 'internet', 'Home internet', 5],
-    [18000, 'school_fees', 'School fees for two', 5],
+    [9500, 'electricity_bill', 'Bijli bill', 3],
+    [2200, 'gas_bill', 'Sui gas bill', 16],
+    [1400, 'water_bill', 'Water charges', 12],
+    [4500, 'internet', 'Home internet', 11],
+    [18000, 'school_fees', 'School fees for two', 6],
   ]) {
     await expensesRepo.create(user._id, {
       financeMode: 'householder',
@@ -254,11 +254,11 @@ const run = async () => {
   // on that card marks off - so the demo has something real to press.
   for (const [amount, category, description, day] of [
     [35000, 'house_rent', 'Monthly house rent', 2],
-    [9500, 'electricity_bill', 'Bijli bill', 8],
-    [2200, 'gas_bill', 'Sui gas bill', 10],
-    [1400, 'water_bill', 'Water charges', 10],
-    [4500, 'internet', 'Home internet', 5],
-    [18000, 'school_fees', 'School fees for two', 5],
+    [9500, 'electricity_bill', 'Bijli bill', 3],
+    [2200, 'gas_bill', 'Sui gas bill', 16],
+    [1400, 'water_bill', 'Water charges', 12],
+    [4500, 'internet', 'Home internet', 11],
+    [18000, 'school_fees', 'School fees for two', 6],
   ]) {
     await expensesRepo.create(user._id, {
       financeMode: 'householder',

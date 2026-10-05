@@ -15,13 +15,15 @@ const ApiError = require('../../shared/errors/ApiError');
 const { goalPace, round2 } = require('../../shared/utils/calculations');
 const events = require('../../shared/events');
 const { DEFAULT_GOAL_ICON } = require('../../shared/constants');
+const requests = require('../../shared/finance/idempotency');
+const { minor, minorToApi, decimalToMinor, roundRatio } = require('../../shared/finance/personalMoney');
 
 /** Adds the derived pace fields the UI needs on top of the stored row. */
 const decorate = (goal) => ({
   ...goal,
-  progress: goal.targetAmount
-    ? Math.min(100, Math.round((goal.savedAmount / goal.targetAmount) * 100))
-    : 0,
+  progress: Math.min(100, roundRatio(
+    goal.savedAmountMinor ?? decimalToMinor(goal.savedAmount),
+    goal.targetAmountMinor ?? decimalToMinor(goal.targetAmount))),
   ...goalPace(goal),
 });
 
@@ -32,11 +34,11 @@ const list = async (userId, status) => {
 
   const totals = items.reduce(
     (acc, g) => {
-      acc.targeted += g.targetAmount;
-      acc.saved += g.savedAmount;
+      acc.targeted += minor(g.targetAmountMinor ?? decimalToMinor(g.targetAmount));
+      acc.saved += minor(g.savedAmountMinor ?? decimalToMinor(g.savedAmount));
       return acc;
     },
-    { targeted: 0, saved: 0 }
+    { targeted: 0n, saved: 0n }
   );
 
   return {
@@ -45,8 +47,8 @@ const list = async (userId, status) => {
       count: items.length,
       active: items.filter((g) => !g.isCompleted).length,
       completed: items.filter((g) => g.isCompleted).length,
-      totalTargeted: round2(totals.targeted),
-      totalSaved: round2(totals.saved),
+      totalTargeted: minorToApi(totals.targeted),
+      totalSaved: minorToApi(totals.saved),
     },
   };
 };
@@ -57,7 +59,7 @@ const getById = async (id, userId) => {
   return decorate(goal);
 };
 
-const create = async (userId, input) => {
+const create = async (userId, input, requestKey, tx = null) => {
   const { title, targetAmount, savedAmount, deadline, icon, note } = input;
 
   // Comparing against the start of today, not now, so a deadline of "today"
@@ -66,14 +68,19 @@ const create = async (userId, input) => {
     throw ApiError.badRequest('The deadline cannot be in the past');
   }
 
-  const goal = await goalsRepo.create(userId, {
+  const values = {
     title,
     targetAmount,
     savedAmount: savedAmount || 0,
     deadline: deadline || null,
     icon: icon || DEFAULT_GOAL_ICON,
     note: note || '',
-  });
+  };
+  // Onboarding passes its enclosing transaction; public creates require a key.
+  if (!tx && !requestKey) throw ApiError.badRequest('A UUID Idempotency-Key header is required');
+  const goal = tx ? await goalsRepo.create(userId, values, tx)
+    : (await requests.run(userId, 'goal:create', requestKey, input,
+      requestTx => goalsRepo.create(userId, values, requestTx))).value;
 
   return decorate(goal);
 };
@@ -101,30 +108,25 @@ const update = async (id, userId, body) => {
  * anything that cares can react - reaching a goal is a fact about the goal,
  * not about the request that happened to cause it.
  */
-const contribute = async (user, id, rawAmount, note) => {
-  const amount = Number(rawAmount);
-  if (!amount || Number.isNaN(amount)) throw ApiError.badRequest('Enter an amount');
+const contribute = async (user, id, rawAmount, note, requestKey) => {
+  const amount = decimalToMinor(rawAmount, { allowNegative: true, allowZero: false });
 
-  const { goal, wasCompleted, overdrawn } = await goalsRepo.contribute(
-    id,
-    user._id,
-    amount,
-    note || ''
-  );
-
-  if (overdrawn) {
-    throw ApiError.badRequest('You cannot withdraw more than you have saved in this goal');
-  }
-  if (!goal) throw ApiError.notFound('Goal not found');
+  const { value, replayed } = await requests.run(user._id, `goal:contribute:${id}`, requestKey,
+    { amount: rawAmount, note }, async tx => {
+      const { goal, wasCompleted, overdrawn } = await goalsRepo.contribute(
+        id, user._id, rawAmount, note || '', tx
+      );
+      if (overdrawn) throw ApiError.badRequest('You cannot withdraw more than you have saved in this goal');
+      if (!goal) throw ApiError.notFound('Goal not found');
+      return { goal: decorate(goal), justCompleted: !wasCompleted && goal.isCompleted, withdrawn: amount < 0n };
+    });
 
   // Announced after the contribution is committed, and awaited, so whatever
   // listens has finished by the time the response says the goal was reached.
-  const justCompleted = !wasCompleted && goal.isCompleted;
-  if (justCompleted) {
-    await events.emitAndWait(events.GOAL_REACHED, { user, goal });
+  if (value.justCompleted && !replayed) {
+    await events.emitAndWait(events.GOAL_REACHED, { user, goal: value.goal });
   }
-
-  return { goal: decorate(goal), justCompleted, withdrawn: amount < 0 };
+  return value;
 };
 
 const remove = async (id, userId) => {

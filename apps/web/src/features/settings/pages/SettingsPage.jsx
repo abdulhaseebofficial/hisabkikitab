@@ -26,12 +26,14 @@ import {
 } from '../../../shared/validation/rules';
 import DeleteAccountModal from '../components/DeleteAccountModal';
 import { trackEvent } from '../../../shared/analytics/analytics';
+import { isSupportedMoney } from '../../../shared/utils/money';
 
 const profileSchema = z.object({
   // The same rule the API applies, so editing a profile cannot save a name
   // that signing up would have refused.
   name: nameSchema,
-  monthlyIncome: z.coerce.number({ invalid_type_error: 'Enter a number' }).min(0, 'Cannot be negative'),
+  monthlyIncome: z.coerce.number({ invalid_type_error: 'Enter a number' }).min(0, 'Cannot be negative')
+    .refine((value) => isSupportedMoney(value), 'Use at most two decimal places'),
   currency: z.string().min(1),
   university: z.string().max(100).optional(),
   hostelName: z.string().max(100).optional(),
@@ -67,6 +69,7 @@ export default function Settings() {
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
   // The mode being asked about, held until the person confirms. Null means no
   // question is on screen.
   const [pendingMode, setPendingMode] = useState(null);
@@ -163,7 +166,23 @@ export default function Settings() {
     runDelete(() => settingsApi.deleteAccount(deletePassword), {
       success: 'Account deleted',
       onDone: logout,
+      onError: (error) => setDeleteError(error.response?.data?.message || 'shared.error'),
     });
+  const manageSharedSpaces = () => {
+    setDeleteOpen(false);
+    setDeleteError('');
+    if (user?.financeMode === 'shared_living') {
+      navigate('/dashboard?section=manage');
+      return;
+    }
+    return run(() => settingsApi.updateProfile({ financeMode: 'shared_living' }), {
+      success: t('mode.switched', { mode: t('mode.shared_living') }),
+      onDone: (updated) => {
+        updateUser(updated);
+        navigate('/dashboard?section=manage');
+      },
+    });
+  };
 
   return (
     <div className="max-w-3xl space-y-5">
@@ -199,7 +218,7 @@ export default function Settings() {
         // through the ordinary reset flow to add one.
         onSetPassword={() => navigate('/forgot-password')}
         onExport={exportData}
-        onDelete={() => setDeleteOpen(true)}
+        onDelete={() => { setDeleteError(''); setDeleteOpen(true); }}
       />
 
       <ConfirmDialog
@@ -226,11 +245,14 @@ export default function Settings() {
 
       <DeleteAccountModal
         open={deleteOpen}
-        onClose={() => setDeleteOpen(false)}
+        onClose={() => { setDeleteOpen(false); setDeleteError(''); }}
         password={deletePassword}
-        onPasswordChange={setDeletePassword}
+        onPasswordChange={(value) => { setDeletePassword(value); setDeleteError(''); }}
         onConfirm={deleteAccount}
         busy={busy}
+        error={deleteError}
+        onManageSpaces={manageSharedSpaces}
+        manageLabel={user?.financeMode === 'shared_living' ? t('settings.manageSharedSpaces') : t('settings.switchToSharedLiving')}
       />
     </div>
   );

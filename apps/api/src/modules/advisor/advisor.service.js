@@ -18,6 +18,7 @@ const ApiError = require('../../shared/errors/ApiError');
 const { allCategories } = require('../../shared/categories');
 const { buildSnapshot, buildWeeklySnapshot } = require('../analytics/analytics.service');
 const { currentPeriod } = require('../../shared/utils/calculations');
+const { apiToMinor, minor, minorToApi } = require('../../shared/finance/personalMoney');
 
 const CHAT_HISTORY_TURNS = 20;
 const MAX_QUESTION_LENGTH = 1000;
@@ -150,17 +151,19 @@ const suggestBudget = async (user, body) => {
 
   // Never trust a model with the maths: report what it actually allocated so
   // the UI can refuse a plan that spends more than the student earns.
-  const income = user.monthlyIncome || snapshot.income || 0;
-  const allocated = (result.categories || []).reduce(
-    (sum, c) => sum + Number(c.limit || 0),
-    0
-  );
+  const incomeMinor = user.monthlyIncomeMinor != null ? minor(user.monthlyIncomeMinor) : apiToMinor(user.monthlyIncome || snapshot.income || 0);
+  let allocatedMinor;
+  try {
+    allocatedMinor = (result.categories || []).reduce((sum, c) => sum + apiToMinor(c.limit || 0), 0n);
+  } catch {
+    throw ApiError.internal('Budget suggestion contained unsupported money precision');
+  }
 
   return {
     ...result,
-    income,
-    allocated: Math.round(allocated * 100) / 100,
-    exceedsIncome: income > 0 && allocated > income,
+    income: minorToApi(incomeMinor),
+    allocated: minorToApi(allocatedMinor),
+    exceedsIncome: incomeMinor > 0n && allocatedMinor > incomeMinor,
   };
 };
 

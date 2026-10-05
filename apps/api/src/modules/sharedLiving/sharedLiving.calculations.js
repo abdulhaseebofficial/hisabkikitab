@@ -109,6 +109,8 @@ const summary = (
     billTotal = sum(bills),
     collected = sum(payments),
     spent = food + billTotal;
+  const paidDirect = sum(bills.filter((bill) => bill.paid && bill.paid_by));
+  const totalPaid = collected + paidDirect;
   const daily = Array.from({ length: daysInMonth(month) }, (_, i) => {
     const on = `${month}-${String(i + 1).padStart(2, "0")}`;
     return {
@@ -147,10 +149,11 @@ const summary = (
     today.slice(0, 7) > month
       ? 0
       : daysInMonth(month) - Math.max(0, elapsed - 1);
-  const categories = [...new Set(expenses.map((e) => e.category_id))].map(
+  const allCosts = [...expenses, ...bills];
+  const categories = [...new Set(allCosts.map((e) => e.category_id))].map(
     (id) => ({
       category_id: id,
-      amount: decimal(sum(expenses.filter((e) => e.category_id === id))),
+      amount: decimal(sum(allCosts.filter((e) => e.category_id === id))),
     }),
   );
   const participants = members.filter(
@@ -160,6 +163,9 @@ const summary = (
   ).length;
   return {
     collected: decimal(collected),
+    totalPaid: decimal(totalPaid),
+    settlementOutstanding: decimal(spent > totalPaid ? spent - totalPaid : 0n),
+    unallocated: decimal(sum(allCosts.filter((row) => row.split_pending))),
     spent: decimal(spent),
     food: decimal(food),
     bills: decimal(billTotal),

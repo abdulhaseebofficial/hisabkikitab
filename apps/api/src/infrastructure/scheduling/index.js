@@ -18,7 +18,7 @@ const { runAlertSweep } = require('./alerts.job');
 
 /** Materialise recurring expenses that have fallen due, for every student. */
 const runRecurringExpenses = async () => {
-  const created = await materializeAll();
+  const created = await materializeAll({ strict: true });
   return { created };
 };
 

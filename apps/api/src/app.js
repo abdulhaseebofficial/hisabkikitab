@@ -23,6 +23,8 @@ const { notFound, errorHandler } = require('./shared/middleware/errorHandler');
 const { globalLimiter } = require('./shared/middleware/rateLimiter');
 const { safeUrl } = require('./shared/http/safeUrl');
 const googleAuth = require('./infrastructure/auth/google');
+const { timingSafeEqual, randomUUID } = require('node:crypto');
+const { runRecurringExpenses } = require('./infrastructure/scheduling');
 const registerRoutes = require('./routes');
 const notificationSubscriptions = require('./modules/notifications/notifications.subscriptions');
 const {
@@ -81,6 +83,12 @@ const createBootstrap = () => {
 const createApp = () => {
   const app = express();
   const origins = allowedOrigins();
+
+  app.use((req, res, next) => {
+    req.requestId = randomUUID();
+    res.setHeader('X-Request-ID', req.requestId);
+    next();
+  });
 
   // Notifications reacts to what expenses and goals announce. Subscribing here
   // rather than at import time means requiring a module never has an opinion
@@ -166,14 +174,16 @@ const createApp = () => {
    * landing in the access log and outliving the thirty minutes it was meant
    * to have. safeUrl is the one place that decides what a logged URL may say.
    */
-  morgan.token('safe-url', (req) => safeUrl(req.originalUrl || req.url));
-
   if (process.env.NODE_ENV !== 'test') {
-    const PRODUCTION_FORMAT =
-      ':remote-addr - :remote-user [:date[clf]] ":method :safe-url HTTP/:http-version"' +
-      ' :status :res[content-length] ":referrer" ":user-agent"';
-    const DEV_FORMAT = ':method :safe-url :status :response-time[0] ms - :res[content-length]';
-    app.use(morgan(process.env.NODE_ENV === 'production' ? PRODUCTION_FORMAT : DEV_FORMAT));
+    app.use(morgan((tokens, req, res) => JSON.stringify({
+      level: 'info', event: 'http_request', requestId: req.requestId,
+      method: req.method,
+      // No query string, referrer, body, or user-agent: they may carry secrets
+      // or financial descriptions. Keep reset tokens out of path logs too.
+      path: safeUrl((req.originalUrl || req.url || '').split('?')[0]),
+      status: Number(tokens.status(req, res)),
+      durationMs: Number(tokens['response-time'](req, res)),
+    })));
   }
 
   app.use('/api', globalLimiter);
@@ -182,7 +192,7 @@ const createApp = () => {
 
   app.get('/', (_req, res) => {
     res.json({
-      name: 'Hisab Ki Kitab API',
+      name: 'Hisabki Kitab API',
       version: '1.0.0',
       docs: '/api/health for status, see README.md for the endpoint list',
     });
@@ -225,6 +235,27 @@ const createApp = () => {
 
   const bootstrap = createBootstrap();
   app.bootstrap = bootstrap; // server.js awaits this before it starts listening
+
+  // Vercel Cron sends CRON_SECRET as a Bearer token. Fail closed when absent.
+  // This endpoint is intentionally separate from user-facing financial routes.
+  app.get('/api/internal/recurring', async (req, res, next) => {
+    const secret = process.env.CRON_SECRET;
+    const supplied = req.get('authorization') || '';
+    if (!secret || secret.length < 16) return res.status(503).json({ success: false });
+    const expected = Buffer.from(`Bearer ${secret}`);
+    const actual = Buffer.from(supplied);
+    if (actual.length !== expected.length || !timingSafeEqual(actual, expected))
+      return res.status(401).json({ success: false });
+    try {
+      await bootstrap();
+      const result = await runRecurringExpenses();
+      console.log('[scheduler] recurring sweep completed:', JSON.stringify(result));
+      return res.json({ success: true, ...result });
+    } catch (error) {
+      console.error('[scheduler] recurring sweep failed:', error.message);
+      return next(error);
+    }
+  });
 
   app.use('/api', (_req, _res, next) => {
     bootstrap().then(() => next(), next);

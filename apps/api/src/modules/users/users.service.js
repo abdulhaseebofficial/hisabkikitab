@@ -18,9 +18,11 @@ const usersRepo = require('./users.repository');
 const expenses = require('../expenses/expenses.service');
 const income = require('../income/income.service');
 const goals = require('../goals/goals.service');
+const requests = require('../../shared/finance/idempotency');
 const budgets = require('../budgets/budgets.service');
 const advisor = require('../advisor/advisor.service');
 const debts = require('../debts/debts.service');
+const sharedLivingExport = require('./sharedLivingExport.repository');
 const ApiError = require('../../shared/errors/ApiError');
 const { DEFAULT_GOAL_ICON } = require('../../shared/constants');
 const { allCategories, modeOf } = require('../../shared/categories');
@@ -61,33 +63,32 @@ const updateProfile = async (userId, body) => {
  * Finishes the first-run wizard: income and currency in one shot, plus an
  * optional first goal so the student lands on a dashboard with something on it.
  */
-const completeOnboarding = async (userId, body) => {
+const completeOnboarding = async (userId, body, requestKey) => {
   const { financeMode, language, monthlyIncome, currency, university, hostelName, goal } = body;
+  const { value } = await requests.run(userId, 'profile:onboarding', requestKey, body, async tx => {
+    const user = await usersRepo.updateProfile(userId, {
+      // Undefined leaves existing optional settings alone.
+      financeMode: financeMode || undefined,
+      language: language || undefined,
+      monthlyIncome: monthlyIncome || 0,
+      currency: currency || undefined,
+      university: university === undefined ? undefined : university,
+      hostelName: hostelName === undefined ? undefined : hostelName,
+      onboardingCompleted: true,
+    }, tx);
 
-  const user = await usersRepo.updateProfile(userId, {
-    // Asked first in the wizard, because everything else is worded by them.
-    // Undefined rather than a default: not sending them must leave whatever
-    // the account already has, which is what the old wizard relied on.
-    financeMode: financeMode || undefined,
-    language: language || undefined,
-    monthlyIncome: monthlyIncome || 0,
-    currency: currency || undefined,
-    university: university === undefined ? undefined : university,
-    hostelName: hostelName === undefined ? undefined : hostelName,
-    onboardingCompleted: true,
+    let createdGoal = null;
+    if (financeMode !== 'shared_living' && goal && goal.title && goal.targetAmount) {
+      createdGoal = await goals.create(userId, {
+        title: goal.title,
+        targetAmount: goal.targetAmount,
+        deadline: goal.deadline || null,
+        icon: goal.icon || DEFAULT_GOAL_ICON,
+      }, null, tx);
+    }
+    return { user: toPublic(user), goal: createdGoal };
   });
-
-  let createdGoal = null;
-  if (financeMode !== 'shared_living' && goal && goal.title && goal.targetAmount) {
-    createdGoal = await goals.create(userId, {
-      title: goal.title,
-      targetAmount: goal.targetAmount,
-      deadline: goal.deadline || null,
-      icon: goal.icon || DEFAULT_GOAL_ICON,
-    });
-  }
-
-  return { user: toPublic(user), goal: createdGoal };
+  return value;
 };
 
 /* ---------------------------- categories ---------------------------- */
@@ -213,9 +214,10 @@ const exportEverything = async (user) => {
     })
   );
 
-  const [allGoals, chat] = await Promise.all([
+  const [allGoals, chat, sharedLiving] = await Promise.all([
     goals.listAllForUser(user._id),
     advisor.exportChat(user._id, EXPORT_CHAT_LIMIT),
+    sharedLivingExport.forUser(user._id),
   ]);
 
   return {
@@ -235,6 +237,7 @@ const exportEverything = async (user) => {
       note: 'Goals are shared across both finance modes and are listed once.',
       goals: allGoals,
       aiConversation: chat,
+      sharedLiving,
     },
   };
 };
@@ -249,11 +252,30 @@ const exportEverything = async (user) => {
 const deleteAccount = async (userId, password) => {
   const user = await usersRepo.findById(userId, { withPassword: true });
 
+  if (!user) throw ApiError.notFound('Account not found');
+  if (!user.password) {
+    throw ApiError.badRequest('Set a password in Settings before deleting this Google account');
+  }
+
   if (!password || !(await usersRepo.comparePassword(password, user.password))) {
     throw ApiError.badRequest('Enter your current password to confirm deletion');
   }
 
-  await usersRepo.remove(userId);
+  let deletion;
+  try {
+    deletion = await usersRepo.removeAccountSafely(userId);
+  } catch (err) {
+    if (err.code === '23503') {
+      // This is retryable if a space/join raced the initial space-lock query.
+      throw ApiError.conflict('shared.accountDeletionRetry');
+    }
+    throw err;
+  }
+  if (!deletion.deleted) {
+    if (deletion.hasSuccessor)
+      throw ApiError.conflict('shared.ownerTransferBeforeDelete');
+    throw ApiError.conflict('shared.ownerNoSuccessorDelete');
+  }
 };
 
 /* ------------------- for other modules to build on ------------------ */

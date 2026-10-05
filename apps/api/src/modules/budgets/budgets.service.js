@@ -12,8 +12,9 @@
 const budgetsRepo = require('./budgets.repository');
 const { allCategories, isOwnCategory, isOtherModeCategory, modeOf } = require('../../shared/categories');
 const ApiError = require('../../shared/errors/ApiError');
-const { currentPeriod, round2 } = require('../../shared/utils/calculations');
+const { currentPeriod } = require('../../shared/utils/calculations');
 const { budgetProgress } = require('../analytics/analytics.service');
+const { minor, minorToApi } = require('../../shared/finance/personalMoney');
 
 /** Resolves ?month=&year= against the current period. */
 const periodFrom = (source = {}) => {
@@ -42,25 +43,25 @@ const listForMonth = async (user, query) => {
 
   const totals = items.reduce(
     (acc, row) => {
-      acc.limit += row.limit;
-      acc.spent += row.spent;
+      acc.limit += minor(row.limitMinor || 0);
+      acc.spent += minor(row.spentMinor || 0);
       return acc;
     },
-    { limit: 0, spent: 0 }
+    { limit: 0n, spent: 0n }
   );
 
-  const income = user.monthlyIncome || 0;
+  const income = minor(user.monthlyIncomeMinor || '0');
 
   return {
     month,
     year,
     items,
     totals: {
-      limit: round2(totals.limit),
-      spent: round2(totals.spent),
-      remaining: round2(totals.limit - totals.spent),
-      income: round2(income),
-      unallocated: round2(income - totals.limit),
+      limit: minorToApi(totals.limit),
+      spent: minorToApi(totals.spent),
+      remaining: minorToApi(totals.limit - totals.spent),
+      income: minorToApi(income),
+      unallocated: minorToApi(income - totals.limit),
     },
   };
 };
@@ -98,7 +99,7 @@ const setPlan = async (user, body, query) => {
   if (!valid.length) throw ApiError.badRequest('None of those categories are valid');
 
   const written = await budgetsRepo.upsertMany(user._id, modeOf(user), valid, month, year);
-  const rows = await budgetProgress(user._id, month, year);
+  const rows = await budgetProgress(user._id, modeOf(user), month, year);
 
   return { written, month, year, items: rows };
 };

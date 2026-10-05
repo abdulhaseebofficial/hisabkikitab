@@ -73,14 +73,21 @@ const withoutSslMode = (uri) => {
 };
 
 /**
- * `pg` hands back BIGINT (20) and NUMERIC (1700) as strings to protect
- * precision. Every amount in this app is a JavaScript number, and the API
- * contract the frontend and the QA suites are written against says a number,
- * not a string - so parse them back.
- * Counts from COUNT(*) are small enough that Number is exact.
+ * Keep exact SQL values as strings. Callers may explicitly convert bounded
+ * counts; money code converts minor-unit strings to BigInt before arithmetic.
  */
-types.setTypeParser(20, (value) => (value === null ? null : Number(value)));
-types.setTypeParser(1700, (value) => (value === null ? null : Number(value)));
+types.setTypeParser(20, (value) => {
+  const parsed = BigInt(value);
+  return parsed <= BigInt(Number.MAX_SAFE_INTEGER) && parsed >= BigInt(Number.MIN_SAFE_INTEGER)
+    ? Number(value) : value;
+});
+types.setTypeParser(1700, (value) => {
+  // Debt NUMERIC(14,2) remains a decimal-number API for now. Preserve larger
+  // or higher-precision values as text instead of silently losing digits.
+  const number = Number(value);
+  return Number.isFinite(number) && Math.abs(number) <= 999999999999.99
+    && /^-?\d+(?:\.\d{1,2})?$/.test(value) ? number : value;
+});
 
 let pool = null;
 

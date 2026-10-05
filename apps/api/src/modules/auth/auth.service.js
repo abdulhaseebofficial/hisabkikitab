@@ -17,7 +17,7 @@ const authRepo = require('./auth.repository');
 const users = require('../users/users.service');
 const google = require('../../infrastructure/auth/google');
 const ApiError = require('../../shared/errors/ApiError');
-const { sendMail } = require('../../infrastructure/email/mailer');
+const { sendMail, isConfigured: isMailConfigured } = require('../../infrastructure/email/mailer');
 const { isDevelopment } = require('../../shared/config/validateEnv');
 const { checkName } = require('@hisabkikitab/contracts/validation');
 const {
@@ -55,7 +55,7 @@ const DUMMY_HASH = bcrypt.hashSync('hisabkikitab-timing-equaliser', 12);
 const ROTATION_GRACE_MS = 60 * 1000;
 
 const issueSession = async (user) => {
-  const accessToken = signAccessToken(user._id);
+  const accessToken = signAccessToken(user._id, user.tokenVersion);
   const refreshToken = signRefreshToken(user._id, user.tokenVersion);
 
   await authRepo.addRefreshToken(
@@ -147,7 +147,7 @@ const register = async (input) => {
     email,
     password,
     monthlyIncome: monthlyIncome || 0,
-    currency: currency || 'INR',
+    currency: currency || 'PKR',
     university: university || '',
     hostelName: hostelName || '',
   });
@@ -290,8 +290,13 @@ const logout = async (token) => {
  * not production" is not good enough, because an unset NODE_ENV satisfies it.
  */
 const forgotPassword = async (email) => {
+  const allowDevLink = isDevelopment() && process.env.ALLOW_DEV_RESET_LINK === 'true';
+  // Do not issue an unusable reset token or claim that mail is on its way.
+  // This answer is identical for known and unknown addresses.
+  if (!isMailConfigured() && !allowDevLink) return { deliveryAvailable: false };
+
   const user = await users.findByEmail(email);
-  if (!user) return {};
+  if (!user) return { deliveryAvailable: true };
 
   const rawToken = await users.createPasswordResetToken(user._id);
 
@@ -300,7 +305,7 @@ const forgotPassword = async (email) => {
 
   await sendMail({
     to: user.email,
-    subject: 'Reset your Hisab Ki Kitab password',
+    subject: 'Reset your Hisabki Kitab password',
     text: [
       `Hi ${user.name},`,
       '',
@@ -311,10 +316,10 @@ const forgotPassword = async (email) => {
     ].join('\n'),
   });
 
-  if (isDevelopment() && process.env.ALLOW_DEV_RESET_LINK === 'true') {
-    return { devResetToken: rawToken, devResetUrl: resetUrl };
+  if (allowDevLink) {
+    return { deliveryAvailable: true, devResetToken: rawToken, devResetUrl: resetUrl };
   }
-  return {};
+  return { deliveryAvailable: true };
 };
 
 const resetPassword = async (rawToken, newPassword) => {

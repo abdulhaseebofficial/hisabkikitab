@@ -24,8 +24,22 @@ const { toApi, toApiList, buildSet, isUuid } = require('../../infrastructure/dat
  */
 const DEBT_COLUMNS = `
   d.*,
+  c.display_name AS current_person_name,
+  c.contact_info AS current_contact_info,
   (d.original_amount - d.paid_amount) AS remaining_amount,
   (d.status NOT IN ('SETTLED', 'CANCELLED') AND d.due_date IS NOT NULL AND d.due_date < now()) AS is_overdue`;
+const DEBT_FROM = 'FROM debts d JOIN debt_contacts c ON c.id=d.contact_id AND c.user_id=d.user_id';
+const toDebtApi = (row) => {
+  const debt = toApi(row);
+  if (!debt) return null;
+  debt.recordedPersonName = debt.personName;
+  debt.personName = debt.currentPersonName;
+  debt.contactInfo = debt.currentContactInfo;
+  delete debt.currentPersonName;
+  delete debt.currentContactInfo;
+  return debt;
+};
+const toDebtList = (rows) => rows.map(toDebtApi);
 
 /* ------------------------------ reading ----------------------------- */
 
@@ -74,7 +88,7 @@ const buildFilters = (userId, financeMode, filters = {}) => {
     // yet - which is how the note clause once ended up comparing a name to a
     // user id, and every search returned a 500.
     const n = next();
-    clauses.push(`(d.person_name ILIKE $${n} ESCAPE '\\' OR d.note ILIKE $${n} ESCAPE '\\')`);
+    clauses.push(`(c.display_name ILIKE $${n} ESCAPE '\\' OR d.note ILIKE $${n} ESCAPE '\\')`);
     values.push(`%${escapeLike(search)}%`);
   }
 
@@ -84,7 +98,7 @@ const buildFilters = (userId, financeMode, filters = {}) => {
   }
   if (to) {
     const end = new Date(to);
-    end.setHours(23, 59, 59, 999);
+    end.setUTCHours(23, 59, 59, 999);
     clauses.push(`d.transaction_date <= $${next()}`);
     values.push(end);
   }
@@ -94,7 +108,7 @@ const buildFilters = (userId, financeMode, filters = {}) => {
   }
   if (dueTo) {
     const end = new Date(dueTo);
-    end.setHours(23, 59, 59, 999);
+    end.setUTCHours(23, 59, 59, 999);
     clauses.push(`d.due_date <= $${next()}`);
     values.push(end);
   }
@@ -111,7 +125,7 @@ const list = async (userId, financeMode, filters = {}) => {
   const { where, values } = buildFilters(userId, financeMode, filters);
 
   const rows = await query(
-    `SELECT ${DEBT_COLUMNS} FROM debts d
+    `SELECT ${DEBT_COLUMNS} ${DEBT_FROM}
       WHERE ${where}
       ORDER BY ${order}
       LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
@@ -121,14 +135,14 @@ const list = async (userId, financeMode, filters = {}) => {
   const summary = await queryOne(
     `SELECT count(*)::bigint AS total,
             coalesce(sum(d.original_amount - d.paid_amount), 0) AS outstanding
-       FROM debts d WHERE ${where}`,
+       ${DEBT_FROM} WHERE ${where}`,
     values
   );
 
   const total = Number(summary.total);
 
   return {
-    items: toApiList(rows),
+    items: toDebtList(rows),
     filteredOutstanding: Number(summary.outstanding),
     pagination: {
       page,
@@ -141,13 +155,90 @@ const list = async (userId, financeMode, filters = {}) => {
   };
 };
 
+// Contact identity, not spelling, groups the two directions. Old rows each
+// retain their own contact until the user explicitly chooses one for new debts.
+const people = async (userId, financeMode, filters = {}) => {
+  const page = Math.max(1, Number(filters.page) || 1);
+  const limit = 20;
+  const search = String(filters.search || '').trim();
+  const params = [userId, financeMode, search ? `%${escapeLike(search)}%` : ''];
+  const grouped = `${DEBT_FROM} WHERE d.user_id=$1 AND d.finance_mode=$2
+    AND ($3='' OR c.display_name ILIKE $3 ESCAPE '\\')
+    GROUP BY c.id, c.display_name, c.contact_info`;
+  const rows = await query(
+    `SELECT c.id AS contact_id, c.display_name AS person_name, c.contact_info,
+      count(*)::integer AS record_count, max(d.transaction_date) AS latest_date,
+      coalesce(sum(CASE WHEN d.kind='LENT' AND d.status NOT IN ('SETTLED','CANCELLED')
+        THEN d.original_amount-d.paid_amount
+        WHEN d.kind='BORROWED' AND d.status NOT IN ('SETTLED','CANCELLED')
+        THEN -(d.original_amount-d.paid_amount) ELSE 0 END),0) AS net_balance
+      ${grouped} ORDER BY latest_date DESC, contact_id ASC LIMIT $4 OFFSET $5`,
+    [...params, limit, (page - 1) * limit],
+  );
+  const totalRow = await queryOne(`SELECT count(*)::integer AS total FROM (SELECT 1 ${grouped}) people`, params);
+  const total = Number(totalRow.total);
+  return {
+    items: rows.map((row) => ({
+      key: row.contact_id, contactId: row.contact_id, name: row.person_name,
+      contactInfo: row.contact_info,
+      recordCount: Number(row.record_count), netBalance: Number(row.net_balance),
+      latestDate: row.latest_date,
+    })),
+    pagination: { page, total, pages: Math.ceil(total / limit) || 1,
+      hasNext: page * limit < total, hasPrev: page > 1 },
+  };
+};
+
+const personRecords = async (userId, financeMode, contactId, page = 1) => {
+  const limit = 20;
+  if (!isUuid(contactId)) return { items: [], pagination: { page, total: 0, pages: 1, hasNext: false, hasPrev: false } };
+  const rows = await query(
+    `SELECT ${DEBT_COLUMNS} ${DEBT_FROM} WHERE d.user_id=$1 AND d.finance_mode=$2
+      AND d.contact_id=$3
+      ORDER BY d.transaction_date DESC,d.id DESC LIMIT $4 OFFSET $5`,
+    [userId, financeMode, contactId, limit, (page - 1) * limit],
+  );
+  const totalRow = await queryOne(
+    `SELECT count(*)::integer AS total FROM debts WHERE user_id=$1 AND finance_mode=$2
+      AND contact_id=$3`, [userId, financeMode, contactId],
+  );
+  const total = Number(totalRow.total);
+  return { items: toDebtList(rows), pagination: { page, total,
+    pages: Math.ceil(total / limit) || 1, hasNext: page * limit < total, hasPrev: page > 1 } };
+};
+
+const contacts = async (userId, search = '', page = 1) => {
+  const limit = 100;
+  const rows = await query(
+    `SELECT id, display_name, contact_info FROM debt_contacts
+      WHERE user_id=$1 AND ($2='' OR display_name ILIKE $2 ESCAPE '\\'
+        OR contact_info ILIKE $2 ESCAPE '\\')
+      ORDER BY lower(display_name), id LIMIT $3 OFFSET $4`,
+    [userId, search ? `%${escapeLike(search)}%` : '', limit + 1, (page - 1) * limit],
+  );
+  return {
+    items: rows.slice(0, limit).map((row) => ({ id: row.id, displayName: row.display_name, contactInfo: row.contact_info })),
+    page, hasNext: rows.length > limit, hasPrev: page > 1,
+  };
+};
+
+const renameContact = async (id, userId, displayName) => {
+  if (!isUuid(id)) return null;
+  const row = await queryOne(
+    `UPDATE debt_contacts SET display_name=$3, updated_at=now()
+      WHERE id=$1 AND user_id=$2 RETURNING id, display_name, contact_info`,
+    [id, userId, displayName],
+  );
+  return row ? { id: row.id, displayName: row.display_name, contactInfo: row.contact_info } : null;
+};
+
 const findById = async (id, financeMode, userId) => {
   if (!isUuid(id)) return null;
   const row = await queryOne(
-    `SELECT ${DEBT_COLUMNS} FROM debts d WHERE d.id = $1 AND d.user_id = $2 AND d.finance_mode = $3`,
+    `SELECT ${DEBT_COLUMNS} ${DEBT_FROM} WHERE d.id = $1 AND d.user_id = $2 AND d.finance_mode = $3`,
     [id, userId, financeMode]
   );
-  return row ? toApi(row) : null;
+  return toDebtApi(row);
 };
 
 /**
@@ -184,7 +275,7 @@ const payments = async (debtId, userId) => {
 const listAllWithPayments = async (userId, financeMode) => {
   const [debtRows, paymentRows] = await Promise.all([
     query(
-      `SELECT ${DEBT_COLUMNS} FROM debts d
+      `SELECT ${DEBT_COLUMNS} ${DEBT_FROM}
         WHERE d.user_id = $1 AND d.finance_mode = $2
         ORDER BY d.created_at DESC, d.id DESC`,
       [userId, financeMode]
@@ -205,34 +296,53 @@ const listAllWithPayments = async (userId, financeMode) => {
     ledger.set(row.debtId, forDebt);
   }
 
-  return toApiList(debtRows).map((debt) => ({ ...debt, payments: ledger.get(debt._id) || [] }));
+  return toDebtList(debtRows).map((debt) => ({ ...debt, payments: ledger.get(debt._id) || [] }));
 };
 
 /* ------------------------------ writing ----------------------------- */
 
-const create = async (userId, input) => {
-  const row = await queryOne(
-    `INSERT INTO debts
-       (user_id, finance_mode, kind, person_name, person_contact, original_amount,
-        transaction_date, due_date, category, note, purpose, purpose_category)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-     RETURNING ${DEBT_COLUMNS.replace(/d\./g, '')}`,
-    [
-      userId,
-      input.financeMode,
-      input.kind,
-      input.personName,
-      input.personContact || '',
-      input.originalAmount,
-      input.transactionDate,
-      input.dueDate || null,
-      input.category || null,
-      input.note || '',
-      input.purpose || '',
-      input.purposeCategory || null,
-    ]
-  );
-  return toApi(row);
+const create = async (userId, input, outerTx = null) => {
+  const perform = async (tx) => {
+    let personName = input.personName;
+    let personContact = input.personContact || '';
+    if (input.contactId) {
+      const contact = await tx.queryOne(
+        `SELECT display_name, contact_info FROM debt_contacts
+        WHERE id=$1 AND user_id=$2 FOR SHARE`, [input.contactId, userId],
+      );
+      if (!contact) return null;
+      personName = contact.display_name;
+      if (!input.personContact) personContact = contact.contact_info;
+    }
+    const row = await tx.queryOne(
+      `INSERT INTO debts
+       (user_id, finance_mode, kind, contact_id, person_name, person_contact, original_amount,
+         transaction_date, due_date, category, note, purpose, purpose_category)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+     RETURNING id`,
+      [
+        userId,
+        input.financeMode,
+        input.kind,
+        input.contactId || null,
+        personName,
+        personContact,
+        input.originalAmount,
+        input.transactionDate,
+        input.dueDate || null,
+        input.category || null,
+        input.note || '',
+        input.purpose || '',
+        input.purposeCategory || null,
+      ],
+    );
+    const created = await tx.queryOne(
+      `SELECT ${DEBT_COLUMNS} ${DEBT_FROM} WHERE d.id=$1 AND d.user_id=$2`,
+      [row.id, userId],
+    );
+    return toDebtApi(created);
+  };
+  return outerTx ? perform(outerTx) : transaction(perform);
 };
 
 /**
@@ -244,7 +354,6 @@ const update = async (id, financeMode, userId, patch) => {
     kind: patch.kind,
     purpose: patch.purpose,
     purpose_category: patch.purposeCategory,
-    person_name: patch.personName,
     person_contact: patch.personContact,
     original_amount: patch.originalAmount,
     transaction_date: patch.transactionDate,
@@ -254,7 +363,7 @@ const update = async (id, financeMode, userId, patch) => {
   };
 
   const { fragment, values, next } = buildSet(columns);
-  if (!fragment) return findById(id, financeMode, userId);
+  if (!fragment && patch.personName === undefined) return findById(id, financeMode, userId);
 
   // Changing the original amount can change what the status should be - paying
   // 500 against a debt later corrected to 500 settles it - so the status is
@@ -275,8 +384,23 @@ const update = async (id, financeMode, userId, patch) => {
   const amountValues = patch.originalAmount === undefined ? [] : [patch.originalAmount];
   const idPosition = next + amountValues.length;
 
-  const row = await queryOne(
-    `UPDATE debts
+  return transaction(async (tx) => {
+    const locked = await tx.queryOne(
+      'SELECT contact_id FROM debts WHERE id=$1 AND user_id=$2 AND finance_mode=$3 FOR UPDATE',
+      [id, userId, financeMode],
+    );
+    if (!locked) return null;
+    if (patch.personName !== undefined || patch.personContact !== undefined) {
+      await tx.queryOne(
+        `UPDATE debt_contacts SET display_name=coalesce($3,display_name),
+          contact_info=coalesce($4,contact_info), updated_at=now()
+          WHERE id=$1 AND user_id=$2 RETURNING id`,
+        [locked.contact_id, userId, patch.personName ?? null, patch.personContact ?? null],
+      );
+    }
+    if (fragment) {
+      await tx.queryOne(
+        `UPDATE debts
         SET ${fragment},
             status = CASE
               WHEN paid_amount >= ${amountPlaceholder}::numeric THEN 'SETTLED'
@@ -289,11 +413,15 @@ const update = async (id, financeMode, userId, patch) => {
       WHERE id = $${idPosition} AND user_id = $${idPosition + 1}
         AND finance_mode = $${idPosition + 2}
       RETURNING id`,
-    [...values, ...amountValues, id, userId, financeMode]
-  );
-  if (!row) return null;
-
-  return findById(id, financeMode, userId);
+        [...values, ...amountValues, id, userId, financeMode],
+      );
+    }
+    const row = await tx.queryOne(
+      `SELECT ${DEBT_COLUMNS} ${DEBT_FROM} WHERE d.id=$1 AND d.user_id=$2 AND d.finance_mode=$3`,
+      [id, userId, financeMode],
+    );
+    return toDebtApi(row);
+  });
 };
 
 const remove = async (id, financeMode, userId) => {
@@ -337,11 +465,11 @@ const cancel = async (id, financeMode, userId, reason) => {
             updated_at = now()
       WHERE id = $1 AND user_id = $2 AND finance_mode = $3
         AND status NOT IN ('SETTLED', 'CANCELLED')
-      RETURNING ${DEBT_COLUMNS.replace(/d\./g, '')}`,
+      RETURNING id`,
     [id, userId, financeMode, reason ? String(reason).trim() : null]
   );
 
-  if (row) return { reason: 'OK', debt: toApi(row) };
+  if (row) return { reason: 'OK', debt: await findById(id, financeMode, userId) };
 
   // Nothing changed. Which of the two it was matters to the caller: a 404 for
   // someone else's record, a 400 for one that cannot be cancelled.
@@ -362,8 +490,8 @@ const cancel = async (id, financeMode, userId, reason) => {
  * Returns a reason rather than throwing, so the service decides what each one
  * means to a caller.
  */
-const addPayment = async (debtId, financeMode, userId, { amount, paidOn, note }) =>
-  transaction(async (tx) => {
+const addPayment = async (debtId, financeMode, userId, { amount, paidOn, note }, outerTx = null) => {
+  const perform = async (tx) => {
     if (!isUuid(debtId)) return { reason: 'NOT_FOUND' };
 
     const current = await tx.queryOne(
@@ -408,17 +536,19 @@ const addPayment = async (debtId, financeMode, userId, { amount, paidOn, note })
     );
 
     const row = await tx.queryOne(
-      `SELECT ${DEBT_COLUMNS} FROM debts d WHERE d.id = $1 AND d.user_id = $2 AND d.finance_mode = $3`,
+      `SELECT ${DEBT_COLUMNS} ${DEBT_FROM} WHERE d.id = $1 AND d.user_id = $2 AND d.finance_mode = $3`,
       [debtId, userId, financeMode]
     );
 
     return {
       reason: 'OK',
-      debt: toApi(row),
+      debt: toDebtApi(row),
       payment: toApi(payment),
       wasSettled: current.status === 'SETTLED',
     };
-  });
+  };
+  return outerTx ? perform(outerTx) : transaction(perform);
+};
 
 /**
  * Removes a payment and puts the balance back, atomically.
@@ -460,10 +590,10 @@ const removePayment = async (debtId, paymentId, financeMode, userId) =>
     );
 
     const row = await tx.queryOne(
-      `SELECT ${DEBT_COLUMNS} FROM debts d WHERE d.id = $1 AND d.user_id = $2 AND d.finance_mode = $3`,
+      `SELECT ${DEBT_COLUMNS} ${DEBT_FROM} WHERE d.id = $1 AND d.user_id = $2 AND d.finance_mode = $3`,
       [debtId, userId, financeMode]
     );
-    return { reason: 'OK', debt: toApi(row) };
+    return { reason: 'OK', debt: toDebtApi(row) };
   });
 
 /* ------------------------------ summary ----------------------------- */
@@ -506,18 +636,22 @@ const summary = async (userId, financeMode) => {
 /** Outstanding debts falling due within `days`, soonest first. */
 const dueWithin = async (userId, financeMode, days, limit = 5) => {
   const rows = await query(
-    `SELECT ${DEBT_COLUMNS} FROM debts d
+    `SELECT ${DEBT_COLUMNS} ${DEBT_FROM}
       WHERE d.user_id = $1 AND d.finance_mode = $4
         AND d.status NOT IN ('SETTLED', 'CANCELLED') AND d.due_date IS NOT NULL
         AND d.due_date <= now() + ($2 || ' days')::interval
       ORDER BY d.due_date ASC LIMIT $3`,
     [userId, String(days), limit, financeMode]
   );
-  return toApiList(rows);
+  return toDebtList(rows);
 };
 
 module.exports = {
   list,
+  people,
+  personRecords,
+  contacts,
+  renameContact,
   findById,
   payments,
   listAllWithPayments,

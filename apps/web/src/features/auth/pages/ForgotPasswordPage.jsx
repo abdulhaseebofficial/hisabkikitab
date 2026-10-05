@@ -11,6 +11,7 @@ import Button from '../../../shared/components/ui/Button';
 import authService from '../api/authApi';
 import { getErrorMessage } from '../../../shared/api/client';
 import useT from '../../../shared/i18n/I18nProvider';
+import useAsync from '../../../shared/hooks/useAsync';
 
 const schema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email'),
@@ -19,7 +20,9 @@ const schema = z.object({
 export default function ForgotPassword() {
   const { t } = useT();
   const [sent, setSent] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
   const [devLink, setDevLink] = useState(null);
+  const { data: config } = useAsync(() => authService.config(), []);
 
   const {
     register,
@@ -30,6 +33,10 @@ export default function ForgotPassword() {
   const onSubmit = async (values) => {
     try {
       const response = await authService.forgotPassword(values.email);
+      if (response.deliveryAvailable === false) {
+        setUnavailable(true);
+        return;
+      }
       setSent(true);
       // In development the API echoes the reset link so it can be tested
       // without configuring SMTP.
@@ -38,6 +45,20 @@ export default function ForgotPassword() {
       toast.error(getErrorMessage(error));
     }
   };
+
+  if (unavailable || config?.passwordReset?.enabled === false) {
+    return (
+      <AuthShell
+        title={t('auth.resetUnavailableTitle')}
+        subtitle={t('auth.resetUnavailableDetail')}
+        footer={<Link to="/login" className="font-semibold text-brand-600 hover:underline dark:text-brand-400">{t('auth.backToLogin')}</Link>}
+      >
+        <Link to="/contact" className="inline-flex min-h-11 items-center font-medium text-brand-600 hover:underline dark:text-brand-400">
+          {t('auth.contactSupport')}
+        </Link>
+      </AuthShell>
+    );
+  }
 
   if (sent) {
     return (

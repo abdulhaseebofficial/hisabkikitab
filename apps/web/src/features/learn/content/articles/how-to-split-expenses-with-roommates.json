@@ -1,0 +1,158 @@
+{
+  "slug": "how-to-split-expenses-with-roommates",
+  "category": "shared-living",
+  "title": "How to Split Expenses With Roommates",
+  "excerpt": "Agree on a fair split, record payments, and settle shared costs without confusion.",
+  "introduction": "Shared living is easier when everyone understands what is shared and how it will be paid. The fictional example below uses an equal split in PKR; roommates can agree on another method.",
+  "author": "Hisabki Kitab Editorial Team",
+  "publishedAt": "2026-09-28",
+  "updatedAt": "2026-09-28",
+  "featured": true,
+  "sections": [
+    {
+      "id": "problem",
+      "title": "The problem",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "One person pays the internet bill, another buys groceries, and nobody knows the final balance."
+        }
+      ]
+    },
+    {
+      "id": "explanation",
+      "title": "How it works",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Agree on eligible expenses and the split before spending. Equal shares may fit common supplies, while room size or actual use may justify a different arrangement. Separate what someone owes from what they already paid."
+        }
+      ]
+    },
+    {
+      "id": "example",
+      "title": "A practical example",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Three roommates agree to share PKR 12,000 of common costs equally. Ali paid PKR 8,000, Sana paid PKR 4,000, and Omar paid nothing yet."
+        },
+        {
+          "type": "table",
+          "caption": "Illustrative amounts in PKR",
+          "headers": [
+            "Roommate",
+            "Paid (PKR)",
+            "Share (PKR)",
+            "Settlement"
+          ],
+          "rows": [
+            [
+              "Ali",
+              "8,000",
+              "4,000",
+              "Receives 4,000"
+            ],
+            [
+              "Sana",
+              "4,000",
+              "4,000",
+              "Nothing due"
+            ],
+            [
+              "Omar",
+              "0",
+              "4,000",
+              "Pays 4,000"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "calculation",
+      "title": "The calculation",
+      "blocks": [
+        {
+          "type": "calculation",
+          "text": "PKR 12,000 ? 3 = PKR 4,000 each. Omar pays Ali PKR 4,000; all three then carry the same net cost."
+        }
+      ]
+    },
+    {
+      "id": "steps",
+      "title": "Actionable steps",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Agree which costs are shared and which are personal.",
+            "Choose equal shares or record agreed percentages that total 100%.",
+            "Save receipts and record the payer, date, amount, and participants.",
+            "Review the ledger together on a regular settlement date.",
+            "Mark transfers as settlements so they are not counted as a second expense."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mistakes",
+      "title": "Common mistakes",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Adding a personal purchase to a shared receipt.",
+            "Changing a split after others have already paid.",
+            "Counting a reimbursement as new household spending."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tips",
+      "title": "Useful tips",
+      "blocks": [
+        {
+          "type": "subheading",
+          "text": "Make it easier to keep going"
+        },
+        {
+          "type": "tip",
+          "text": "Write down how you will handle a move-out, guests, and partial months before those situations arise."
+        }
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusion",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A clear agreement and a shared record matter more than a complicated formula. Confirm disputed costs before settling."
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "title": "CFPB: Spending and cash-flow tools (background; roommate example is original)",
+      "url": "https://www.consumerfinance.gov/consumer-tools/educator-tools/your-money-your-goals/toolkit/"
+    }
+  ],
+  "ads": [],
+  "cta": {
+    "label": "Track shared expenses",
+    "to": "/dashboard?section=daily"
+  },
+  "faqs": [
+    {
+      "question": "Should roommates always split expenses equally?",
+      "answer": "Only if everyone agrees that an equal share is fair for that cost. Room size, use and agreements can support a different split."
+    },
+    {
+      "question": "How often should shared expenses be settled?",
+      "answer": "Pick a predictable date and agree how receipts, reimbursements and move-out balances will be recorded."
+    }
+  ]
+}

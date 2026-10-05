@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+require('../../scripts/require-test-database');
 require("dotenv").config({ path: path.resolve("apps/api/.env"), quiet: true });
 const schema = `sl_test_${crypto.randomBytes(8).toString("hex")}`;
 
@@ -55,7 +56,7 @@ test(
             [name, `${name.toLowerCase()}@example.test`],
           ),
         );
-      const tokens = accounts.map((a) => signAccessToken(a.id));
+      const tokens = accounts.map((a) => signAccessToken(a.id, 0));
       const app = require("express")();
       app.use(require("express").json());
       require("../../apps/api/src/routes")(app);
@@ -67,6 +68,10 @@ test(
         server = app.listen(0, "127.0.0.1", resolve);
       });
       const request = async (method, url, body, who = 0) => {
+        if (method === 'POST' && /\/months\/[^/]+\/(expenses|bills|payments)$/.test(url) && body)
+          body = { request_id: crypto.randomUUID(), ...body };
+        if (method === 'POST' && /\/months\/[^/]+\/(expenses|bills|payments)$/.test(url) && body)
+          body = { request_id: crypto.randomUUID(), ...body };
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 15000);
         try {
@@ -123,7 +128,7 @@ test(
           base = `/spaces/${space.id}`;
           monthPath = `${base}/months/2024-02`;
           assert.equal(space.owner_id, accounts[0].id);
-          assert.equal(code.length, 43);
+          assert.match(code, /^[A-Z2-9]{7}$/);
           const stored = await db.queryOne(
             "SELECT * FROM sl_invites WHERE space_id=$1",
             [space.id],
@@ -144,12 +149,18 @@ test(
             {
               name: "Other Flat",
               currency: "PKR",
-              residents: 1,
+              residents: 2,
               month: "2024-02",
               budget: "100",
+              organization_type: "company",
+              organization_name: "Example Works",
+              members: ["Raza", "Sara"],
             },
             2,
           );
+          const otherDashboard = await call("GET", `/spaces/${other.id}/months/2024-02`, undefined, 2);
+          assert.deepEqual(otherDashboard.summary.members.map((member) => member.name).sort(), ["Raza", "Sara"]);
+          assert.equal(other.organization_name, "Example Works");
         },
       );
       if (!food) throw new Error("Shared Living fixture setup failed");
@@ -207,7 +218,6 @@ test(
             ["PATCH", `${base}/categories/${id}`],
             ["POST", `${monthPath}/copy-bills`],
             ["POST", `${monthPath}/preview`],
-            ["PUT", `${monthPath}/bills/${id}/receipt`],
           ];
           for (const kind of ["expenses", "bills", "payments"])
             for (const method of ["POST", "PATCH", "DELETE"])
@@ -278,6 +288,7 @@ test(
         "bills use exact splits; wrong share totals and cross-space categories fail",
         async () => {
           bill = await call("POST", `${monthPath}/bills`, {
+            request_id: crypto.randomUUID(),
             name: "Rent",
             category_id: billCategory,
             date: "2024-02-16",
@@ -290,6 +301,14 @@ test(
             bill.shares.map((s) => s.amount_minor),
             [1001, 1000],
           );
+          const pendingSplit = await call("POST", `${monthPath}/expenses`, {
+            category_id: food, date: "2024-02-16", amount: "9",
+            method: "later", included: [memberB.id],
+          });
+          assert.equal(pendingSplit.split_pending, true);
+          assert.deepEqual(pendingSplit.shares.map((share) =>
+            [share.member_id, share.amount_minor]), [[memberB.id, 0]]);
+          await call("DELETE", `${monthPath}/expenses/${pendingSplit.id}`, { version: pendingSplit.version });
           const foreign = (
             await call(
               "GET",
@@ -338,6 +357,7 @@ test(
           assert.equal(dash.summary.remainingBudget, "969.98");
           assert.equal(dash.summary.remainingFoodBudget, "489.99");
           await call("PATCH", `${monthPath}/payments/${payment.id}`, {
+            version: payment.version,
             member_id: memberA.id,
             date: "2024-02-20",
             amount: "40",
@@ -346,6 +366,26 @@ test(
           dash = await call("GET", monthPath);
           assert.equal(dash.summary.collected, "40.00");
           assert.equal(dash.summary.cash, "29.99");
+        },
+      );
+      await t.test(
+        "simultaneous financial edits reject the stale version without overwriting the winner",
+        async () => {
+          const current = (await call("GET", monthPath)).payments.find((row) => row.id === payment.id);
+          const path = `/shared-living${monthPath}/payments/${payment.id}`;
+          const base = { version: current.version, member_id: current.member_id,
+            amount: "40", date: "2024-02-20", method: "bank" };
+          const results = await Promise.all([
+            request("PATCH", path, { ...base, note: "first edit" }),
+            request("PATCH", path, { ...base, note: "second edit" }),
+          ]);
+          assert.deepEqual(results.map((r) => r.status).sort(), [200, 409]);
+          const winner = results.find((r) => r.status === 200).data;
+          const latest = (await call("GET", monthPath)).payments.find((row) => row.id === payment.id);
+          assert.equal(latest.version, current.version + 1);
+          assert.equal(latest.note, winner.note);
+          assert.equal((await request("PATCH", path, { ...base, note: "late edit" })).status, 409);
+          assert.equal((await request("PATCH", path, { note: "missing version" })).status, 400);
         },
       );
       await t.test(
@@ -407,7 +447,9 @@ test(
           );
           assert.equal(copied.length, 1);
           assert.equal(copied[0].paid, false);
-          assert.equal(copied[0].shares[0].member_id, memberB.id);
+          assert.equal(copied[0].amount_minor, 0);
+          assert.deepEqual(copied[0].shares.map((share) =>
+            [share.member_id, share.amount_minor]), [[memberB.id, 0]]);
           assert.equal(
             (
               await call("POST", `${base}/months/2024-03/copy-bills`, {
@@ -416,6 +458,14 @@ test(
             ).length,
             0,
           );
+          const nextMonth = `${base}/months/2024-04`;
+          await call("POST", `${nextMonth}/start`, {});
+          const april = await call("GET", nextMonth);
+          assert.equal(april.bills.length, 1);
+          assert.equal(april.bills[0].amount_minor, 0);
+          assert.equal(april.summary.spent, "0.00");
+          await call("POST", `${nextMonth}/start`, {});
+          assert.equal((await call("GET", nextMonth)).bills.length, 1);
         },
       );
       await t.test(
@@ -540,7 +590,11 @@ test(
         },
       );
       await t.test('submission IDs and hashes are paired and uniquely scoped by group', async () => {
+        assert.equal((await request('POST', `/shared-living${monthPath}/payments`, {
+          request_id: null, member_id: memberB.id, date: '2024-02-20', amount: '1', method: 'cash',
+        })).status, 400);
         const requestId = crypto.randomUUID();
+        await db.query('UPDATE sl_expenses SET request_id=NULL,request_hash=NULL WHERE id=$1', [expense.id]);
         await assert.rejects(() => db.query('UPDATE sl_expenses SET request_id=$1 WHERE id=$2', [requestId, expense.id]), (e) => e.code === '23514');
         await db.query('UPDATE sl_expenses SET request_id=$1,request_hash=$2 WHERE id=$3', [requestId, 'a'.repeat(64), expense.id]);
         await assert.rejects(() => db.query(`INSERT INTO sl_expenses(space_id,period_id,category_id,date,amount_minor,method,request_id,request_hash)

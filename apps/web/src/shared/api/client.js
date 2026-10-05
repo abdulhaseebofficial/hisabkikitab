@@ -44,8 +44,29 @@ const api = axios.create({
   timeout: 120000, // AI calls can legitimately take a while
 });
 
+// Keep a key through an uncertain network failure so repeating the same submit
+// cannot create another financial effect. A completed submit releases the key.
+const pendingFinancial = new Map();
+const financialRoute = (method, url) => {
+  const path = String(url || '').split('?')[0];
+  return (method === 'post' && [
+    /^\/(expenses|income|debts|goals)\/?$/,
+    /^\/profile\/onboarding$/,
+    /^\/profile\/onboarding$/,
+    /^\/expenses\/[^/]+\/mark-paid$/,
+    /^\/debts\/[^/]+\/(payments|settle)$/,
+  ].some(pattern => pattern.test(path))) ||
+    (method === 'patch' && /^\/goals\/[^/]+\/add$/.test(path));
+};
+
 api.interceptors.request.use((config) => {
   if (config._sessionEpoch === undefined) config._sessionEpoch = sessionEpoch;
+  if (financialRoute(String(config.method || '').toLowerCase(), config.url)) {
+    const fingerprint = `${config.method}:${config.url}:${typeof config.data === 'string' ? config.data : JSON.stringify(config.data || {})}`;
+    if (!pendingFinancial.has(fingerprint)) pendingFinancial.set(fingerprint, crypto.randomUUID());
+    config.headers['Idempotency-Key'] = pendingFinancial.get(fingerprint);
+    config._financialFingerprint = fingerprint;
+  }
   // No header on a fresh page load, and that is correct: the httpOnly cookie
   // carries the session until the first response hands a token back.
   if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
@@ -79,7 +100,10 @@ const refreshSession = async () => {
 };
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.config?._financialFingerprint) pendingFinancial.delete(response.config._financialFingerprint);
+    return response;
+  },
   async (error) => {
     const original = error.config;
     const status = error.response ? error.response.status : null;
@@ -105,6 +129,8 @@ api.interceptors.response.use(
       }
     }
 
+    if (original?._financialFingerprint && error.response && error.response.status < 500)
+      pendingFinancial.delete(original._financialFingerprint);
     return Promise.reject(error);
   }
 );

@@ -1,0 +1,146 @@
+{
+  "slug": "how-freelancers-can-manage-irregular-income",
+  "category": "freelancing",
+  "title": "How Freelancers Can Manage Irregular Income",
+  "excerpt": "Build a cash-flow plan around payment dates, essential costs and a buffer between stronger and quieter months.",
+  "introduction": "Freelance income can arrive in uneven amounts and at uncertain times. A cash-flow plan makes upcoming commitments visible without treating a good month as guaranteed.",
+  "author": "Hisabki Kitab Editorial Team",
+  "publishedAt": "2026-09-28",
+  "updatedAt": "2026-09-28",
+  "featured": true,
+  "sections": [
+    {
+      "id": "problem",
+      "title": "The problem",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "An invoice total is not the same as money received. Spending expected income too early can leave a gap when a client pays late."
+        }
+      ]
+    },
+    {
+      "id": "explanation",
+      "title": "How it works",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Track issued invoices separately from cleared payments. List essential monthly costs, upcoming business costs and amounts reserved for future obligations. Use a cautious baseline informed by your own history rather than one unusually strong month."
+        }
+      ]
+    },
+    {
+      "id": "example",
+      "title": "A practical example",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Suppose a freelancer received PKR 45,000, 70,000 and 35,000 in three illustrative months. The average is PKR 50,000 per month. This average describes the sample period; it does not promise the next month will match."
+        },
+        {
+          "type": "table",
+          "caption": "Illustrative receipts in PKR",
+          "headers": [
+            "Month",
+            "Received"
+          ],
+          "rows": [
+            [
+              "Month 1",
+              "45,000"
+            ],
+            [
+              "Month 2",
+              "70,000"
+            ],
+            [
+              "Month 3",
+              "35,000"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "calculation",
+      "title": "The calculation",
+      "blocks": [
+        {
+          "type": "calculation",
+          "text": "(45,000 + 70,000 + 35,000) ? 3 = PKR 50,000 average monthly receipts in the example. Keep invoice timing and business costs visible too."
+        }
+      ]
+    },
+    {
+      "id": "steps",
+      "title": "Actionable steps",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Record client invoices, expected dates and actual cleared payments.",
+            "List household essentials and business commitments separately.",
+            "Review several recent months and choose a cautious planning baseline.",
+            "When a larger payment clears, set aside money for near-term bills and planned obligations.",
+            "Revisit the plan when contracts, workload or payment delays change."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mistakes",
+      "title": "Common mistakes",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Counting unpaid invoices as available cash.",
+            "Setting fixed commitments using only a peak-income month.",
+            "Mixing business purchases and personal spending without records."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tips",
+      "title": "Useful tips",
+      "blocks": [
+        {
+          "type": "tip",
+          "text": "If cash is tight, contact the biller or client early and agree on realistic next steps rather than relying on a payment that has not cleared."
+        }
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusion",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Irregular income calls for flexible planning and clear records. No averaging method can remove uncertainty from future work."
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "title": "CFPB: Your Money, Your Goals toolkit",
+      "url": "https://www.consumerfinance.gov/consumer-tools/educator-tools/your-money-your-goals/toolkit/"
+    }
+  ],
+  "cta": {
+    "label": "Track your income",
+    "to": "/income"
+  },
+  "faqs": [
+    {
+      "question": "Should freelancers budget from their best month?",
+      "answer": "A stronger month may not repeat. Review your own payment history and keep future income estimates cautious."
+    },
+    {
+      "question": "Are invoices the same as income I can spend?",
+      "answer": "An invoice is a request for payment. Until money clears, track it separately from available cash."
+    }
+  ],
+  "ads": []
+}

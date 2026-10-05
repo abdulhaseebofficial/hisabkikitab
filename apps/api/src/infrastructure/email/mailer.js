@@ -6,7 +6,7 @@
 
 let transporter = null;
 
-const isConfigured = () => Boolean(process.env.SMTP_HOST && process.env.SMTP_USER);
+const isConfigured = () => Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 
 const getTransporter = () => {
   if (!isConfigured()) return null;
@@ -33,7 +33,7 @@ const sendMail = async ({ to, subject, text, html }) => {
 
   try {
     await tx.sendMail({
-      from: process.env.MAIL_FROM || 'Hisab Ki Kitab <no-reply@hisabkikitab.app>',
+      from: process.env.MAIL_FROM || process.env.SMTP_USER,
       to,
       subject,
       text,

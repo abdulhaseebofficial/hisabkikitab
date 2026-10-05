@@ -19,7 +19,7 @@ const updateProfile = asyncHandler(async (req, res) => {
  * goal.
  */
 const completeOnboarding = asyncHandler(async (req, res) => {
-  const data = await users.completeOnboarding(req.user._id, req.body);
+  const data = await users.completeOnboarding(req.user._id, req.body, req.financialRequestKey);
   res.json({ success: true, message: 'You are all set!', data });
 });
 

@@ -2,6 +2,7 @@ import { MessageSquarePlus } from 'lucide-react';
 import ContactLinks from '../../shared/components/ContactLinks';
 import { DEVELOPER } from '../../shared/utils/constants';
 import useT from '../../shared/i18n/I18nProvider';
+import TrustFooterLinks from './TrustFooterLinks';
 
 export default function Footer({ onOpenFeedback }) {
   const { t } = useT();
@@ -30,6 +31,7 @@ export default function Footer({ onOpenFeedback }) {
           </button>
         )}
       </div>
+      <TrustFooterLinks />
     </footer>
   );
 }

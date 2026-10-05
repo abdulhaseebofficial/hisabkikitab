@@ -1,4 +1,4 @@
-const ID_PATTERN = /^G-[A-Z0-9]+$/i;
+const ID_PATTERN = /^G-[A-Z0-9]{10}$/i;
 const SCRIPT_ID = 'hkk-ga4-script';
 
 const EVENT_PARAMETERS = Object.freeze({
@@ -12,6 +12,8 @@ const EVENT_PARAMETERS = Object.freeze({
   shared_expense_created: ['role'], shared_bill_created: ['role'],
   contribution_added: ['role'], shared_member_added: ['role'], shared_month_changed: ['role'],
   sign_up_completed: ['method'], login_completed: ['method'], logout_completed: [],
+  article_view: ['content_category'], calculator_used: ['calculator_name'], calculator_completed: ['calculator_name'],
+  core_feature_cta_clicked: ['feature_name'], related_article_clicked: ['content_category'],
 });
 
 const SAFE_VALUES = Object.freeze({
@@ -19,6 +21,9 @@ const SAFE_VALUES = Object.freeze({
   language: new Set(['en', 'roman_ur']),
   role: new Set(['admin', 'viewer']),
   method: new Set(['password', 'google']),
+  content_category: new Set(['saving','earning','budgeting','personal-finance','household','shared-living','lending-borrowing','freelancing','small-business','financial-habits']),
+  calculator_name: new Set(['budget-calculator','savings-goal-calculator','expense-split-calculator','emergency-fund-calculator','debt-repayment-calculator','net-worth-calculator','freelancer-income-calculator']),
+  feature_name: new Set(['dashboard','expenses','income','goals','lending-borrowing','budget','reports','advisor']),
 });
 
 let initialized = false;
@@ -73,7 +78,7 @@ export const initializeAnalytics = (options = defaultOptions()) => {
 
 export const normalizePage = (pathname) => {
   const path = String(pathname || '/').split(/[?#]/, 1)[0] || '/';
-  if (path === '/') return '/dashboard';
+  if (path === '/') return '/';
   if (/^\/reset-password\/[^/]+\/?$/i.test(path)) return '/reset-password/:token';
   return path;
 };
@@ -86,7 +91,7 @@ export const trackPageView = (pathname, title = '') => {
   window.gtag('event', 'page_view', {
     page_path: pagePath,
     page_location: `${window.location.origin}${pagePath}`,
-    page_title: String(title || 'Hisab Ki Kitab').slice(0, 100),
+    page_title: String(title || 'Hisabki Kitab').slice(0, 100),
     page_referrer: '',
   });
   return true;

@@ -10,6 +10,8 @@
  * Read-only apart from two throwaway accounts it creates and deletes.
  */
 
+require('../../scripts/require-test-database');
+const crypto = require('node:crypto');
 const BASE = process.env.HW_API || 'http://localhost:5000/api';
 
 let passed = 0;
@@ -27,6 +29,8 @@ const call = async (method, path, { body, token, headers = {}, cookie, raw } = {
   const h = { ...headers };
   if (body !== undefined && !raw) h['content-type'] = 'application/json';
   if (token) h.authorization = 'Bearer ' + token;
+  if (method === 'POST' && /^\/expenses$/.test(path))
+    h['Idempotency-Key'] ||= crypto.randomUUID();
   if (cookie) h.cookie = cookie;
 
   const res = await fetch(BASE + path, {
@@ -176,6 +180,9 @@ const ROUTES = [
     });
     held('and the replay invalidates the whole session, not just the old token',
       afterReplay.status === 401, `-> ${afterReplay.status} (reuse detection)`);
+    const oldAccess = await call('GET', '/auth/me', { token: tokenA });
+    held('and the replay revokes an already issued access token',
+      oldAccess.status === 401, `-> ${oldAccess.status}`);
 
     /* ---------------------------------------------------------------- */
     section('WHAT AN ERROR TELLS AN ATTACKER');
@@ -221,6 +228,8 @@ const ROUTES = [
 
     const headed = await call('GET', '/health');
     const header = (n) => headed.headers.get(n) || '';
+    held('health response has a correlation request ID',
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(header('x-request-id')));
     held('X-Content-Type-Options is nosniff', /nosniff/i.test(header('x-content-type-options')));
     held('framing is restricted', /deny|sameorigin/i.test(header('x-frame-options')) ||
       /frame-ancestors/i.test(header('content-security-policy')));

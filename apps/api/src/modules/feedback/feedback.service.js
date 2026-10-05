@@ -17,7 +17,7 @@ const RECENT_LIMIT = 20;
 /** Formats one note as the plain-text mail the developer receives. */
 const asMail = (author, feedback) => ({
   to: DEVELOPER.email,
-  subject: `Hisab Ki Kitab feedback: ${feedback.type}${
+  subject: `Hisabki Kitab feedback: ${feedback.type}${
     feedback.rating ? ` (${feedback.rating}/5)` : ''
   }`,
   text: [

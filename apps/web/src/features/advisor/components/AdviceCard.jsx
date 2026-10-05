@@ -2,6 +2,7 @@ import { AlertTriangle, PartyPopper, Sparkles, TrendingDown } from 'lucide-react
 import { useTheme } from '../../../app/providers/ThemeProvider';
 import { categoryColor, categoryEmoji } from '../../../shared/utils/constants';
 import { formatMoney } from '../../../shared/utils/format';
+import { sumMoney } from '../../../shared/utils/money';
 
 /**
  * Renders the structured advice payload from POST /api/ai/advice.
@@ -13,7 +14,7 @@ export default function AdviceCard({ advice, currency = 'INR' }) {
   if (!advice) return null;
 
   const { headline, tips = [], warning, encouragement, aiPowered } = advice;
-  const totalSaving = tips.reduce((sum, tip) => sum + (Number(tip.estimatedMonthlySaving) || 0), 0);
+  const totalSaving = sumMoney(tips.map((tip) => tip.estimatedMonthlySaving || 0));
 
   return (
     <div className="space-y-4">

@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const { query, queryOne, transaction } = require('../../infrastructure/database/pool');
 const { toApi, toApiList, buildSet, isUuid } = require('../../infrastructure/database/rows');
 const { DEFAULT_CATEGORIES } = require('../../shared/constants');
+const { decimalToMinor } = require('../../shared/finance/personalMoney');
 
 const SALT_ROUNDS = 12;
 const RESET_TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
@@ -21,7 +22,7 @@ const PRIVATE = ['password', 'reset_password_token', 'reset_password_expires', '
 
 // Everything except the password, which is only fetched where it is compared.
 const PUBLIC_COLUMNS = `
-  id, name, email, monthly_income, currency, university, hostel_name,
+  id, name, email, monthly_income, monthly_income_minor, currency, university, hostel_name,
   custom_categories, theme, finance_mode, language, onboarding_completed, token_version,
   last_expense_reminder_at, created_at, updated_at,
   -- Not the password: whether there is one. An account created through Google
@@ -68,7 +69,7 @@ const findById = async (id, { withPassword = false } = {}) => {
 /** Every user, for the nightly alert sweep. */
 const findAllForAlerts = async () => {
   const rows = await query(
-    `SELECT id, name, currency, monthly_income, last_expense_reminder_at FROM users`
+    `SELECT id, name, currency, monthly_income, monthly_income_minor, last_expense_reminder_at FROM users`
   );
   return toApiList(rows);
 };
@@ -80,21 +81,21 @@ const create = async ({
   email,
   password,
   monthlyIncome = 0,
-  currency = 'INR',
+  currency = 'PKR',
   university = '',
   hostelName = '',
 }) => {
   const hash = await bcrypt.hash(password, SALT_ROUNDS);
   const row = await queryOne(
-    `INSERT INTO users (name, email, password, monthly_income, currency, university, hostel_name)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `INSERT INTO users (name, email, password, monthly_income, monthly_income_minor, currency, university, hostel_name)
+     VALUES ($1, $2, $3, 0, $4, $5, $6, $7)
      RETURNING ${PUBLIC_COLUMNS}`,
     [
       String(name).trim(),
       String(email).trim().toLowerCase(),
       hash,
-      monthlyIncome || 0,
-      String(currency || 'INR').toUpperCase(),
+      decimalToMinor(monthlyIncome || 0).toString(),
+      String(currency || 'PKR').toUpperCase(),
       university || '',
       hostelName || '',
     ]
@@ -230,10 +231,10 @@ const revokeAllSessions = async (userId) =>
 /* ------------------------------- profile ---------------------------- */
 
 /** Applies a partial profile update. Unknown keys are ignored by design. */
-const updateProfile = async (userId, patch) => {
+const updateProfile = async (userId, patch, tx = { queryOne }) => {
   const columns = {
     name: patch.name,
-    monthly_income: patch.monthlyIncome,
+    monthly_income_minor: patch.monthlyIncome === undefined ? undefined : decimalToMinor(patch.monthlyIncome).toString(),
     currency: patch.currency === undefined ? undefined : String(patch.currency).toUpperCase(),
     university: patch.university,
     hostel_name: patch.hostelName,
@@ -248,7 +249,7 @@ const updateProfile = async (userId, patch) => {
   const { fragment, values, next } = buildSet(columns);
   if (!fragment) return findById(userId);
 
-  const row = await queryOne(
+  const row = await tx.queryOne(
     `UPDATE users SET ${fragment}, updated_at = now()
       WHERE id = $${next} RETURNING ${PUBLIC_COLUMNS}`,
     [...values, userId]
@@ -256,11 +257,39 @@ const updateProfile = async (userId, patch) => {
   return toApi(row);
 };
 
-const remove = async (userId) => {
-  // Every child table is ON DELETE CASCADE, so one statement is enough.
-  const rows = await query(`DELETE FROM users WHERE id = $1 RETURNING id`, [userId]);
-  return rows.length > 0;
-};
+const removeAccountSafely = (userId) =>
+  transaction(async (tx) => {
+    // Lock every space the account owns or belongs to. Transfer, leave and join
+    // all lock the space first, so deletion cannot race an ownership decision.
+    await tx.query(
+      `SELECT s.id FROM sl_spaces s
+       WHERE s.owner_id=$1 OR EXISTS (
+         SELECT 1 FROM sl_memberships m WHERE m.space_id=s.id AND m.user_id=$1
+       )
+       ORDER BY s.id FOR UPDATE OF s`,
+      [userId],
+    );
+    const owned = await tx.query(
+      `SELECT s.id,EXISTS(
+         SELECT 1 FROM sl_memberships m JOIN users u ON u.id=m.user_id
+         WHERE m.space_id=s.id AND m.user_id<>$1
+       ) AS has_successor
+       FROM sl_spaces s WHERE s.owner_id=$1 ORDER BY s.id`,
+      [userId],
+    );
+    if (owned.length) {
+      return {
+        deleted: false,
+        // If any owned space lacks a successor, that is the actionable blocker.
+        hasSuccessor: owned.every((space) => space.has_successor),
+      };
+    }
+    const removed = await tx.queryOne(
+      'DELETE FROM users WHERE id=$1 RETURNING id',
+      [userId],
+    );
+    return { deleted: Boolean(removed), hasSuccessor: false };
+  });
 
 module.exports = {
   findByGoogleId,
@@ -277,5 +306,5 @@ module.exports = {
   findByResetToken,
   revokeAllSessions,
   updateProfile,
-  remove,
+  removeAccountSafely,
 };

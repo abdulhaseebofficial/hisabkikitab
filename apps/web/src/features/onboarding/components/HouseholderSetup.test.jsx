@@ -59,9 +59,9 @@ describe('the money step', () => {
     expect(screen.queryByLabelText(/pocket money/i)).not.toBeInTheDocument();
   });
 
-  it('and asks a student about pocket money', () => {
+  it('and asks an individual about monthly income', () => {
     show(<MoneyStep form={form()} onChange={() => {}} />);
-    expect(screen.getByLabelText(/Monthly pocket money/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Monthly income/i)).toBeInTheDocument();
   });
 
   it('describes the question differently for each', () => {
@@ -70,7 +70,7 @@ describe('the money step', () => {
     unmount();
 
     show(<MoneyStep form={form()} onChange={() => {}} />);
-    expect(screen.getByText(/Pocket money, allowance/i)).toBeInTheDocument();
+    expect(screen.getByText(/salary, allowance, freelance work/i)).toBeInTheDocument();
   });
 });
 

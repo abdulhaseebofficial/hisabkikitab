@@ -30,7 +30,9 @@ const { ok, section, call, report, requireApi, bailIfRateLimited } = require('./
     note: 'Mess bill emergency', personContact: '0300-1234567',
   }, token);
   const borrowedId = r.data?.data?.debt?._id;
+  const borrowedContactId = r.data?.data?.debt?.contactId;
   ok('a borrowed record is created', r.status === 201, `-> ${r.status}`);
+  ok('a new debt has a stable contact id', /^[0-9a-f-]{36}$/i.test(borrowedContactId || ''));
   ok('it starts PENDING', r.data?.data?.debt?.status === 'PENDING', r.data?.data?.debt?.status);
   ok('with nothing paid', r.data?.data?.debt?.paidAmount === 0, `${r.data?.data?.debt?.paidAmount}`);
   ok('and the whole amount remaining', r.data?.data?.debt?.remainingAmount === 5000,
@@ -227,6 +229,25 @@ const { ok, section, call, report, requireApi, bailIfRateLimited } = require('./
   });
   const otherToken = other.data?.data?.accessToken;
 
+  r = await call('POST', '/debts', { kind: 'LENT', personName: 'Ali', originalAmount: 1 }, otherToken);
+  const otherDebtId = r.data?.data?.debt?._id;
+  const otherContactId = r.data?.data?.debt?.contactId;
+  ok('another user can have the same display name with a different contact id',
+    r.status === 201 && otherContactId && otherContactId !== borrowedContactId);
+  r = await call('POST', '/debts', { kind: 'LENT', contactId: otherContactId, originalAmount: 1 }, token);
+  ok('cross-user contact cannot be used to create a debt', r.status === 404, `-> ${r.status}`);
+  r = await call('PATCH', `/debts/contacts/${otherContactId}`, { displayName: 'Stolen' }, token);
+  ok('cross-user contact cannot be renamed', r.status === 404, `-> ${r.status}`);
+  r = await call('PATCH', `/debts/contacts/${borrowedContactId}`, { displayName: 'Stolen' }, otherToken);
+  ok('another user cannot rename the owner contact', r.status === 404, `-> ${r.status}`);
+  r = await call('GET', '/debts/contacts?search=Ali', undefined, token);
+  ok('contact list is scoped to the authenticated user', r.status === 200 &&
+    r.data?.data?.items?.some((item) => item.id === borrowedContactId) &&
+    !r.data?.data?.items?.some((item) => item.id === otherContactId));
+  r = await call('GET', `/debts/people/records?contactId=${borrowedContactId}`, undefined, otherToken);
+  ok('guessed contact id does not reveal another user debt records',
+    r.status === 200 && r.data?.data?.items?.length === 0);
+
   for (const [what, method, path, body] of [
     ['read', 'GET', `/debts/${lentId}`, undefined],
     ['edit', 'PUT', `/debts/${lentId}`, { note: 'hacked' }],
@@ -240,9 +261,11 @@ const { ok, section, call, report, requireApi, bailIfRateLimited } = require('./
   }
 
   r = await call('GET', '/debts', undefined, otherToken);
-  ok('and sees none of them in a list', (r.data?.data?.items || []).length === 0);
+  ok('and sees only their own debt in a list', (r.data?.data?.items || []).length === 1 &&
+    r.data?.data?.items?.[0]?._id === otherDebtId);
   r = await call('GET', '/debts/summary', undefined, otherToken);
-  ok('nor in a summary', r.data?.data?.payable === 0 && r.data?.data?.receivable === 0);
+  ok('and their summary includes only their own debt',
+    r.data?.data?.payable === 0 && r.data?.data?.receivable === 1);
   r = await call('GET', '/debts?search=Sara', undefined, otherToken);
   ok('nor through search', (r.data?.data?.items || []).length === 0);
 
@@ -392,6 +415,27 @@ const { ok, section, call, report, requireApi, bailIfRateLimited } = require('./
   ok('and is gone afterwards', r.status === 404, `-> ${r.status}`);
   r = await call('GET', `/debts/${lentId}/payments`, undefined, token);
   ok('its ledger went with it', r.status === 404, `-> ${r.status}`);
+
+  section('ONE LEDGER PER PERSON');
+  await call('POST', '/debts', { kind: 'LENT', contactId: borrowedContactId, originalAmount: 500 }, token);
+  r = await call('GET', '/debts/people', undefined, token);
+  const ali = r.data?.data?.items?.filter((person) => person.contactId === borrowedContactId) || [];
+  ok('borrowed and lent records share one Ali ledger', r.status === 200 && ali.length === 1 && ali[0].recordCount === 2,
+    JSON.stringify(ali));
+  // The borrowed record was fully settled in EDITING, so only the new loan
+  // to Ali remains outstanding. The settled history still appears above.
+  ok('Ali net balance reflects both directions and ignores the settled balance', ali[0]?.netBalance === 500,
+    String(ali[0]?.netBalance));
+  r = await call('GET', `/debts/people/records?contactId=${borrowedContactId}`, undefined, token);
+  ok('one person profile contains both transactions', r.status === 200 &&
+    new Set(r.data?.data?.items?.map((item) => item.kind)).size === 2, `-> ${r.status}`);
+
+  r = await call('POST', '/debts', { kind: 'LENT', personName: 'Ali', originalAmount: 7 }, token);
+  const distinctAliId = r.data?.data?.debt?.contactId;
+  ok('same-name new person is not silently merged', r.status === 201 && distinctAliId !== borrowedContactId);
+  r = await call('GET', '/debts/people?search=Ali', undefined, token);
+  ok('same-name contacts stay as distinct groups', r.status === 200 &&
+    r.data?.data?.items?.filter((person) => person.name === 'Ali').length === 2);
 
   section('CLEAN UP');
   r = await call('DELETE', '/profile', { password: 'DebtPass123!' }, token);

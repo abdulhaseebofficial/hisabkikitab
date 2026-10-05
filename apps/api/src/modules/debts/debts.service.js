@@ -24,6 +24,7 @@ const ApiError = require('../../shared/errors/ApiError');
 const events = require('../../shared/events');
 const { isOwnCategory, modeOf } = require('../../shared/categories');
 const { round2 } = require('../../shared/utils/calculations');
+const requests = require('../../shared/finance/idempotency');
 
 /** How far ahead "due soon" looks, for the summary and for reminders. */
 const DUE_SOON_DAYS = 7;
@@ -57,6 +58,15 @@ const assertCategory = (user, category) => {
 /* ------------------------------ reading ----------------------------- */
 
 const list = (userId, financeMode, filters) => debtsRepo.list(userId, financeMode, filters);
+const people = (userId, financeMode, filters) => debtsRepo.people(userId, financeMode, filters);
+const personRecords = (userId, financeMode, filters) =>
+  debtsRepo.personRecords(userId, financeMode, filters.contactId, filters.page || 1);
+const contacts = (userId, filters) => debtsRepo.contacts(userId, filters.search, filters.page || 1);
+const renameContact = async (id, userId, input) => {
+  const contact = await debtsRepo.renameContact(id, userId, input.displayName.trim());
+  if (!contact) throw ApiError.notFound('Debt contact not found');
+  return contact;
+};
 
 /** One debt with its ledger, which is the only way the details screen is useful. */
 const getById = async (id, financeMode, userId) => {
@@ -84,25 +94,29 @@ const listAllForExport = (userId, financeMode) =>
 
 /* ------------------------------ writing ----------------------------- */
 
-const create = async (user, input) => {
+const create = async (user, input, requestKey) => {
   assertCategory(user, input.category);
 
-  return debtsRepo.create(user._id, {
-    financeMode: modeOf(user),
-    kind: input.kind,
-    personName: String(input.personName).trim(),
-    personContact: input.personContact,
-    originalAmount: input.originalAmount,
-    transactionDate: input.transactionDate ? new Date(input.transactionDate) : new Date(),
-    dueDate: input.dueDate ? new Date(input.dueDate) : null,
-    category: input.category || null,
-    note: input.note,
-    // What the money was for, in the person's own words and as one of the
-    // known reasons. Both optional: a debt is worth recording even when
-    // nobody wants to explain it.
-    purpose: input.purpose || null,
-    purposeCategory: input.purposeCategory || null,
+  const { value } = await requests.run(user._id, `debt:create:${modeOf(user)}`, requestKey, input, async tx => {
+    const debt = await debtsRepo.create(user._id, {
+      financeMode: modeOf(user),
+      kind: input.kind,
+      contactId: input.contactId,
+      personName: input.personName ? String(input.personName).trim() : undefined,
+      personContact: input.personContact,
+      originalAmount: input.originalAmount,
+      transactionDate: input.transactionDate ? new Date(input.transactionDate) : new Date(),
+      dueDate: input.dueDate ? new Date(input.dueDate) : null,
+      category: input.category || null,
+      note: input.note,
+      // Both purpose fields are optional: a debt is worth recording without a reason.
+      purpose: input.purpose || null,
+      purposeCategory: input.purposeCategory || null,
+    }, tx);
+    if (!debt) throw ApiError.notFound('Debt contact not found');
+    return debt;
   });
+  return value;
 };
 
 /**
@@ -158,22 +172,23 @@ const announceIfSettled = async (user, result) => {
   }
 };
 
-const addPayment = async (id, user, { amount, paidOn, note }) => {
+const addPayment = async (id, user, { amount, paidOn, note }, requestKey) => {
   const value = Number(amount);
   if (!Number.isFinite(value) || value <= 0) {
     throw ApiError.badRequest('A payment has to be more than zero');
   }
 
-  const result = await debtsRepo.addPayment(id, modeOf(user), user._id, { amount: value, paidOn, note });
+  const { value: result, replayed } = await requests.run(user._id,
+    `debt:payment:${modeOf(user)}:${id}`, requestKey, { amount, paidOn, note }, async tx => {
+      const outcome = await debtsRepo.addPayment(id, modeOf(user), user._id,
+        { amount: value, paidOn, note }, tx);
+      if (outcome.reason === 'NOT_FOUND') throw ApiError.notFound('Debt record not found');
+      if (outcome.reason === 'OVERPAY') throw ApiError.badRequest(
+        `That is more than is left. Only ${round2(outcome.remaining)} remains on this record.`);
+      return outcome;
+    });
 
-  if (result.reason === 'NOT_FOUND') throw ApiError.notFound('Debt record not found');
-  if (result.reason === 'OVERPAY') {
-    throw ApiError.badRequest(
-      `That is more than is left. Only ${round2(result.remaining)} remains on this record.`
-    );
-  }
-
-  await announceIfSettled(user, result);
+  if (!replayed) await announceIfSettled(user, result);
   return { debt: result.debt, payment: result.payment, justSettled: result.debt.status === 'SETTLED' && !result.wasSettled };
 };
 
@@ -205,16 +220,19 @@ const cancel = async (id, user, reason) => {
   return result.debt;
 };
 
-const settle = async (id, user, note) => {
-  const debt = await debtsRepo.findById(id, modeOf(user), user._id);
-  if (!debt) throw ApiError.notFound('Debt record not found');
-  if (debt.remainingAmount <= 0) throw ApiError.badRequest('This record is already settled');
-
-  return addPayment(id, user, {
-    amount: debt.remainingAmount,
-    paidOn: new Date(),
-    note: note || 'Settled in full',
-  });
+const settle = async (id, user, note, requestKey) => {
+  const { value: result, replayed } = await requests.run(user._id,
+    `debt:settle:${modeOf(user)}:${id}`, requestKey, { note }, async tx => {
+      const row = await tx.queryOne(
+        'SELECT original_amount - paid_amount AS remaining FROM debts WHERE id=$1 AND user_id=$2 AND finance_mode=$3 FOR UPDATE',
+        [id, user._id, modeOf(user)]);
+      if (!row) throw ApiError.notFound('Debt record not found');
+      if (row.remaining <= 0) throw ApiError.badRequest('This record is already settled');
+      return debtsRepo.addPayment(id, modeOf(user), user._id,
+        { amount: row.remaining, paidOn: new Date(), note: note || 'Settled in full' }, tx);
+    });
+  if (!replayed) await announceIfSettled(user, result);
+  return { debt: result.debt, payment: result.payment, justSettled: true };
 };
 
 /** Removes a mistyped payment and puts the balance back. */
@@ -256,6 +274,10 @@ const summary = async (userId, financeMode) => {
 
 module.exports = {
   list,
+  people,
+  personRecords,
+  contacts,
+  renameContact,
   getById,
   paymentsFor,
   listAllForExport,

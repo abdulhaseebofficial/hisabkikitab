@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useLocation } from 'react-router-dom';
 import authService from './api/authApi';
 import { setSessionExpiredHandler, getErrorMessage, bumpSessionEpoch } from '../../shared/api/client';
 import { trackEvent } from '../../shared/analytics/analytics';
@@ -23,6 +24,7 @@ const AuthContext = createContext(null);
  * refresh token every time somebody pressed F5.
  */
 export function AuthProvider({ children }) {
+  const { pathname } = useLocation();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   // A page can receive a login click while the initial /me -> /refresh
@@ -38,9 +40,12 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     setSessionExpiredHandler(() => {
       clearSession();
-      toast.error('Your session expired. Please log in again.');
+      // Anonymous readers do not need a session to use the public library.
+      if (pathname !== '/' && !/^\/(?:learn|tools)(?:\/|$)/.test(pathname)) {
+        toast.error('Your session expired. Please log in again.');
+      }
     });
-  }, [clearSession]);
+  }, [clearSession, pathname]);
 
   useEffect(() => {
     let cancelled = false;
@@ -138,7 +143,7 @@ export function AuthProvider({ children }) {
       loading,
       isAuthenticated: Boolean(user),
       needsOnboarding: Boolean(user) && !user.onboardingCompleted,
-      currency: user ? user.currency : 'INR',
+      currency: user ? user.currency : 'PKR',
       login,
       loginWithGoogle,
       register,

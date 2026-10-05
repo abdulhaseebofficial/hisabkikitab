@@ -9,11 +9,13 @@ import { PAYMENT_METHODS, RECURRING_FREQUENCIES, categoryColor, categoryEmoji } 
 import { cn, currencySymbol, formatMoney, toInputDate } from '../../../shared/utils/format';
 import useT from '../../../shared/i18n/I18nProvider';
 import { useAuth } from '../../auth';
+import { sumMoney, toMinor } from '../../../shared/utils/money';
 
 // Mirrors the backend validators so the student is told about a bad value
 // before a request is even sent.
 const schema = z.object({
-  amount: z.coerce.number({ invalid_type_error: 'Enter an amount' }).positive('Amount must be more than 0'),
+  amount: z.coerce.number({ invalid_type_error: 'Enter an amount' }).positive('Amount must be more than 0')
+    .refine((value) => { try { return toMinor(value) <= 99999999999999n; } catch { return false; } }, 'Use at most two decimal places'),
   category: z.string().min(1, 'Pick a category'),
   description: z.string().max(200, 'Keep it under 200 characters').optional(),
   paymentMethod: z.enum(PAYMENT_METHODS),
@@ -83,8 +85,11 @@ export default function ExpenseForm({ expense, categories = [], currency = 'PKR'
   const bumpAmount = (value) => {
     // Tapping twice adds up: 500 then 100 is 600, which is how a student
     // totals a split bill in their head.
-    const current = Number(amount) || 0;
-    setValue('amount', current + value, { shouldValidate: true, shouldDirty: true });
+    try {
+      setValue('amount', sumMoney([amount || 0, value]), { shouldValidate: true, shouldDirty: true });
+    } catch {
+      setValue('amount', amount, { shouldValidate: true, shouldDirty: true });
+    }
   };
 
   return (
@@ -204,7 +209,7 @@ export default function ExpenseForm({ expense, categories = [], currency = 'PKR'
               This repeats every month
             </span>
             <span className="block text-xs text-slate-500 dark:text-slate-400">
-              Perfect for the mess bill or hostel fee. Hisab Ki Kitab will add it for you automatically.
+              Perfect for the mess bill or hostel fee. Hisabki Kitab will add it for you automatically.
             </span>
           </span>
         </label>

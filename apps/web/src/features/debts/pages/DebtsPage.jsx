@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Plus, HandCoins } from 'lucide-react';
+import { Plus, HandCoins, ChevronDown, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PageHeader from '../../../shared/components/ui/PageHeader';
 import Button from '../../../shared/components/ui/Button';
@@ -12,13 +12,12 @@ import useDebounce from '../../../shared/hooks/useDebounce';
 import useT from '../../../shared/i18n/I18nProvider';
 import { useAuth } from '../../auth';
 import debtsApi from '../api/debtsApi';
-import DebtFilters from '../components/DebtFilters';
-import DebtRow from '../components/DebtRow';
 import DebtForm from '../components/DebtForm';
 import DebtDetail from '../components/DebtDetail';
+import { formatMoney, formatDate } from '../../../shared/utils/format';
 
 /** Still-open records first: a settled debt is history, not a to-do. */
-const DEFAULT_FILTERS = { kind: 'LENT', status: 'OUTSTANDING', sort: 'newest', search: '', page: 1 };
+const DEFAULT_FILTERS = { search: '', page: 1 };
 
 /**
  * Udhaar: who owes whom.
@@ -37,6 +36,8 @@ export default function DebtsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [openId, setOpenId] = useState(null);
+  const [openPerson, setOpenPerson] = useState('');
+  const [recordPage, setRecordPage] = useState(1);
   const [confirm, setConfirm] = useState(null);
 
   // Typing in the search box should not fire a request per keystroke.
@@ -48,7 +49,12 @@ export default function DebtsPage() {
     loading: listLoading,
     error: listError,
     reload: refreshList,
-  } = useAsync(() => debtsApi.list(query), [JSON.stringify(query)]);
+  } = useAsync(() => debtsApi.people(query), [JSON.stringify(query)]);
+
+  const { data: personRecords, loading: recordsLoading, reload: refreshRecords } =
+    useAsync(() => openPerson
+      ? debtsApi.personRecords({ contactId: openPerson, page: recordPage })
+      : Promise.resolve(null), [openPerson, recordPage]);
 
   const {
     data: summary,
@@ -67,9 +73,10 @@ export default function DebtsPage() {
   /** Any write can move a balance, so both the list and the totals reload. */
   const refreshAll = useCallback(() => {
     refreshList();
+    refreshRecords();
     refreshSummary();
     if (openId) refreshDetail();
-  }, [refreshList, refreshSummary, refreshDetail, openId]);
+  }, [refreshList, refreshRecords, refreshSummary, refreshDetail, openId]);
 
   const saveRecord = (values) =>
     run(() => (editing ? debtsApi.update(editing._id, values) : debtsApi.create(values)), {
@@ -151,7 +158,14 @@ export default function DebtsPage() {
         </Button>
       </PageHeader>
 
-      <DebtFilters filters={filters} onChange={setFilters} summary={summary} currency={currency} loading={summaryLoading} />
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="hw-card p-3"><p className="text-xs text-slate-500 dark:text-slate-400">{t('udhaar.collectSection')}</p><p className="text-lg font-bold tabular-nums">{summaryLoading ? '...' : formatMoney(summary?.receivable || 0, currency)}</p></div>
+        <div className="hw-card p-3"><p className="text-xs text-slate-500 dark:text-slate-400">{t('udhaar.paySection')}</p><p className="text-lg font-bold tabular-nums">{summaryLoading ? '...' : formatMoney(summary?.payable || 0, currency)}</p></div>
+      </div>
+      <div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+        <input type="search" className="hw-input pl-9" value={filters.search} placeholder={t('udhaar.searchPlaceholder')}
+          aria-label={t('udhaar.filters.person')} onChange={(event) => setFilters({ search: event.target.value, page: 1 })} />
+      </div>
 
       {listError ? (
         <EmptyState
@@ -180,8 +194,22 @@ export default function DebtsPage() {
         />
       ) : (
         <div className="space-y-2">
-          {items.map((debt) => (
-            <DebtRow key={debt._id} debt={debt} currency={currency} onOpen={() => setOpenId(debt._id)} />
+          {items.map((person) => (
+            <div key={person.key} className="hw-card overflow-hidden p-3 sm:p-4">
+              <button type="button" className="flex w-full items-center justify-between gap-3 text-left" aria-expanded={openPerson === person.key}
+                onClick={() => { setOpenPerson(openPerson === person.key ? '' : person.key); setRecordPage(1); }}>
+                <span className="min-w-0"><strong className="block truncate">{person.name}</strong><span className="text-xs text-slate-500 dark:text-slate-400">{person.recordCount} {t('udhaar.records')} · {person.contactInfo ? `${person.contactInfo} · ` : ''}{t('udhaar.contactRef')} {person.contactId?.slice(-6)}</span></span>
+                <span className="flex shrink-0 items-center gap-2 text-right"><span className="text-sm font-semibold tabular-nums">{person.netBalance > 0 ? t('udhaar.personOwesYou') : person.netBalance < 0 ? t('udhaar.youOwePerson') : t('udhaar.settled')}: {formatMoney(Math.abs(person.netBalance), currency)}</span><ChevronDown className="h-4 w-4" /></span>
+              </button>
+              {openPerson === person.key && <div className="mt-3 space-y-2 border-t border-slate-200 pt-3 dark:border-slate-700">
+                {recordsLoading ? <Skeleton className="h-16" /> : (personRecords?.items || []).map((debt) =>
+                  <button key={debt._id} type="button" onClick={() => setOpenId(debt._id)} className="flex w-full flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 p-2 text-left text-sm hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700">
+                    <span><strong>{debt.kind === 'BORROWED' ? t('udhaar.borrowedFrom') : t('udhaar.lentTo')}</strong><span className="ml-2 text-xs text-slate-500 dark:text-slate-400">{formatDate(debt.transactionDate)}</span></span>
+                    <span className="font-semibold tabular-nums">{formatMoney(debt.originalAmount, currency)} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">({formatMoney(debt.remainingAmount, currency)} {t('udhaar.remaining')})</span></span>
+                  </button>)}
+                {personRecords?.pagination?.pages > 1 && <div className="flex items-center justify-between gap-2 text-sm"><span>{recordPage} / {personRecords.pagination.pages}</span><div className="flex gap-2"><Button variant="outline" disabled={!personRecords.pagination.hasPrev} onClick={() => setRecordPage((n) => n - 1)}>{t('common.previous')}</Button><Button variant="outline" disabled={!personRecords.pagination.hasNext} onClick={() => setRecordPage((n) => n + 1)}>{t('common.next')}</Button></div></div>}
+              </div>}
+            </div>
           ))}
         </div>
       )}
@@ -189,7 +217,7 @@ export default function DebtsPage() {
       {pagination && pagination.pages > 1 && (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Page {pagination.page} of {pagination.pages} - {pagination.total} record(s)
+            Page {pagination.page} of {pagination.pages} - {pagination.total} people
           </p>
           <div className="flex gap-2">
             <Button
@@ -211,7 +239,7 @@ export default function DebtsPage() {
       )}
 
       {formOpen && <DebtForm
-        defaultKind={filters.kind}
+        defaultKind="LENT"
         open={formOpen}
         onClose={() => { setFormOpen(false); setEditing(null); }}
         onSubmit={saveRecord}

@@ -38,6 +38,9 @@ jobs:
         run: npm run test:web
 
       - name: Production build
+        env:
+          # Public canonical origin used by prerender, sitemap and metadata.
+          VITE_SITE_URL: https://hisabkikitab.com
         run: npm run build
 
       # Advisory: a vulnerable transitive dependency should be visible without
@@ -68,6 +71,8 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://hisabkikitab:hisabkikitab@localhost:5432/hisabkikitab_test?sslmode=disable
+      TEST_DATABASE_URL: postgresql://hisabkikitab:hisabkikitab@localhost:5432/hisabkikitab_test?sslmode=disable
+      ALLOW_DESTRUCTIVE_TEST_DB: 'true'
       NODE_ENV: test
       # Not secrets: this database exists for the length of one job.
       JWT_ACCESS_SECRET: ci-access-secret-long-enough-to-pass-validation-000000

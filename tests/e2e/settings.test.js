@@ -203,16 +203,16 @@ const { ok, section, heading, call, report, requireApi, bailIfRateLimited, curre
   r = await call('POST', '/auth/refresh', undefined);
   ok('the session that changed it stays signed in', r.status === 200, `-> ${r.status}`);
 
-  // The access token is stateless and lives out JWT_ACCESS_EXPIRES, which is
-  // why other devices drop within that window rather than instantly.
+  // Revocation must take effect on access-token requests as well as refresh.
   r = await call('GET', '/auth/me', undefined, token);
-  ok('the old access token lasts out its window (by design)', r.status === 200, `-> ${r.status}`);
+  ok('the access token from before the change is revoked', r.status === 401, `-> ${r.status}`);
 
   r = await call('POST', '/auth/login', { email, password: 'TestPass123!' });
   ok('the old password stops working', r.status === 401, `-> ${r.status}`);
   r = await call('POST', '/auth/login', { email, password: 'NewPass456!' });
   ok('the new password works', r.status === 200, `-> ${r.status}`);
   const freshToken = r.data?.data?.accessToken;
+  token = freshToken;
 
   heading('MODE AND LANGUAGE');
 

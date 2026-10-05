@@ -11,6 +11,8 @@
  * disappearing, which is what makes an empty month still readable.
  */
 
+import { sumMoney } from '../../shared/utils/money';
+
 export const STUDENT_GROUPS = [
   {
     key: 'food',
@@ -97,7 +99,7 @@ export const totalsByGroup = (groups, breakdown = []) => {
 
   return groups.map((group) => ({
     ...group,
-    amount: group.categories.reduce((sum, id) => sum + (spent.get(id) || 0), 0),
+    amount: sumMoney(group.categories.map((id) => spent.get(id) || 0)),
   }));
 };
 

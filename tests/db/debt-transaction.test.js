@@ -20,6 +20,8 @@ const path = require('path');
  * Runs against whatever apps/api/.env points at, creates its own throwaway
  * account, and deletes it at the end.
  */
+require('../../scripts/require-test-database');
+require('../../scripts/require-test-database');
 require('dotenv').config({ path: path.join(__dirname, '..', '..', 'apps', 'api', '.env') });
 
 const API = path.join(__dirname, '..', '..', 'apps', 'api');
@@ -58,7 +60,7 @@ const section = (t) => console.log(`\n--- ${t} ---`);
 
     const raced = await queryOne(
       `INSERT INTO debts (user_id, kind, person_name, original_amount)
-       VALUES ($1, 'BORROWED', 'Race', 100) RETURNING id`,
+       VALUES ($1, 'BORROWED', 'Race', 100) RETURNING id, contact_id`,
       [userId]
     );
 
@@ -169,6 +171,19 @@ const section = (t) => console.log(`\n--- ${t} ---`);
     const houseSummary = await debtsRepo.summary(userId, 'householder');
     ok('and it counts for nothing in the other mode totals',
       Number(houseSummary.payable) === 0, `payable = ${houseSummary.payable}`);
+
+    section('ONE PROFILE GROUPS BOTH DIRECTIONS');
+    await query(`INSERT INTO debts (user_id, finance_mode, kind, contact_id, person_name, original_amount)
+      VALUES ($1, 'student', 'LENT', $2, ' race ', 20)`, [userId, raced.contact_id]);
+    const grouped = await debtsRepo.people(userId, 'student');
+    const race = grouped.items.filter((person) => person.contactId === raced.contact_id);
+    ok('one person has one ledger', race.length === 1 && race[0].recordCount === 2,
+      JSON.stringify(race));
+    ok('the net balance combines lending and borrowing', race[0]?.netBalance === 10,
+      String(race[0]?.netBalance));
+    const records = await debtsRepo.personRecords(userId, 'student', raced.contact_id);
+    ok('both directions are available in that ledger', records.items.length === 2 &&
+      new Set(records.items.map((item) => item.kind)).size === 2);
   } catch (err) {
     console.error('\nERROR:', err.message);
     failed += 1;

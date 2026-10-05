@@ -42,7 +42,10 @@ function PersonalDashboard() {
   // the N shortcut uses - so this page no longer carries a second copy of it.
   const { open: openQuickAdd, canCreate } = useQuickAdd();
 
-  const load = useCallback(() => dashboardService.summary(), []);
+  const load = useCallback(() => {
+    const now = new Date();
+    return dashboardService.summary(now.getMonth() + 1, now.getFullYear());
+  }, []);
   const { data, loading, error, reload } = useAsync(load, []);
 
   if (loading && !data) {

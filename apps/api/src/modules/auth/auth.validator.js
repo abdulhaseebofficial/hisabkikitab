@@ -5,6 +5,7 @@ const {
   password,
   confirmPassword,
   accepted,
+  moneyValue,
   CURRENCY_CODES,
 } = require('../../shared/validation/rules');
 const { TERMS_MESSAGE } = require('@hisabkikitab/contracts/validation');
@@ -16,7 +17,7 @@ const authValidators = {
     password(),
     confirmPassword(),
     accepted('acceptTerms', TERMS_MESSAGE),
-    body('monthlyIncome').optional().isFloat({ min: 0 }).toFloat(),
+    moneyValue(body('monthlyIncome').optional()),
     body('currency').optional().isIn(CURRENCY_CODES).withMessage('Unsupported currency'),
   ],
 

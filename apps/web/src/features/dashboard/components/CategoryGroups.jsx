@@ -2,6 +2,7 @@ import Card, { CardHeader } from '../../../shared/components/ui/Card';
 import useT from '../../../shared/i18n/I18nProvider';
 import { formatMoney } from '../../../shared/utils/format';
 import { cn } from '../../../shared/utils/format';
+import { ratioPercent } from '../../../shared/utils/money';
 
 /**
  * Where the month's money went, in the handful of groups this reader cares about.
@@ -20,7 +21,7 @@ export default function CategoryGroups({ title, groups = [], currency = 'PKR', t
   const { t } = useT();
 
   const anySpending = groups.some((group) => group.amount > 0);
-  const share = (amount) => (total > 0 ? Math.round((amount / total) * 100) : 0);
+  const share = (amount) => ratioPercent(amount, total);
 
   return (
     <Card>

@@ -19,6 +19,7 @@ const {
   materializeForUser,
 } = require('../../infrastructure/scheduling/recurringExpenses.job');
 const events = require('../../shared/events');
+const requests = require('../../shared/finance/idempotency');
 
 const DEFAULT_PAYMENT_METHOD = 'Cash';
 const DEFAULT_FREQUENCY = 'monthly';
@@ -58,7 +59,7 @@ const getById = async (id, financeMode, userId) => {
   return expense;
 };
 
-const create = async (user, input) => {
+const create = async (user, input, requestKey) => {
   const {
     amount,
     category,
@@ -74,7 +75,7 @@ const create = async (user, input) => {
   const when = date ? new Date(date) : new Date();
   const frequency = recurringFrequency || DEFAULT_FREQUENCY;
 
-  const expense = await expensesRepo.create(user._id, {
+  const { value: expense, replayed } = await requests.run(user._id, `expense:create:${modeOf(user)}`, requestKey, input, tx => expensesRepo.create(user._id, {
     // Whichever life they are recording right now is the one this belongs to.
     financeMode: modeOf(user),
     amount,
@@ -85,9 +86,9 @@ const create = async (user, input) => {
     isRecurring: Boolean(isRecurring),
     recurringFrequency: frequency,
     nextRunAt: isRecurring ? firstRunAfter(when, frequency) : null,
-  });
+  }, tx));
 
-  announce(user, expense, 'created');
+  if (!replayed) announce(user, expense, 'created');
   return expense;
 };
 
@@ -173,31 +174,35 @@ const findBillsDueBy = (userId, financeMode, when) =>
  * days early every month would watch its billing date drift through the
  * calendar.
  */
-const markBillPaid = async (id, user, { amount, paidOn } = {}) => {
-  const template = await expensesRepo.findById(id, modeOf(user), user._id);
-  if (!template) throw ApiError.notFound('Expense not found');
-  if (!template.isRecurring) throw ApiError.badRequest('That expense is not a recurring bill');
+const markBillPaid = async (id, user, { amount, paidOn } = {}, requestKey) => {
+  const { value: result } = await requests.run(user._id, `expense:mark-paid:${modeOf(user)}:${id}`, requestKey,
+    { amount, paidOn }, async tx => {
+      const payment = await expensesRepo.withLockedBillTemplate(id, user._id, modeOf(user), async (template, billTx) => {
+        if (!template.isRecurring) throw ApiError.badRequest('That expense is not a recurring bill');
 
-  const scheduled = template.nextRunAt ? new Date(template.nextRunAt) : new Date();
-  const when = paidOn ? new Date(paidOn) : new Date();
+        const scheduled = template.nextRunAt ? new Date(template.nextRunAt) : new Date();
+        const when = paidOn ? new Date(paidOn) : new Date();
+        const created = await expensesRepo.create(user._id, {
+          financeMode: template.financeMode,
+          // The actual payment may differ from the template amount.
+          amount: amount === undefined || amount === null ? template.amount : amount,
+          amountMinor: amount === undefined || amount === null ? template.amountMinor : undefined,
+          category: template.category,
+          description: template.description,
+          paymentMethod: template.paymentMethod,
+          date: when,
+          isRecurring: false,
+          generatedFrom: template._id,
+        }, billTx);
 
-  const created = await expensesRepo.create(user._id, {
-    financeMode: modeOf(user),
-    // The real amount may differ from the template - a bill is rarely the same
-    // twice - so the caller may say what was actually paid.
-    amount: amount === undefined || amount === null ? template.amount : amount,
-    category: template.category,
-    description: template.description,
-    paymentMethod: template.paymentMethod,
-    date: when,
-    isRecurring: false,
-    generatedFrom: template._id,
-  });
-
-  const next = advance(scheduled, template.recurringFrequency);
-  await expensesRepo.setNextRunAt(template._id, next);
-
-  return { expense: created, nextDueAt: next };
+        const next = advance(scheduled, template.recurringFrequency);
+        await expensesRepo.setNextRunAt(template._id, next, billTx);
+        return { expense: created, nextDueAt: next };
+      }, tx);
+      if (!payment) throw ApiError.notFound('Expense not found');
+      return payment;
+    });
+  return result;
 };
 
 module.exports = {

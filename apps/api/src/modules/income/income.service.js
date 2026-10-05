@@ -10,10 +10,11 @@ const incomeRepo = require('./income.repository');
 const ApiError = require('../../shared/errors/ApiError');
 const { modeOf } = require('../../shared/categories');
 const catalogue = require('@hisabkikitab/contracts/catalogue');
+const requests = require('../../shared/finance/idempotency');
+const { minor, minorToApi } = require('../../shared/finance/personalMoney');
 const {
-  round2,
-  startOfMonth,
-  endOfMonth,
+  startOfCalendarMonth,
+  endOfCalendarMonth,
   currentPeriod,
 } = require('../../shared/utils/calculations');
 
@@ -37,29 +38,32 @@ const list = (userId, financeMode, filters) => incomeRepo.list(userId, financeMo
  */
 const summary = async (user) => {
   const { month, year } = currentPeriod();
-  const from = startOfMonth(year, month);
-  const to = endOfMonth(year, month);
+  const from = startOfCalendarMonth(year, month);
+  const to = endOfCalendarMonth(year, month);
 
   const bySource = await incomeRepo.totalsBySource(user._id, modeOf(user), from, to);
-  const total = bySource.reduce((sum, row) => sum + row.total, 0);
+  const total = bySource.reduce((sum, row) => sum + minor(row.totalMinor), 0n);
 
   return {
     month,
     year,
-    total: round2(total),
-    plannedIncome: round2(user.monthlyIncome || 0),
-    bySource: bySource.map((row) => ({ source: row.source, amount: round2(row.total) })),
+    total: minorToApi(total),
+    plannedIncome: minorToApi(user.monthlyIncomeMinor || '0'),
+    bySource: bySource.map((row) => ({ source: row.source, amount: minorToApi(row.totalMinor) })),
   };
 };
 
-const create = (userId, financeMode, { amount, source, note, date }) =>
-  incomeRepo.create(userId, {
-    financeMode,
-    amount,
-    source: source || defaultSource(financeMode),
-    note: note || '',
-    date: date ? new Date(date) : new Date(),
-  });
+const create = async (userId, financeMode, { amount, source, note, date }, requestKey) => {
+  const { value } = await requests.run(userId, `income:create:${financeMode}`, requestKey,
+    { amount, source, note, date }, tx => incomeRepo.create(userId, {
+      financeMode,
+      amount,
+      source: source || defaultSource(financeMode),
+      note: note || '',
+      date: date ? new Date(date) : new Date(),
+    }, tx));
+  return value;
+};
 
 /** Only the fields a student is allowed to change are copied across. */
 const EDITABLE = ['amount', 'source', 'note', 'date'];

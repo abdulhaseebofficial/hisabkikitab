@@ -8,6 +8,7 @@ import useCategoryLabel from '../../../shared/i18n/useCategoryLabel';
 import { notifyDataChanged } from '../../../shared/hooks/useAsync';
 import { expensesApi } from '../../expenses';
 import { cn, formatDate, formatMoney } from '../../../shared/utils/format';
+import { sumMoney } from '../../../shared/utils/money';
 
 /**
  * What is already committed in the next fortnight, and a way to tick it off.
@@ -37,7 +38,7 @@ export default function UpcomingBills({ bills = [], currency = 'PKR' }) {
   // rest of the list.
   const [saving, setSaving] = useState(null);
 
-  const total = bills.reduce((sum, bill) => sum + Number(bill.amount || 0), 0);
+  const total = sumMoney(bills.map((bill) => bill.amount || 0));
   const now = Date.now();
 
   const markPaid = async (bill) => {

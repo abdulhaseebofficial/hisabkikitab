@@ -57,7 +57,7 @@ export default function Onboarding() {
     financeMode: (user && user.financeMode) || 'student',
     language: (user && user.language) || 'en',
     monthlyIncome: '',
-    currency: user && user.currency ? user.currency : 'INR',
+    currency: user && user.currency ? user.currency : 'PKR',
     university: '',
     hostelName: '',
     goalTitle: '',

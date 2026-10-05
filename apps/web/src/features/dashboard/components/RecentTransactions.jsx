@@ -4,7 +4,7 @@ import Card, { CardHeader } from '../../../shared/components/ui/Card';
 import EmptyState from '../../../shared/components/ui/EmptyState';
 import { useTheme } from '../../../app/providers/ThemeProvider';
 import { categoryColor, categoryEmoji } from '../../../shared/utils/constants';
-import { formatDate, formatMoney } from '../../../shared/utils/format';
+import { formatCalendarDate, formatMoney } from '../../../shared/utils/format';
 import useT from '../../../shared/i18n/I18nProvider';
 import useCategoryLabel from '../../../shared/i18n/useCategoryLabel';
 
@@ -56,7 +56,7 @@ export default function RecentTransactions({ expenses = [], currency = 'INR', on
                   {expense.description || label(expense.category)}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {label(expense.category)} &middot; {formatDate(expense.date)}
+                  {label(expense.category)} &middot; {formatCalendarDate(expense.date)}
                 </p>
               </div>
 

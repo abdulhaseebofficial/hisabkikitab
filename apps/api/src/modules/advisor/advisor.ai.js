@@ -14,7 +14,7 @@
 
 const ai = require('../../infrastructure/ai');
 const { FALLBACK_BUDGET_SPLIT, DEFAULT_CATEGORIES } = require('../../shared/constants');
-const { round2 } = require('../../shared/utils/calculations');
+const { apiToMinor, decimalToMinor, minorToApi, minor, divideMinor, roundRatio } = require('../../shared/finance/personalMoney');
 const { modeOf } = require('../../shared/categories');
 const { safeLanguage } = require('@hisabkikitab/contracts/catalogue');
 
@@ -126,7 +126,7 @@ const SHARED_RULES = [
  * merely useless - it says the app has not understood them at all.
  */
 const HOUSEHOLDER_PROMPT = [
-  'You are Hisab Ki Kitab, a warm and practical money coach for someone running a household in Pakistan.',
+  'You are Hisabki Kitab, a warm and practical money coach for someone running a household in Pakistan.',
   '',
   'Who you are talking to: an adult responsible for a home. Their month is shaped by obligations that arrive whether',
   'or not anyone planned for them - house rent, the electricity bill in a hot month, gas, water, internet and mobile',
@@ -153,7 +153,7 @@ const HOUSEHOLDER_PROMPT = [
  * person sends does not change between requests.
  */
 const STUDENT_PROMPT = [
-  'You are Hisab Ki Kitab, a warm and practical money coach for a university student living in a hostel in Pakistan.',
+  'You are Hisabki Kitab, a warm and practical money coach for a university student living in a hostel in Pakistan.',
   '',
   'Who you are talking to: a student aged roughly 18 to 24 whose entire monthly budget is small pocket money sent',
   'from home. Their world is the hostel mess bill, chai and paratha at the canteen, samosas and rolls from the dhaba',
@@ -269,7 +269,12 @@ const getAdvice = async ({ user, snapshot, tipCount = 4 }) =>
         ],
       });
 
-      return answer.json;
+      const result = answer.json;
+      result.tips = result.tips.map((tip) => ({
+        ...tip,
+        estimatedMonthlySaving: minorToApi(decimalToMinor(tip.estimatedMonthlySaving)),
+      }));
+      return result;
     },
     () => fallbackAdvice({ user, snapshot, tipCount })
   );
@@ -290,7 +295,7 @@ const chat = async ({ user, snapshot, history = [], message }) =>
           {
             role: 'user',
             content: [
-              `Context about me (currency ${user.currency}, name ${user.name}). Do not reply to this message`,
+              `Context about my finances (currency ${user.currency}). Do not reply to this message`,
               'directly, just use it as background for everything I ask next.',
               '',
               snapshotToText(snapshot, user.currency),
@@ -438,14 +443,16 @@ const fallbackAdvice = ({ user, snapshot, tipCount = 4 }) => {
   const cur = user.currency;
   const { breakdown = [], income = 0, totalSpent = 0, remaining = 0, daysLeftInMonth = 0 } = snapshot;
   const tips = [];
+  const fraction = (amount, numerator, denominator) =>
+    minorToApi(divideMinor(apiToMinor(amount) * BigInt(numerator), denominator));
 
   const top = breakdown[0];
   if (top) {
     tips.push({
       title: `Trim your ${top.category} spend`,
-      detail: `${top.category} is ${top.percent}% of your spending at ${money(cur, top.amount)}. Cutting it by a fifth frees about ${money(cur, top.amount * 0.2)} a month.`,
+      detail: `${top.category} is ${top.percent}% of your spending at ${money(cur, top.amount)}. Cutting it by a fifth frees about ${money(cur, fraction(top.amount, 1, 5))} a month.`,
       category: top.category,
-      estimatedMonthlySaving: round2(top.amount * 0.2),
+      estimatedMonthlySaving: fraction(top.amount, 1, 5),
     });
   }
 
@@ -453,9 +460,9 @@ const fallbackAdvice = ({ user, snapshot, tipCount = 4 }) => {
   if (food) {
     tips.push({
       title: 'Eat the mess meals you already paid for',
-      detail: `You spent ${money(cur, food.amount)} on food. Skipping two dhaba meals a week keeps roughly ${money(cur, food.amount * 0.15)} in your pocket.`,
+      detail: `You spent ${money(cur, food.amount)} on food. Skipping two dhaba meals a week keeps roughly ${money(cur, fraction(food.amount, 15, 100))} in your pocket.`,
       category: food.category,
-      estimatedMonthlySaving: round2(food.amount * 0.15),
+      estimatedMonthlySaving: fraction(food.amount, 15, 100),
     });
   }
 
@@ -463,9 +470,9 @@ const fallbackAdvice = ({ user, snapshot, tipCount = 4 }) => {
   if (fun) {
     tips.push({
       title: 'Make one weekend a no-spend weekend',
-      detail: `Entertainment came to ${money(cur, fun.amount)}. One quiet weekend a month saves about ${money(cur, fun.amount / 4)} with almost no effort.`,
+      detail: `Entertainment came to ${money(cur, fun.amount)}. One quiet weekend a month saves about ${money(cur, fraction(fun.amount, 1, 4))} with almost no effort.`,
       category: fun.category,
-      estimatedMonthlySaving: round2(fun.amount / 4),
+      estimatedMonthlySaving: fraction(fun.amount, 1, 4),
     });
   }
 
@@ -475,19 +482,19 @@ const fallbackAdvice = ({ user, snapshot, tipCount = 4 }) => {
       title: 'Share rickshaws, book tickets early',
       detail: `Travel cost ${money(cur, travel.amount)}. Splitting a rickshaw or Careem with hostel mates and booking Daewoo tickets early usually shaves a quarter off.`,
       category: travel.category,
-      estimatedMonthlySaving: round2(travel.amount * 0.25),
+      estimatedMonthlySaving: fraction(travel.amount, 1, 4),
     });
   }
 
   tips.push({
     title: 'Pay yourself first',
-    detail: `Move ${money(cur, Math.max(500, income * 0.1))} into a savings goal the day your pocket money lands, before you can spend it.`,
+    detail: `Move ${money(cur, minorToApi(apiToMinor(income) / 10n > 50000n ? apiToMinor(income) / 10n : 50000n))} into a savings goal the day your pocket money lands, before you can spend it.`,
     category: 'Misc',
-    estimatedMonthlySaving: round2(Math.max(500, income * 0.1)),
+    estimatedMonthlySaving: minorToApi(apiToMinor(income) / 10n > 50000n ? apiToMinor(income) / 10n : 50000n),
   });
 
-  const overspending = income > 0 && totalSpent > income * 0.9;
-  const dailySafe = daysLeftInMonth > 0 ? remaining / daysLeftInMonth : remaining;
+  const overspending = apiToMinor(income) > 0n && apiToMinor(totalSpent) * 10n > apiToMinor(income) * 9n;
+  const dailySafe = daysLeftInMonth > 0 ? minorToApi(divideMinor(apiToMinor(remaining), daysLeftInMonth)) : remaining;
 
   return {
     headline:
@@ -496,7 +503,7 @@ const fallbackAdvice = ({ user, snapshot, tipCount = 4 }) => {
         : `You have spent ${money(cur, totalSpent)} so far this month.`,
     tips: tips.slice(0, tipCount),
     warning: overspending
-      ? `You have used ${Math.round((totalSpent / income) * 100)}% of your income with ${daysLeftInMonth} days to go. Try to stay under ${money(cur, dailySafe)} a day.`
+      ? `You have used ${roundRatio(apiToMinor(totalSpent), apiToMinor(income))}% of your income with ${daysLeftInMonth} days to go. Try to stay under ${money(cur, dailySafe)} a day.`
       : '',
     encouragement: 'Small changes add up fast at this budget. You have got this.',
   };
@@ -512,7 +519,7 @@ const fallbackChat = ({ user, snapshot, message }) => {
     ...advice.tips.map((t, i) => `${i + 1}. ${t.title} - ${t.detail}`),
   ];
   if (advice.warning) lines.push('', advice.warning);
-  lines.push('', '(The AI advisor is not configured, so this is Hisab Ki Kitab built-in advice.)');
+  lines.push('', '(The AI advisor is not configured, so this is Hisabki Kitab built-in advice.)');
   return { reply: lines.join('\n') };
 };
 
@@ -556,7 +563,7 @@ const fallbackTip = ({ user, snapshot }) => {
     };
   }
 
-  const perDay = daysLeftInMonth > 0 ? remaining / daysLeftInMonth : remaining;
+  const perDay = daysLeftInMonth > 0 ? minorToApi(divideMinor(apiToMinor(remaining), daysLeftInMonth)) : remaining;
 
   return {
     tip: household
@@ -567,33 +574,36 @@ const fallbackTip = ({ user, snapshot }) => {
 
 const fallbackBudget = ({ user, snapshot, categories }) => {
   const income = user.monthlyIncome || snapshot.income || 0;
+  const incomeMinor = user.monthlyIncomeMinor != null ? minor(user.monthlyIncomeMinor) : apiToMinor(income);
   const list = categories && categories.length ? categories.slice() : DEFAULT_CATEGORIES.slice();
 
   // Blend the default split with the student's real habits, then round to 50.
   const spentBy = {};
   (snapshot.breakdown || []).forEach((b) => {
-    spentBy[b.category] = b.amount;
+    spentBy[b.category] = apiToMinor(b.amount);
   });
 
   const rows = list.map((category) => {
     const share = FALLBACK_BUDGET_SPLIT[category] != null ? FALLBACK_BUDGET_SPLIT[category] : 0.05;
-    const fromSplit = income * share;
-    const actual = spentBy[category] || 0;
-    const blended = actual > 0 ? (fromSplit + actual) / 2 : fromSplit;
+    const shareHundredths = apiToMinor(share);
+    const fromSplit = divideMinor(incomeMinor * shareHundredths, 100n);
+    const actual = spentBy[category] || 0n;
+    const blended = actual > 0n ? divideMinor(fromSplit + actual, 2) : fromSplit;
+    const trimmed = divideMinor(blended * 9n, 10);
     return {
       category,
-      limit: Math.round((blended * 0.9) / 50) * 50, // the 10% trim leaves room to save
-      reason: actual > 0 ? 'Based on what you actually spend here' : 'Standard hostel-student allocation',
+      limit: minorToApi(divideMinor(trimmed, 5000) * 5000n), // nearest 50 major units
+      reason: actual > 0n ? 'Based on what you actually spend here' : 'Standard hostel-student allocation',
     };
   });
 
-  const allocated = rows.reduce((sum, r) => sum + r.limit, 0);
+  const allocated = rows.reduce((sum, r) => sum + apiToMinor(r.limit), 0n);
   return {
     summary:
       income > 0
         ? `A starter plan for ${money(user.currency, income)} a month, trimmed by about 10% so there is always something left to save.`
         : 'Add your monthly pocket money in Settings to get a plan sized to your income.',
-    savingsTarget: Math.max(0, Math.round((income - allocated) / 50) * 50),
+    savingsTarget: minorToApi(incomeMinor > allocated ? divideMinor(incomeMinor - allocated, 5000) * 5000n : 0n),
     categories: rows,
   };
 };

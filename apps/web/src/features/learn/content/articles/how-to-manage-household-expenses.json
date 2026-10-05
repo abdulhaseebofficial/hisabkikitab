@@ -1,0 +1,154 @@
+{
+  "slug": "how-to-manage-household-expenses",
+  "category": "household",
+  "title": "How to Manage Household Expenses",
+  "excerpt": "Bring household bills, grocery spending, and irregular costs into one practical plan.",
+  "introduction": "Household money management starts with a complete picture of recurring and occasional costs. This fictional PKR example shows how to prepare for a known expense without confusing it with an emergency.",
+  "author": "Hisabki Kitab Editorial Team",
+  "publishedAt": "2026-09-28",
+  "updatedAt": "2026-09-28",
+  "featured": true,
+  "sections": [
+    {
+      "id": "problem",
+      "title": "The problem",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Monthly bills seem manageable until a school payment, repair, or annual renewal arrives."
+        }
+      ]
+    },
+    {
+      "id": "explanation",
+      "title": "How it works",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Keep a bill calendar for due dates and separate recurring spending from predictable irregular costs. Discuss priorities with the people who share the budget, and avoid assuming that every month will look the same."
+        }
+      ]
+    },
+    {
+      "id": "example",
+      "title": "A practical example",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A household expects a PKR 24,000 school-related payment in six months. It adds a monthly contribution to the regular household plan."
+        },
+        {
+          "type": "table",
+          "caption": "Illustrative amounts in PKR",
+          "headers": [
+            "Planning item",
+            "Amount (PKR)"
+          ],
+          "rows": [
+            [
+              "Known payment in six months",
+              "24,000"
+            ],
+            [
+              "Already saved",
+              "6,000"
+            ],
+            [
+              "Still needed",
+              "18,000"
+            ],
+            [
+              "Monthly contribution for six months",
+              "3,000"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "calculation",
+      "title": "The calculation",
+      "blocks": [
+        {
+          "type": "calculation",
+          "text": "(PKR 24,000 - PKR 6,000) ? 6 months = PKR 3,000 per month. If fewer months remain, recalculate the contribution."
+        }
+      ]
+    },
+    {
+      "id": "steps",
+      "title": "Actionable steps",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Gather recent bills and list each due date.",
+            "Set realistic grocery and utility estimates using your own records.",
+            "List larger costs expected over the next year.",
+            "Divide each remaining cost by the months until it is due.",
+            "Hold a short household review each month and update who pays what."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mistakes",
+      "title": "Common mistakes",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Using last year?s prices without checking current bills.",
+            "Forgetting small recurring subscriptions.",
+            "Treating money reserved for a future bill as spare cash."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tips",
+      "title": "Useful tips",
+      "blocks": [
+        {
+          "type": "subheading",
+          "text": "Make it easier to keep going"
+        },
+        {
+          "type": "tip",
+          "text": "Put a reminder several days before a bill is due so you have time to resolve a shortfall or payment problem."
+        }
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusion",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A shared calendar and small regular contributions make household costs easier to anticipate. Update the plan when bills or income change."
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "title": "CFPB: Assess your spending",
+      "url": "https://www.consumerfinance.gov/owning-a-home/prepare/assess-your-spending/"
+    }
+  ],
+  "ads": [],
+  "cta": {
+    "label": "Track household expenses",
+    "to": "/expenses"
+  },
+  "faqs": [
+    {
+      "question": "How do I budget for irregular household costs?",
+      "answer": "List known costs and due dates, then set aside an affordable amount across the months before each bill is due."
+    },
+    {
+      "question": "Who should track shared household purchases?",
+      "answer": "Agree who records each purchase and review the shared record together so responsibility does not fall invisibly on one person."
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import useCategoryLabel from '../../i18n/useCategoryLabel';
 import EmptyState from '../ui/EmptyState';
 import { PieChart as PieIcon } from 'lucide-react';
 import useT from '../../i18n/I18nProvider';
+import { sumMoney } from '../../utils/money';
 
 /**
  * Donut of spending by category.
@@ -29,7 +30,7 @@ export default function CategoryPieChart({ data = [], currency = 'PKR', total, h
   const slices = inCategoryOrder(data)
     .filter((row) => row.amount > 0)
     .map((row) => ({ ...row, label: label(row.category) }));
-  const sum = total !== undefined ? total : slices.reduce((acc, row) => acc + row.amount, 0);
+  const sum = total !== undefined ? total : sumMoney(slices.map((row) => row.amount));
 
   if (!slices.length) {
     return (

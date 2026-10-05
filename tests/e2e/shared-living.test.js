@@ -1,15 +1,22 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('crypto');
+require('../../scripts/require-test-database');
 const BASE = process.env.HW_API || 'http://localhost:5000/api';
 const password = 'SharedTest123!';
 
 test('Shared Living journey through the running application', { timeout: 600000 }, async (t) => {
   const accounts = [];
   const request = async (method, path, body, who = 0) => {
+    if (method === 'POST' && /\/months\/[^/]+\/(expenses|bills|payments)$/.test(path) && body)
+      body = { request_id: crypto.randomUUID(), ...body };
     const response = await fetch(BASE + path, {
       method,
-      headers: { 'Content-Type': 'application/json', ...(accounts[who]?.token ? { Authorization: `Bearer ${accounts[who].token}` } : {}) },
+      headers: { 'Content-Type': 'application/json',
+        ...((path === '/profile/onboarding' ||
+          (method === 'POST' && /^\/(expenses|income|debts|goals)$/.test(path)))
+          ? { 'Idempotency-Key': crypto.randomUUID() } : {}),
+        ...(accounts[who]?.token ? { Authorization: `Bearer ${accounts[who].token}` } : {}) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
     return { status: response.status, body: await response.json(), cookies: response.headers.getSetCookie() };
@@ -30,7 +37,7 @@ test('Shared Living journey through the running application', { timeout: 600000 
     space = await call('POST', '/shared-living/spaces', { name: 'Journey Flat', residents: 2, month: '2024-02', budget: '1000', food_budget: '500', currency: 'PKR', role: 'viewer' });
     assert.equal(space.role, 'admin');
     code = space.invite.code;
-    assert.match(code, /^[\w-]{43}$/);
+    assert.match(code, /^[A-HJ-NP-Z2-9]{7}$/);
     base = `/shared-living/spaces/${space.id}`;
     period = `${base}/months/2024-02`;
     categories = (await call('GET', period)).categories;
@@ -70,9 +77,11 @@ test('Shared Living journey through the running application', { timeout: 600000 
   });
   await t.test('viewer cannot mutate any group endpoint, including splits and paid state', async () => {
     const id = members[0].id;
-    const paths = [['PATCH', base], ['POST', `${base}/invite`], ['PUT', period], ['POST', `${base}/members`], ['PATCH', `${base}/members/${id}`], ['DELETE', `${base}/members/${id}`], ['POST', `${base}/categories`], ['PATCH', `${base}/categories/${id}`], ['POST', `${period}/copy-bills`], ['POST', `${period}/preview`], ['PUT', `${period}/bills/${id}/receipt`]];
+    const paths = [['PATCH', base], ['POST', `${base}/invite`], ['PUT', period], ['POST', `${base}/members`], ['PATCH', `${base}/members/${id}`], ['DELETE', `${base}/members/${id}`], ['POST', `${base}/categories`], ['PATCH', `${base}/categories/${id}`], ['POST', `${period}/copy-bills`], ['POST', `${period}/preview`]];
     for (const kind of ['expenses', 'bills', 'payments']) for (const method of ['POST', 'PATCH', 'DELETE']) paths.push([method, `${period}/${kind}${method === 'POST' ? '' : `/${id}`}`]);
     for (const [method, path] of paths) assert.equal((await request(method, path, { role: 'admin', paid: true }, 1)).status, 403, `${method} ${path}`);
+    // Receipt uploads were intentionally removed; no actor can call this route.
+    assert.equal((await request('PUT', `${period}/bills/${id}/receipt`, {}, 1)).status, 404);
   });
   await t.test('concurrent and retried financial creates are idempotent; changed payload conflicts', async () => {
     const food = categories.find((c) => c.kind === 'food');
@@ -116,6 +125,37 @@ test('Shared Living journey through the running application', { timeout: 600000 
     await call('PUT', period, { closed: true });
     assert.equal((await request('POST', `${period}/payments`, {})).status, 409);
     await call('PUT', period, { closed: false });
+  });
+  await t.test('bill copy uses source identity across concurrent requests and retains manual lookalikes', async () => {
+    const rent = categories.find((category) => category.stable_key === 'rent');
+    const sourceBody = {
+      category_id: rent.id, name: 'Same rent', date: '2024-02-10',
+      due_date: '2024-02-12', amount: '10.00', recurring: true,
+    };
+    const sources = [];
+    for (let i = 0; i < 2; i++)
+      sources.push(await call('POST', `${period}/bills`, sourceBody));
+    const marchPath = `${base}/months/2024-03`;
+    const manual = await call('POST', `${marchPath}/bills`, {
+      ...sourceBody, date: '2024-03-10', due_date: '2024-03-12',
+    });
+    const attempts = await Promise.all([
+      call('POST', `${marchPath}/copy-bills`, { from: '2024-02' }),
+      call('POST', `${marchPath}/copy-bills`, { from: '2024-02' }),
+    ]);
+    assert.deepEqual(attempts.map((rows) => rows.length).sort(), [0, 2]);
+    const copied = attempts.flat();
+    assert.deepEqual(new Set(copied.map((bill) => bill.recurring_origin_id)),
+      new Set(sources.map((bill) => bill.id)));
+    assert.equal(copied.some((bill) => sources.some((source) => source.request_id === bill.request_id)), false);
+    assert.equal((await call('POST', `${marchPath}/copy-bills`, { from: '2024-02' })).length, 0);
+    const march = await call('GET', marchPath);
+    assert.equal(march.bills.length, 3);
+    assert.ok(march.bills.some((bill) => bill.id === manual.id && bill.recurring_origin_id === null));
+    await call('POST', `${base}/months/2024-04/start`, {});
+    const april = await call('GET', `${base}/months/2024-04`);
+    assert.deepEqual(new Set(april.bills.map((bill) => bill.recurring_origin_id)),
+      new Set([...sources.map((bill) => bill.id), manual.id]));
   });
   await t.test('sign-in restores viewer role; Student and Householder records survive switches', async () => {
     const login = await call('POST', '/auth/login', { email: accounts[1].email, password }, -1);

@@ -60,12 +60,21 @@ const invite = async (tx, space, user, body = {}) => {
     "UPDATE sl_invites SET revoked_at=now() WHERE space_id=$1 AND revoked_at IS NULL",
     [space.id],
   );
-  const code = crypto.randomBytes(32).toString("base64url");
-  if (!v.bool(body.disabled))
-    await tx.query(
-      "INSERT INTO sl_invites(space_id,code_hash,expires_at) VALUES($1,$2,$3)",
-      [space.id, hash(code), expires],
-    );
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = null;
+  if (!v.bool(body.disabled)) {
+    // A short code remains unguessable in practice with the join rate limit;
+    // never store its plaintext. Retry the extremely unlikely hash collision.
+    for (let attempt = 0; attempt < 5 && !code; attempt++) {
+      const candidate = Array.from({ length: 7 }, () => alphabet[crypto.randomInt(alphabet.length)]).join("");
+      const saved = await tx.queryOne(
+        "INSERT INTO sl_invites(space_id,code_hash,expires_at) VALUES($1,$2,$3) ON CONFLICT (code_hash) DO NOTHING RETURNING id",
+        [space.id, hash(candidate), expires],
+      );
+      if (saved) code = candidate;
+    }
+    if (!code) throw ApiError.conflict("shared.error");
+  }
   await repo.audit(
     tx,
     space.id,
@@ -80,9 +89,13 @@ const invite = async (tx, space, user, body = {}) => {
 };
 const createSpace = (user, body) =>
   repo.transaction(async (tx) => {
-    const values = v.space(body),
-      month = v.month(body.month),
-      budget = v.amount(body.budget);
+    const memberNames = body.members === undefined ? [] : body.members;
+    if (!Array.isArray(memberNames) || memberNames.length > 500) return v.invalid();
+    const names = memberNames.map((name) => v.text(name, 100, true));
+    if (new Set(names.map((name) => name.toLocaleLowerCase())).size !== names.length) return v.invalid();
+    const values = v.space({ ...body, residents: names.length ? names.length : (body.residents ?? 1) }),
+      month = v.month(body.month || new Date().toISOString().slice(0, 7)),
+      budget = v.amount(body.budget ?? "0");
     const space = await repo.insert(tx, "spaces", {
       ...values,
       owner_id: user._id,
@@ -95,8 +108,12 @@ const createSpace = (user, body) =>
       space_id: space.id,
       month: `${month}-01`,
       budget_minor: budget,
-      food_budget_minor: v.amount(body.food_budget ?? body.budget),
+      food_budget_minor: v.amount(body.food_budget ?? body.budget ?? "0"),
     });
+    for (const name of names)
+      await repo.insert(tx, "members", {
+        space_id: space.id, name, joined_on: `${month}-01`,
+      });
     for (const [kind, keys] of Object.entries(DEFAULTS))
       for (let i = 0; i < keys.length; i++)
         await repo.insert(tx, "categories", {
@@ -119,12 +136,14 @@ const createSpace = (user, body) =>
   });
 const join = (user, body) =>
   repo.transaction(async (tx) => {
-    if (typeof body.code !== "string" || !/^[\w-]{43}$/.test(body.code))
+    if (typeof body.code !== "string" ||
+        !(/^[A-Z0-9]{7}$/.test(body.code.toUpperCase()) || /^[\w-]{43}$/.test(body.code)))
       throw ApiError.badRequest("shared.invalidCode");
+    const submittedCode = body.code.length === 7 ? body.code.toUpperCase() : body.code;
     // Lock the space before rechecking the invitation, matching rotation's lock order.
     const found = await tx.queryOne(
       "SELECT space_id FROM sl_invites WHERE code_hash=$1",
-      [hash(body.code)],
+      [hash(submittedCode)],
     );
     if (!found) throw ApiError.badRequest("shared.invalidCode");
     await tx.query("SELECT id FROM sl_spaces WHERE id=$1 FOR UPDATE", [
@@ -132,7 +151,7 @@ const join = (user, body) =>
     ]);
     const valid = await tx.queryOne(
       "SELECT space_id FROM sl_invites WHERE code_hash=$1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at>now())",
-      [hash(body.code)],
+      [hash(submittedCode)],
     );
     if (!valid) throw ApiError.badRequest("shared.invalidCode");
     const membership = await tx.queryOne(
@@ -164,12 +183,6 @@ const dashboard = (user, spaceId, month) =>
       "SELECT * FROM sl_categories WHERE space_id=$1 ORDER BY position,id",
       [spaceId],
     );
-    const receipts = await tx.query(
-      "SELECT bill_id FROM sl_receipts WHERE space_id=$1",
-      [spaceId],
-    );
-    for (const bill of bills)
-      bill.has_receipt = receipts.some((r) => r.bill_id === bill.id);
     const periods = await tx.query(
       "SELECT p.*,to_char(p.month,'YYYY-MM') AS month_key,(SELECT COALESCE(sum(e.amount_minor),0)::text FROM sl_expenses e WHERE e.period_id=p.id AND NOT e.deleted) AS food_minor,(SELECT COALESCE(sum(b.amount_minor),0)::text FROM sl_bills b WHERE b.period_id=p.id AND NOT b.deleted) AS bills_minor FROM sl_periods p WHERE space_id=$1 ORDER BY month",
       [spaceId],
@@ -218,6 +231,44 @@ const editSpace = (user, spaceId, body) =>
       result,
     );
     return result;
+  });
+const transferOwnership = (user, spaceId, body) =>
+  scope(user, spaceId, true, async (tx, space) => {
+    const successorId = v.uuid(body.successor_user_id);
+    if (successorId === space.owner_id)
+      throw ApiError.conflict("shared.successorUnavailable");
+    const before = { owner_id: space.owner_id };
+    const result = await repo.transferOwner(tx, space, user._id, successorId);
+    if (!result) throw ApiError.conflict("shared.successorUnavailable");
+    await repo.audit(
+      tx,
+      spaceId,
+      user._id,
+      "ownership_transferred",
+      "space",
+      spaceId,
+      before,
+      { owner_id: successorId },
+    );
+    return result;
+  });
+const leaveSpace = (user, spaceId) =>
+  scope(user, spaceId, false, async (tx, space) => {
+    if (space.owner_id === user._id)
+      throw ApiError.conflict("shared.transferBeforeLeave");
+    const removed = await repo.leaveMembership(tx, space, user._id);
+    if (!removed) throw ApiError.notFound("shared.notFound");
+    await repo.audit(
+      tx,
+      spaceId,
+      user._id,
+      "member_left",
+      "membership",
+      null,
+      { role: removed.role },
+      { user_id: user._id },
+    );
+    return { space_id: spaceId, left: true };
   });
 const editPeriod = (user, spaceId, month, body) =>
   scope(user, spaceId, true, async (tx) => {
@@ -331,9 +382,10 @@ const saveFinancial = async (
   id,
   body,
   remove = false,
+  copyOriginId = null,
 ) => {
   let requestId, requestHash;
-  if (!id && !remove && body.request_id != null) {
+  if (!id && !remove) {
     requestId = v.uuid(body.request_id);
     const { request_id, ...payload } = body;
     requestHash = hash(JSON.stringify(canonical(payload)));
@@ -350,6 +402,10 @@ const saveFinancial = async (
   const before = id ? await repo.find(tx, kind, spaceId, v.uuid(id)) : null;
   if (id && (!before || before.period_id !== p.id || before.deleted))
     throw ApiError.notFound("shared.notFound");
+  if (id && (!Number.isInteger(body.version) || body.version < 1))
+    throw ApiError.badRequest('shared.invalid');
+  if (before && before.version !== body.version)
+    throw ApiError.conflict('shared.staleWrite');
   let values, assigned;
   if (remove) values = { deleted: true };
   else {
@@ -400,15 +456,24 @@ const saveFinancial = async (
           Array.isArray(body.values))
       )
         return v.invalid();
-      try {
-        assigned = calc.split(
-          values.amount_minor,
-          values.method,
-          included,
-          body.values,
-        );
-      } catch {
-        return v.invalid();
+      values.split_pending = values.method === "later";
+      if (values.split_pending || (kind === "bills" && values.amount_minor === 0)) {
+        if (values.split_pending && !included.length) return v.invalid();
+        if (values.split_pending && body.values && Object.keys(body.values).length) return v.invalid();
+        // Zero-value shares remember participants for a pending split or
+        // recurring bill template without assigning anyone a debt yet.
+        assigned = included.map((member) => ({ member_id: member.id, amount_minor: 0, manually_adjusted: false }));
+      } else {
+        try {
+          assigned = calc.split(
+            values.amount_minor,
+            values.method,
+            included,
+            body.values,
+          );
+        } catch {
+          return v.invalid();
+        }
       }
     }
   }
@@ -419,14 +484,20 @@ const saveFinancial = async (
           [id],
         )
       : [];
-  const result = id
-    ? await repo.update(tx, kind, spaceId, id, values)
-    : await repo.insert(tx, kind, {
+  const insertValues = {
         space_id: spaceId,
         period_id: p.id,
         ...(requestId ? { request_id: requestId, request_hash: requestHash } : {}),
+        ...(copyOriginId ? { recurring_origin_id: copyOriginId } : {}),
         ...values,
-      });
+      };
+  const result = id
+    ? await repo.update(tx, kind, spaceId, id, values, body.version)
+    : copyOriginId
+      ? await repo.insertCopiedBill(tx, insertValues)
+      : await repo.insert(tx, kind, insertValues);
+  if (!result && copyOriginId) return null;
+  if (!result) throw ApiError.conflict('shared.staleWrite');
   if (assigned) {
     const column = kind === "bills" ? "bill_id" : "expense_id";
     await tx.query(`DELETE FROM sl_shares WHERE ${column}=$1`, [result.id]);
@@ -485,37 +556,75 @@ const editFinancial = (user, spaceId, month, kind, id, body, remove = false) =>
       remove,
     );
   });
-const copyBills = (user, spaceId, month, body) =>
-  scope(user, spaceId, true, async (tx) => {
-    const target = await openPeriod(tx, spaceId, month),
-      source = await openPeriod(tx, spaceId, body.from, false);
-    if (target.id === source.id) return v.invalid();
+const copyRecurringBills = async (tx, user, spaceId, target, source, month) => {
     const bills = (await repo.records(tx, "bills", spaceId, source.id)).filter(
       (b) => b.recurring,
     );
+    const unknownSourceKeys = new Set();
+    for (const bill of bills) {
+      if (bill.recurrence_identity_known !== null) continue;
+      const key = `${bill.category_id}\u0000${bill.name}`;
+      if (unknownSourceKeys.has(key)) throw ApiError.conflict("shared.legacyBillReview");
+      unknownSourceKeys.add(key);
+    }
+    if (bills.length && await tx.queryOne(
+      "SELECT id FROM sl_bills WHERE space_id=$1 AND period_id=$2 AND recurrence_identity_known IS NULL LIMIT 1",
+      [spaceId, target.id],
+    )) throw ApiError.conflict("shared.legacyBillReview");
+    const members = await repo.members(tx, spaceId);
     const result = [];
     for (const bill of bills) {
       // New month uses residents eligible on the new bill date and equal shares.
       const date = `${month}-${String(Math.min(Number(bill.date.slice(8)), calc.daysInMonth(month))).padStart(2, "0")}`;
       const due_date = `${month}-${String(Math.min(Number(bill.due_date.slice(8)), calc.daysInMonth(month))).padStart(2, "0")}`;
-      const exists = await tx.queryOne(
-        "SELECT id FROM sl_bills WHERE space_id=$1 AND period_id=$2 AND name=$3 AND category_id=$4 AND recurring AND NOT deleted",
-        [spaceId, target.id, bill.name, bill.category_id],
-      );
-      if (!exists)
-        result.push(
-          await saveFinancial(tx, user, spaceId, target, "bills", null, {
+      const originalShares = await tx.query(
+          "SELECT member_id FROM sl_shares WHERE bill_id=$1", [bill.id],
+        );
+        const eligibleIds = members.filter((member) => calc.eligible(member, date)).map((member) => member.id);
+        const included = originalShares.length
+          ? originalShares.map((share) => share.member_id).filter((id) => eligibleIds.includes(id))
+          : eligibleIds;
+        const copied = await saveFinancial(tx, user, spaceId, target, "bills", null, {
             ...bill,
-            amount: calc.decimal(bill.amount_minor),
+            // A copied bill is a new occurrence. Reusing the source request ID
+            // would make idempotency reject the new period as a conflicting retry.
+            request_id: crypto.randomUUID(),
+            request_hash: undefined,
+            amount: "0",
             date,
             due_date: due_date < date ? date : due_date,
             paid: false,
             paid_by: null,
             method: "equal",
-          }),
-        );
+            included,
+          }, false, bill.recurring_origin_id || bill.id);
+      if (copied) result.push(copied);
     }
     return result;
+};
+const copyBills = (user, spaceId, month, body) =>
+  scope(user, spaceId, true, async (tx) => {
+    const target = await openPeriod(tx, spaceId, month),
+      source = await openPeriod(tx, spaceId, body.from, false);
+    if (target.id === source.id) return v.invalid();
+    return copyRecurringBills(tx, user, spaceId, target, source, month);
+  });
+const startMonth = (user, spaceId, month) =>
+  scope(user, spaceId, true, async (tx) => {
+    const key = v.month(month);
+    const existing = await repo.period(tx, spaceId, key);
+    if (existing) return existing;
+    await repo.insert(tx, "periods", {
+      space_id: spaceId, month: `${key}-01`, budget_minor: 0, food_budget_minor: 0,
+    });
+    const created = await repo.period(tx, spaceId, key);
+    const source = await tx.queryOne(
+      "SELECT *,to_char(month,'YYYY-MM') AS month_key FROM sl_periods WHERE space_id=$1 AND month<$2::date ORDER BY month DESC LIMIT 1",
+      [spaceId, `${key}-01`],
+    );
+    if (source) await copyRecurringBills(tx, user, spaceId, created, source, key);
+    await repo.audit(tx, spaceId, user._id, "month_started", "period", created.id, null, created);
+    return created;
   });
 const receipt = (user, spaceId, month, billId, buffer) =>
   scope(user, spaceId, buffer !== undefined, async (tx) => {
@@ -580,11 +689,14 @@ module.exports = {
   join,
   dashboard,
   editSpace,
+  transferOwnership,
+  leaveSpace,
   editPeriod,
   editMember,
   editCategory,
   editFinancial,
   copyBills,
+  startMonth,
   receipt,
   preview,
   rotateInvite: (user, id, body) =>

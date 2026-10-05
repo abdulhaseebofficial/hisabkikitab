@@ -54,7 +54,11 @@ const errorHandler = (err, req, res, _next) => {
 
   const isServerError = statusCode >= 500;
   if (isServerError) {
-    console.error('[error]', err.stack || err);
+    // The event is an integration point for optional centralized error
+    // tracking. Logs contain no SQL parameters, request bodies, or tokens.
+    req.app.emit('api:error', { error: err, requestId: req.requestId, statusCode });
+    console.error(JSON.stringify({ level: 'error', event: 'api_error',
+      requestId: req.requestId, statusCode, code: err.code || 'UNEXPECTED' }));
   }
 
   // Default-deny: internals are only ever revealed when NODE_ENV explicitly
@@ -63,6 +67,7 @@ const errorHandler = (err, req, res, _next) => {
 
   res.status(statusCode).json({
     success: false,
+    requestId: req.requestId,
     message: isServerError && !debug ? 'Something went wrong' : message,
     ...(details ? { errors: details } : {}),
     ...(debug && isServerError ? { stack: err.stack } : {}),

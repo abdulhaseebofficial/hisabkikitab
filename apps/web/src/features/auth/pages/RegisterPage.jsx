@@ -185,9 +185,6 @@ export default function Register() {
               aria-describedby={errors.acceptTerms ? 'terms-error' : undefined}
               {...register('acceptTerms')}
             />
-            {/* Written as plain text on purpose: there are no terms or privacy
-                pages yet, and a link to a 404 is worse than no link. When those
-                pages exist, this is the one place to link them from. */}
             <span className="text-sm text-slate-700 dark:text-slate-300">
               <span className="block font-medium text-slate-800 dark:text-slate-200">
                 {t('auth.agreeTerms')}
@@ -197,6 +194,10 @@ export default function Register() {
               </span>
             </span>
           </label>
+          <p className="ml-7 mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+            <Link className="font-medium text-brand-700 underline underline-offset-2 dark:text-brand-300" to="/terms">{t('auth.termsOfUse')}</Link>
+            <Link className="font-medium text-brand-700 underline underline-offset-2 dark:text-brand-300" to="/privacy">{t('auth.privacyPolicy')}</Link>
+          </p>
           {errors.acceptTerms && (
             <p id="terms-error" className="mt-2 text-xs font-medium text-danger">
               {errors.acceptTerms.message}

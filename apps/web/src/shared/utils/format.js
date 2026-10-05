@@ -24,6 +24,16 @@ export const formatMoney = (value, code = 'PKR', { compact = false, decimals } =
   const symbol = currencySymbol(code);
   const gap = symbol.length > 1 ? ' ' : '';
 
+  // An exceptional historical BIGINT amount arrives as a decimal string.
+  // Group its integer digits without converting the cents through Number.
+  if (typeof value === 'string' && /^-?\d+\.\d{2}$/.test(value) && !compact &&
+      (value.length > 16 || !Number.isSafeInteger(Number(value.replace('.', ''))))) {
+    const negative = value.startsWith('-');
+    const [whole, fraction] = (negative ? value.slice(1) : value).split('.');
+    const digits = decimals !== undefined ? decimals : fraction === '00' ? 0 : 2;
+    return `${symbol}${gap}${negative ? '-' : ''}${BigInt(whole).toLocaleString(locale)}${digits ? `.${fraction.slice(0, digits).padEnd(digits, '0')}` : ''}`;
+  }
+
   if (compact && Math.abs(amount) >= 100000) {
     return `${symbol}${gap}${(amount / 100000).toFixed(1)}L`;
   }
@@ -57,7 +67,24 @@ export const formatDate = (value) => {
 export const formatDateTime = (value) => (value ? format(toDate(value), "d MMM yyyy, h:mm a") : '');
 
 /** Value for an <input type="date">. */
-export const toInputDate = (value) => (value ? format(toDate(value), 'yyyy-MM-dd') : '');
+// Date-input values are calendar days. The API stores an explicitly chosen day
+// as UTC midnight in a timestamptz column; converting that sentinel into the
+// viewer's timezone would turn it into yesterday west of UTC. Other instants
+// (including creation/payment timestamps) retain ordinary local formatting.
+const storedCalendarDay = (value) => {
+  if (typeof value !== 'string') return null;
+  const match = /^(\d{4}-\d{2}-\d{2})(?:$|T00:00:00(?:\.0+)?Z$)/.exec(value);
+  return match ? match[1] : null;
+};
+
+export const toInputDate = (value) => (value
+  ? storedCalendarDay(value) || format(toDate(value), 'yyyy-MM-dd') : '');
+
+/** Display a financial calendar day without shifting a stored UTC-midnight value. */
+export const formatCalendarDate = (value) => {
+  const day = storedCalendarDay(value);
+  return day ? formatDate(day) : formatDate(value);
+};
 
 export const formatRelative = (value) => (value ? `${formatDistanceToNowStrict(toDate(value))} ago` : '');
 

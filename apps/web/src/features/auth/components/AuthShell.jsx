@@ -20,7 +20,7 @@ export default function AuthShell({ title, subtitle, children, footer }) {
   const { t } = useT();
 
   return (
-    <div className="flex min-h-full">
+    <div className="flex min-h-full bg-canvas-light dark:bg-canvas-dark">
       {/*
         The pitch is one block with the logo, not a third thing spread to the
         far corner: `justify-between` on three children left ~225px of dead
@@ -61,11 +61,11 @@ export default function AuthShell({ title, subtitle, children, footer }) {
         </p>
       </aside>
 
-      <main className="flex w-full flex-col justify-center px-5 py-12 sm:px-10 lg:w-1/2">
-        <div className="mx-auto w-full max-w-[24rem]">
-          <BrandMark to="/" className="mb-10 lg:hidden" />
+      <main className="flex w-full flex-col justify-center px-4 py-8 sm:px-10 sm:py-12 lg:w-1/2">
+        <div className="mx-auto w-full max-w-[26rem] rounded-[1.5rem] border border-slate-200 bg-canvas-card p-5 shadow-raised sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none dark:border-slate-800 dark:bg-canvas-darkCard lg:dark:bg-transparent">
+          <BrandMark to="/" className="mb-8 lg:hidden" />
 
-          <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{title}</h2>
+          <h2 className="font-display text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">{title}</h2>
           {subtitle && <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{subtitle}</p>}
 
           <div className="mt-8">{children}</div>
