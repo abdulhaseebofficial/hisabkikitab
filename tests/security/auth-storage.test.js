@@ -47,6 +47,7 @@ const named = (setCookie, name) =>
   cookiesFrom(setCookie).find((c) => c.toLowerCase().startsWith(`${name.toLowerCase()}=`)) || null;
 
 const valueOf = (cookie) => (cookie ? cookie.split(';')[0] : null);
+const safeCookie = (cookie) => cookie ? cookie.replace(/^([^=]+=)[^;]*/, '$1<redacted>') : 'missing';
 
 (async () => {
   await requireApi();
@@ -79,21 +80,21 @@ const valueOf = (cookie) => (cookie ? cookie.split(';')[0] : null);
   section('The cookie is set, and set properly');
   ok('signing in sets an access cookie', Boolean(accessCookie), accessCookie ? 'present' : 'missing');
   ok('it is httpOnly, so no script can read it',
-    /httponly/i.test(accessCookie || ''), accessCookie);
+    /httponly/i.test(accessCookie || ''), safeCookie(accessCookie));
   ok('it declares a SameSite policy, which is what blocks cross-site writes',
-    /samesite=/i.test(accessCookie || ''), accessCookie);
+    /samesite=/i.test(accessCookie || ''), safeCookie(accessCookie));
   ok('it is not SameSite=None without also being Secure',
     !/samesite=none/i.test(accessCookie || '') || /secure/i.test(accessCookie || ''),
-    accessCookie);
+    safeCookie(accessCookie));
   ok('it carries an explicit expiry rather than lasting the browser session',
-    /max-age=|expires=/i.test(accessCookie || ''), accessCookie);
+    /max-age=|expires=/i.test(accessCookie || ''), safeCookie(accessCookie));
   ok('it is scoped to the API path',
-    /path=\/api/i.test(accessCookie || ''), accessCookie);
+    /path=\/api/i.test(accessCookie || ''), safeCookie(accessCookie));
 
   section('The refresh cookie keeps its narrower scope');
-  ok('the refresh cookie is httpOnly too', /httponly/i.test(refreshCookie || ''), refreshCookie);
+  ok('the refresh cookie is httpOnly too', /httponly/i.test(refreshCookie || ''), safeCookie(refreshCookie));
   ok('and is sent only to the auth routes that rotate it',
-    /path=\/api\/auth/i.test(refreshCookie || ''), refreshCookie);
+    /path=\/api\/auth/i.test(refreshCookie || ''), safeCookie(refreshCookie));
   ok('the two cookies are different',
     valueOf(accessCookie) !== valueOf(refreshCookie), 'distinct');
 
@@ -164,8 +165,8 @@ const valueOf = (cookie) => (cookie ? cookie.split(';')[0] : null);
 
     const clearedAccess = named(out.setCookie, 'hw_access');
     const clearedRefresh = named(out.setCookie, 'hw_refresh');
-    ok('the access cookie is cleared', Boolean(clearedAccess), clearedAccess || 'not cleared');
-    ok('and so is the refresh cookie', Boolean(clearedRefresh), clearedRefresh || 'not cleared');
+    ok('the access cookie is cleared', Boolean(clearedAccess), safeCookie(clearedAccess));
+    ok('and so is the refresh cookie', Boolean(clearedRefresh), safeCookie(clearedRefresh));
   }
 
   heading('CLEAN UP');

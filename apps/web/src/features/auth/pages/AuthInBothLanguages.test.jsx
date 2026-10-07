@@ -18,11 +18,12 @@ import LoginPage from './LoginPage';
 import RegisterPage from './RegisterPage';
 import ForgotPasswordPage from './ForgotPasswordPage';
 import ResetPasswordPage from './ResetPasswordPage';
+import authService from '../api/authApi';
 
 // The pages call the API for their config; none of that is what is under test.
 vi.mock('../api/authApi', () => ({
   default: {
-    config: () => Promise.resolve({ google: { enabled: false } }),
+    config: () => Promise.resolve({ google: { enabled: false }, passwordReset: { enabled: true } }),
     forgotPassword: () => Promise.resolve({}),
     resetPassword: () => Promise.resolve({}),
   },
@@ -100,6 +101,15 @@ describe('the password screens', () => {
   it('forgot-password reads in Roman Urdu', () => {
     signedOut('roman_ur', <ForgotPasswordPage />);
     expect(screen.getByText('Password bhool gaye?')).toBeInTheDocument();
+  });
+
+  it('does not promise a reset email when delivery is unavailable', async () => {
+    const config = vi.spyOn(authService, 'config').mockResolvedValueOnce({ google: { enabled: false }, passwordReset: { enabled: false } });
+    signedOut(null, <ForgotPasswordPage />);
+    expect(await screen.findByText('Password reset is unavailable')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Send reset link' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Contact us' })).toHaveAttribute('href', '/contact');
+    config.mockRestore();
   });
 
   it('reset-password reads in Roman Urdu', () => {

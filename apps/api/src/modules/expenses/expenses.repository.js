@@ -3,14 +3,15 @@
  * page. Replaces models/Expense.js.
  */
 
-const { query, queryOne } = require('../../infrastructure/database/pool');
+const { query, queryOne, transaction } = require('../../infrastructure/database/pool');
 const { toApi, toApiList, buildSet, isUuid } = require('../../infrastructure/database/rows');
+const { decimalToMinor, minor, minorToApi } = require('../../shared/finance/personalMoney');
 
 // Sort keys the client is allowed to ask for, mapped to real columns so the
 // query string can never reach the SQL.
 const SORT_COLUMNS = {
   date: 'date',
-  amount: 'amount',
+  amount: 'amount_minor',
   category: 'category',
   createdAt: 'created_at',
 };
@@ -50,7 +51,7 @@ const buildWhere = (userId, financeMode, q = {}) => {
   }
   if (to) {
     const end = new Date(to);
-    end.setHours(23, 59, 59, 999); // make `to` inclusive
+    end.setUTCHours(23, 59, 59, 999); // API date-only bounds use UTC calendar days
     clauses.push(`date <= $${n}`);
     values.push(end);
     n += 1;
@@ -68,13 +69,13 @@ const buildWhere = (userId, financeMode, q = {}) => {
   }
 
   if (minAmount) {
-    clauses.push(`amount >= $${n}`);
-    values.push(Number(minAmount));
+    clauses.push(`amount_minor >= $${n}`);
+    values.push(decimalToMinor(minAmount).toString());
     n += 1;
   }
   if (maxAmount) {
-    clauses.push(`amount <= $${n}`);
-    values.push(Number(maxAmount));
+    clauses.push(`amount_minor <= $${n}`);
+    values.push(decimalToMinor(maxAmount).toString());
     n += 1;
   }
 
@@ -110,7 +111,7 @@ const list = async (userId, financeMode, q = {}) => {
       [...values, limit, (page - 1) * limit]
     ),
     queryOne(
-      `SELECT count(*)::bigint AS total, COALESCE(sum(amount), 0) AS sum
+      `SELECT count(*)::bigint AS total, COALESCE(sum(amount_minor), 0)::text AS sum
          FROM expenses WHERE ${where}`,
       values
     ),
@@ -120,7 +121,7 @@ const list = async (userId, financeMode, q = {}) => {
   return {
     items: toApiList(items),
     total,
-    filteredTotal: Math.round(Number(summary.sum) * 100) / 100,
+    filteredTotal: minorToApi(summary.sum),
     pagination: {
       page,
       limit,
@@ -142,17 +143,17 @@ const findById = async (id, financeMode, userId) => {
   return toApi(row);
 };
 
-const create = async (userId, data) => {
-  const row = await queryOne(
+const create = async (userId, data, tx = { queryOne }) => {
+  const row = await tx.queryOne(
     `INSERT INTO expenses
-       (user_id, finance_mode, amount, category, description, payment_method, date,
+       (user_id, finance_mode, amount, amount_minor, category, description, payment_method, date,
         is_recurring, recurring_frequency, next_run_at, generated_from)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+     VALUES ($1, $2, 0, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      RETURNING *`,
     [
       userId,
       data.financeMode,
-      data.amount,
+      (data.amountMinor == null ? decimalToMinor(data.amount, { allowZero: false }) : minor(data.amountMinor)).toString(),
       data.category,
       data.description || '',
       data.paymentMethod || 'Cash',
@@ -168,7 +169,7 @@ const create = async (userId, data) => {
 
 const update = async (id, financeMode, userId, patch) => {
   const columns = {
-    amount: patch.amount,
+    amount_minor: patch.amount === undefined ? undefined : decimalToMinor(patch.amount, { allowZero: false }).toString(),
     category: patch.category,
     description: patch.description,
     payment_method: patch.paymentMethod,
@@ -246,9 +247,32 @@ const findDue = async (userId = null) => {
   return toApiList(rows);
 };
 
+/** Lock and recheck a due template; the callback writes clones and pointer on this client. */
+const withLockedDueTemplate = (id, userId, now, materialize) => transaction(async (tx) => {
+  const row = await tx.queryOne(
+    `SELECT * FROM expenses WHERE id = $1 AND user_id = $2 AND is_recurring
+       AND next_run_at IS NOT NULL AND next_run_at <= $3 FOR UPDATE`,
+    [id, userId, now]
+  );
+  return row ? materialize(toApi(row), tx) : 0;
+});
+
+/** Serialize manual bill payments with the recurring sweep and other payments. */
+const withLockedBillTemplate = (id, userId, financeMode, pay, outerTx = null) => {
+  const perform = async (tx) => {
+  if (!isUuid(id)) return null;
+  const row = await tx.queryOne(
+    `SELECT * FROM expenses WHERE id = $1 AND user_id = $2 AND finance_mode = $3 FOR UPDATE`,
+    [id, userId, financeMode]
+  );
+  return row ? pay(toApi(row), tx) : null;
+  };
+  return outerTx ? perform(outerTx) : transaction(perform);
+};
+
 /** Moves a template's pointer forward after it has been materialised. */
-const setNextRunAt = async (id, nextRunAt) => {
-  await query(`UPDATE expenses SET next_run_at = $2, updated_at = now() WHERE id = $1`, [
+const setNextRunAt = async (id, nextRunAt, tx = { query }) => {
+  await tx.query(`UPDATE expenses SET next_run_at = $2, updated_at = now() WHERE id = $1`, [
     id,
     nextRunAt,
   ]);
@@ -276,7 +300,7 @@ const userIdsWithDue = async () => {
 };
 
 /** Writes the occurrences a template has generated, in one statement. */
-const createMany = async (clones) => {
+const createMany = async (clones, tx = { query }) => {
   if (!clones.length) return 0;
 
   const values = [];
@@ -287,7 +311,7 @@ const createMany = async (clones) => {
       // The clone belongs to the same life as the template it came from, which
       // is what keeps a repeating household bill out of a student's month.
       c.financeMode,
-      c.amount,
+      (c.amountMinor == null ? decimalToMinor(c.amount, { allowZero: false }) : minor(c.amountMinor)).toString(),
       c.category,
       c.description || '',
       c.paymentMethod || 'Cash',
@@ -295,13 +319,14 @@ const createMany = async (clones) => {
       false,
       c.generatedFrom || null
     );
-    return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9})`;
+    return `($${base + 1}, $${base + 2}, 0, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, true)`;
   });
 
-  const rows = await query(
+  const rows = await tx.query(
     `INSERT INTO expenses
-       (user_id, finance_mode, amount, category, description, payment_method, date, is_recurring, generated_from)
-     VALUES ${tuples.join(', ')} RETURNING id`,
+       (user_id, finance_mode, amount, amount_minor, category, description, payment_method, date, is_recurring, generated_from, recurrence_occurrence)
+     VALUES ${tuples.join(', ')}
+     ON CONFLICT DO NOTHING RETURNING id`,
     values
   );
   return rows.length;
@@ -356,6 +381,8 @@ module.exports = {
   listAllForUser,
   listForRange,
   findDue,
+  withLockedDueTemplate,
+  withLockedBillTemplate,
   setNextRunAt,
   userIdsWithDue,
   createMany,

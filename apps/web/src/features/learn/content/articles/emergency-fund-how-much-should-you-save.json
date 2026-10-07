@@ -1,0 +1,154 @@
+{
+  "slug": "emergency-fund-how-much-should-you-save",
+  "category": "personal-finance",
+  "title": "Emergency Fund: How Much Should You Save?",
+  "excerpt": "Estimate a personal emergency buffer from essential expenses and your circumstances.",
+  "introduction": "An emergency fund is money reserved for unexpected costs or an interruption to income. There is no single amount that fits every household. The examples here are planning illustrations in PKR.",
+  "author": "Hisab Ki Kitab Editorial Team",
+  "publishedAt": "2026-09-28",
+  "updatedAt": "2026-09-28",
+  "featured": true,
+  "sections": [
+    {
+      "id": "problem",
+      "title": "The problem",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A repair or delayed paycheck can force you to borrow if every rupee is already committed."
+        }
+      ]
+    },
+    {
+      "id": "explanation",
+      "title": "How it works",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Begin with essential monthly expenses, not total salary. Consider how stable your income is, who depends on it, and what other support is available. A smaller first milestone can be more achievable than trying to build a large reserve immediately."
+        }
+      ]
+    },
+    {
+      "id": "example",
+      "title": "A practical example",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Sara estimates essentials at PKR 40,000 per month. She first targets PKR 10,000, then compares what one, three, or six months of essentials would look like. These are scenarios, not a prescription."
+        },
+        {
+          "type": "table",
+          "caption": "Illustrative amounts in PKR",
+          "headers": [
+            "Illustrative buffer",
+            "PKR"
+          ],
+          "rows": [
+            [
+              "First milestone",
+              "10,000"
+            ],
+            [
+              "One month",
+              "40,000"
+            ],
+            [
+              "Three months",
+              "120,000"
+            ],
+            [
+              "Six months",
+              "240,000"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "calculation",
+      "title": "The calculation",
+      "blocks": [
+        {
+          "type": "calculation",
+          "text": "Essential monthly costs ? months of cover = target reserve. PKR 40,000 ? 3 = PKR 120,000. At PKR 5,000 per month, building this from zero takes 24 months, ignoring withdrawals and returns."
+        }
+      ]
+    },
+    {
+      "id": "steps",
+      "title": "Actionable steps",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "List rent, basic food, utilities, essential travel, and required payments.",
+            "Choose a first milestone you can reasonably work toward.",
+            "Keep the reserve accessible and separate from everyday spending; check account terms and fees.",
+            "Decide which events count as emergencies.",
+            "Review your target after changes in income or dependants and replenish after use."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mistakes",
+      "title": "Common mistakes",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Counting an available loan as emergency savings.",
+            "Using the reserve for predictable annual purchases.",
+            "Keeping urgent money somewhere difficult to access."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tips",
+      "title": "Useful tips",
+      "blocks": [
+        {
+          "type": "subheading",
+          "text": "Make it easier to keep going"
+        },
+        {
+          "type": "tip",
+          "text": "A known annual bill belongs in a separate planned-expense pot, even if it feels large."
+        }
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusion",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Choose a reserve around your risks and resources. Building it gradually still improves your ability to handle a surprise."
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "title": "CFPB: An essential guide to building an emergency fund",
+      "url": "https://www.consumerfinance.gov/an-essential-guide-to-building-an-emergency-fund/"
+    }
+  ],
+  "ads": [],
+  "cta": {
+    "label": "Set a savings goal",
+    "to": "/goals"
+  },
+  "faqs": [
+    {
+      "question": "How large should an emergency fund be?",
+      "answer": "Estimate from essential costs and your own income stability, dependants and available support. Treat any month target as a planning scenario, not a rule."
+    },
+    {
+      "question": "Should I use an emergency fund for a planned annual bill?",
+      "answer": "A known bill is usually easier to plan for in a separate sinking fund so emergency savings remain available for unexpected needs."
+    }
+  ]
+}

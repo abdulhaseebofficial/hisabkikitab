@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '../features/auth/index';
 import { ThemeProvider } from './providers/ThemeProvider';
@@ -8,6 +8,7 @@ import ProtectedRoute, { PublicOnlyRoute } from './routes/ProtectedRoute';
 import AppLayout from './layout/AppLayout';
 import { PageSpinner } from '../shared/components/ui/Spinner';
 import AnalyticsObserver from './providers/AnalyticsObserver';
+import SeoBoundary from './routes/SeoBoundary';
 
 // Auth screens load eagerly - they are the first thing most visitors see.
 import Login from '../features/auth/pages/LoginPage';
@@ -27,6 +28,9 @@ const AIAdvisor = lazy(() => import('../features/advisor/pages/AdvisorPage'));
 const Reports = lazy(() => import('../features/reports/pages/ReportsPage'));
 const SettingsPage = lazy(() => import('../features/settings/pages/SettingsPage'));
 const NotFound = lazy(() => import('./routes/NotFoundPage'));
+const LearnPage = lazy(() => import('../features/learn/LearnPage'));
+const ToolsPage = lazy(() => import('../features/tools/pages/ToolsPage'));
+const TrustPage = lazy(() => import('../features/trust/TrustPage'));
 
 export default function App() {
   return (
@@ -35,6 +39,7 @@ export default function App() {
         <AuthProvider>
           <LanguageProvider>
             <AnalyticsObserver />
+            <SeoBoundary />
             <Suspense fallback={<PageSpinner />}>
               <Routes>
                 {/* Signed out only */}
@@ -65,7 +70,15 @@ export default function App() {
                   </Route>
                 </Route>
 
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/" element={<LearnPage />} />
+                <Route path="/learn/*" element={<LearnPage />} />
+                <Route path="/tools" element={<ToolsPage />} />
+                <Route path="/tools/:tool" element={<ToolsPage />} />
+                <Route path="/about" element={<TrustPage />} />
+                <Route path="/contact" element={<TrustPage />} />
+                <Route path="/privacy" element={<TrustPage />} />
+                <Route path="/terms" element={<TrustPage />} />
+                <Route path="/disclaimer" element={<TrustPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

@@ -1,0 +1,158 @@
+{
+  "slug": "simple-ways-to-track-income-and-expenses",
+  "category": "financial-habits",
+  "title": "Simple Ways to Track Income and Expenses",
+  "excerpt": "Build a short daily routine that makes your income, spending, and balance easier to understand.",
+  "introduction": "Tracking is a record of what happened, while a budget is a plan for what should happen. You can start with a notebook, spreadsheet, or Hisab Ki Kitab. These fictional PKR entries illustrate the difference between spending and moving money.",
+  "author": "Hisab Ki Kitab Editorial Team",
+  "publishedAt": "2026-09-28",
+  "updatedAt": "2026-09-28",
+  "featured": true,
+  "sections": [
+    {
+      "id": "problem",
+      "title": "The problem",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Small cash purchases and transfers between accounts can make your records disagree with your actual balance."
+        }
+      ]
+    },
+    {
+      "id": "explanation",
+      "title": "How it works",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Record each income or expense once with its date, amount, category, and payment account. Transfers between your own accounts change where money sits; they do not create income or consumption."
+        }
+      ]
+    },
+    {
+      "id": "example",
+      "title": "A practical example",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Hamza begins with PKR 5,000, receives PKR 20,000, spends PKR 7,000, and moves PKR 3,000 into his own savings account."
+        },
+        {
+          "type": "table",
+          "caption": "Illustrative amounts in PKR",
+          "headers": [
+            "Entry",
+            "Effect on total money (PKR)"
+          ],
+          "rows": [
+            [
+              "Opening balance",
+              "5,000"
+            ],
+            [
+              "Income",
+              "+20,000"
+            ],
+            [
+              "Expenses",
+              "-7,000"
+            ],
+            [
+              "Transfer to own savings",
+              "0"
+            ],
+            [
+              "Closing total across accounts",
+              "18,000"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "calculation",
+      "title": "The calculation",
+      "blocks": [
+        {
+          "type": "calculation",
+          "text": "PKR 5,000 + PKR 20,000 - PKR 7,000 = PKR 18,000. Of this, PKR 3,000 is in savings and PKR 15,000 remains elsewhere."
+        }
+      ]
+    },
+    {
+      "id": "steps",
+      "title": "Actionable steps",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Choose one place to keep your records.",
+            "Enter purchases when they happen or keep receipts for a daily check.",
+            "Use a small consistent set of categories.",
+            "Compare each account with its statement and count cash weekly.",
+            "Correct missing or duplicate entries and review your main spending categories."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mistakes",
+      "title": "Common mistakes",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Recording both a purchase and its later credit-card payment as new spending.",
+            "Treating your own savings transfer as income.",
+            "Ignoring cash because it does not appear in an account statement."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tips",
+      "title": "Useful tips",
+      "blocks": [
+        {
+          "type": "subheading",
+          "text": "Make it easier to keep going"
+        },
+        {
+          "type": "tip",
+          "text": "Keep notes short but specific: ?shared groceries? is easier to review than ?shopping.?"
+        }
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusion",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A brief regular check is easier to maintain than reconstructing a whole month. Accurate records give your next budget a stronger starting point."
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "title": "CFPB: Track your spending with this easy tool",
+      "url": "https://www.consumerfinance.gov/archive/blog/track-your-spending-with-this-easy-tool/"
+    }
+  ],
+  "ads": [],
+  "cta": {
+    "label": "Start tracking your expenses",
+    "to": "/expenses"
+  },
+  "faqs": [
+    {
+      "question": "How often should I record expenses?",
+      "answer": "Recording purchases as they happen or doing one short daily check can reduce forgotten cash spending."
+    },
+    {
+      "question": "Are transfers between my own accounts income?",
+      "answer": "No. A transfer changes where money is held. Record it as a transfer so it is not counted as new income or new spending."
+    }
+  ]
+}

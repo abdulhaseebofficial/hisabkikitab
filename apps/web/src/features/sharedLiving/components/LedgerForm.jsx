@@ -25,7 +25,7 @@ export default function LedgerForm({
     >
       <div className="grid gap-4 sm:grid-cols-2">
         {fields.map(
-          ({ key, type = "text", options, required = false, ...rest }) =>
+          ({ key, type = "text", options, required = false, uppercase = false, ...rest }) =>
             type === "checkbox" ? (
               <label
                 key={key}
@@ -50,7 +50,7 @@ export default function LedgerForm({
                 onInput={(e) => e.target.setCustomValidity('')}
                 value={values[key] ?? ""}
                 onChange={(e) =>
-                  setValues({ ...values, [key]: e.target.value })
+                  setValues({ ...values, [key]: uppercase ? e.target.value.toUpperCase() : e.target.value })
                 }
               />
             ) : (
@@ -67,7 +67,7 @@ export default function LedgerForm({
                 }
                 onInput={(e) => e.target.setCustomValidity("")}
                 onChange={(e) =>
-                  setValues({ ...values, [key]: e.target.value })
+                  setValues({ ...values, [key]: uppercase ? e.target.value.toUpperCase() : e.target.value })
                 }
               />
             ),

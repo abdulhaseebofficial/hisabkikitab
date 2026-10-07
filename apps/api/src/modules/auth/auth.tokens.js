@@ -20,11 +20,15 @@ const ACCESS_COOKIE_MS = 60 * 60 * 1000;
 const ALGORITHM = 'HS256';
 
 /** Short lived token, sent in an httpOnly cookie and held in memory. */
-const signAccessToken = (userId) =>
-  jwt.sign({ sub: String(userId), type: 'access' }, process.env.JWT_ACCESS_SECRET, {
+const signAccessToken = (userId, tokenVersion) => {
+  if (!Number.isSafeInteger(tokenVersion) || tokenVersion < 0) {
+    throw new TypeError('A current token version is required for an access token');
+  }
+  return jwt.sign({ sub: String(userId), type: 'access', v: tokenVersion }, process.env.JWT_ACCESS_SECRET, {
     expiresIn: ACCESS_EXPIRES,
     algorithm: ALGORITHM,
   });
+};
 
 /**
  * Long lived token, stored in an httpOnly cookie so JavaScript cannot read it.

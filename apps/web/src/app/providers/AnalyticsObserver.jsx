@@ -10,11 +10,13 @@ import {
 } from '../../shared/analytics/analytics';
 
 const TITLES = {
+  '/': 'Personal financial management',
   '/login': 'Login', '/register': 'Register', '/forgot-password': 'Forgot password',
   '/reset-password/:token': 'Reset password', '/onboarding': 'Onboarding',
   '/dashboard': 'Dashboard', '/expenses': 'Expenses', '/income': 'Income',
   '/goals': 'Goals', '/debts': 'Udhaar', '/budget': 'Budget', '/advisor': 'AI advisor',
   '/reports': 'Reports', '/settings': 'Settings',
+  '/tools': 'Financial tools',
 };
 
 export default function AnalyticsObserver() {
@@ -36,4 +38,3 @@ export default function AnalyticsObserver() {
 
   return null;
 }
-

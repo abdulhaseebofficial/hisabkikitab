@@ -1,0 +1,150 @@
+{
+  "slug": "beginners-guide-to-personal-budgeting",
+  "category": "budgeting",
+  "title": "A Beginner's Guide to Personal Budgeting",
+  "excerpt": "Learn a straightforward first-month budgeting routine using actual income, essential costs and a flexible review.",
+  "introduction": "A personal budget is a plan for money you expect to receive and spend. It can start with a notebook and improve as you collect more accurate records.",
+  "author": "Hisab Ki Kitab Editorial Team",
+  "publishedAt": "2026-09-28",
+  "updatedAt": "2026-09-28",
+  "featured": true,
+  "sections": [
+    {
+      "id": "problem",
+      "title": "The problem",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "New budgeters can feel they need a perfect spreadsheet or a strict rule before they begin. That can delay a simple plan that would already help."
+        }
+      ]
+    },
+    {
+      "id": "explanation",
+      "title": "How it works",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Start with take-home income, list necessary expenses and due dates, then decide what remains for savings and flexible costs. Use your own records rather than a generic percentage rule."
+        }
+      ]
+    },
+    {
+      "id": "example",
+      "title": "A practical example",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Amir has a fictional PKR 50,000 monthly take-home amount. He plans PKR 32,000 for essential bills and daily needs, PKR 5,000 for a savings goal and PKR 13,000 for flexible spending and irregular costs."
+        },
+        {
+          "type": "table",
+          "caption": "Illustrative monthly plan in PKR",
+          "headers": [
+            "Plan",
+            "Amount"
+          ],
+          "rows": [
+            [
+              "Take-home income",
+              "50,000"
+            ],
+            [
+              "Essentials",
+              "32,000"
+            ],
+            [
+              "Planned savings",
+              "5,000"
+            ],
+            [
+              "Flexible and irregular costs",
+              "13,000"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "calculation",
+      "title": "The calculation",
+      "blocks": [
+        {
+          "type": "calculation",
+          "text": "50,000 - 32,000 - 5,000 = PKR 13,000. The remaining amount still needs a plan for flexible purchases and costs that do not arrive every month."
+        }
+      ]
+    },
+    {
+      "id": "steps",
+      "title": "Actionable steps",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Write down reliable take-home income and payment dates.",
+            "List regular bills and estimate variable essentials from recent records.",
+            "Include a planned savings amount that fits your current situation.",
+            "Check that planned categories do not exceed income.",
+            "Review the plan weekly and adjust after unexpected changes."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mistakes",
+      "title": "Common mistakes",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Using gross income instead of take-home money.",
+            "Copying someone else?s category limits without checking your own costs.",
+            "Giving every rupee a plan but leaving no room for irregular expenses."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tips",
+      "title": "Useful tips",
+      "blocks": [
+        {
+          "type": "tip",
+          "text": "Use your first month to learn. Record the actual amounts and revise estimates rather than blaming yourself for a forecast that changed."
+        }
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusion",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "The best beginner budget is clear enough to guide a choice and easy enough to revisit next week."
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "title": "Consumer.gov: Making a Budget",
+      "url": "https://consumer.gov/your-money/making-budget"
+    }
+  ],
+  "cta": {
+    "label": "Create your budget in Hisab Ki Kitab",
+    "to": "/budget"
+  },
+  "faqs": [
+    {
+      "question": "Do I need an app to make my first budget?",
+      "answer": "No. Use a method you can keep up with; an app may help organize records and review the plan."
+    },
+    {
+      "question": "What should I do if planned expenses exceed income?",
+      "answer": "Check estimates and flexible costs, protect essential needs, and look at realistic changes in timing or income. Avoid assuming borrowed money solves a recurring shortfall."
+    }
+  ],
+  "ads": []
+}

@@ -1,11 +1,11 @@
 const { body } = require('express-validator');
 const { MODES, LANGUAGES } = require('@hisabkikitab/contracts/catalogue');
-const { name, password, CURRENCY_CODES } = require('../../shared/validation/rules');
+const { name, password, moneyValue, CURRENCY_CODES } = require('../../shared/validation/rules');
 
 const profileValidators = {
   update: [
     name().optional(),
-    body('monthlyIncome').optional().isFloat({ min: 0 }).withMessage('Income cannot be negative').toFloat(),
+    moneyValue(body('monthlyIncome').optional()),
     body('currency').optional().isIn(CURRENCY_CODES).withMessage('Unsupported currency'),
     body('university').optional().trim().isLength({ max: 100 }),
     body('hostelName').optional().trim().isLength({ max: 100 }),
@@ -17,12 +17,12 @@ const profileValidators = {
   ],
 
   onboarding: [
-    body('monthlyIncome').isFloat({ min: 0 }).withMessage('Enter your monthly pocket money').toFloat(),
+    moneyValue(body('monthlyIncome')),
     body('financeMode').optional().isIn(MODES).withMessage('Unsupported finance mode'),
     body('language').optional().isIn(LANGUAGES).withMessage('Unsupported language'),
     body('currency').optional().isIn(CURRENCY_CODES),
     body('goal.title').optional().trim().isLength({ max: 80 }),
-    body('goal.targetAmount').optional().isFloat({ gt: 0 }).toFloat(),
+    moneyValue(body('goal.targetAmount').optional(), { allowZero: false, minMinor: 100n }),
   ],
 
   addCategory: [body('name').trim().notEmpty().withMessage('Category name is required').isLength({ max: 40 })],

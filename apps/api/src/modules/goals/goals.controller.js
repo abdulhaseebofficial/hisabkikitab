@@ -22,7 +22,7 @@ const getGoal = asyncHandler(async (req, res) => {
 
 /** POST /api/goals */
 const createGoal = asyncHandler(async (req, res) => {
-  const goal = await goals.create(req.user._id, req.body);
+  const goal = await goals.create(req.user._id, req.body, req.financialRequestKey);
   res.status(201).json({ success: true, message: 'Goal created', data: { goal } });
 });
 
@@ -41,7 +41,8 @@ const contribute = asyncHandler(async (req, res) => {
     req.user,
     req.params.id,
     req.body.amount,
-    req.body.note
+    req.body.note,
+    req.financialRequestKey
   );
 
   res.json({

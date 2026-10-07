@@ -29,7 +29,7 @@ const form = {
 describe('MoneyStep', () => {
   it('asks for the figure everything else is sized against', () => {
     render(<MoneyStep form={form} onChange={() => {}} />);
-    expect(screen.getByLabelText(/monthly pocket money/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/monthly income/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/currency/i)).toBeInTheDocument();
   });
 
@@ -51,14 +51,14 @@ describe('MoneyStep', () => {
     const onChange = vi.fn();
     render(<MoneyStep form={form} onChange={onChange} />);
 
-    await userEvent.type(screen.getByLabelText(/monthly pocket money/i), '3');
+    await userEvent.type(screen.getByLabelText(/monthly income/i), '3');
 
     expect(onChange).toHaveBeenCalledWith({ monthlyIncome: '3' });
   });
 
   it('shows the amount already entered', () => {
     render(<MoneyStep form={{ ...form, monthlyIncome: '25000' }} onChange={() => {}} />);
-    expect(screen.getByLabelText(/monthly pocket money/i)).toHaveValue(25000);
+    expect(screen.getByLabelText(/monthly income/i)).toHaveValue(25000);
   });
 });
 
@@ -86,7 +86,7 @@ describe('MoneyStep: the order of the two money fields', () => {
   it('puts currency before monthly income on screen', () => {
     const { container } = render(<MoneyStep form={form} onChange={() => {}} />);
 
-    const income = screen.getByLabelText(/monthly pocket money/i);
+    const income = screen.getByLabelText(/monthly income/i);
     const currency = screen.getByLabelText(/currency/i);
 
     // DOCUMENT_POSITION_FOLLOWING: income comes after currency in the document.
@@ -96,7 +96,7 @@ describe('MoneyStep: the order of the two money fields', () => {
 
   it('gives them the same order for the keyboard', async () => {
     render(<MoneyStep form={form} onChange={() => {}} />);
-    const income = screen.getByLabelText(/monthly pocket money/i);
+    const income = screen.getByLabelText(/monthly income/i);
     const currency = screen.getByLabelText(/currency/i);
 
     currency.focus();
@@ -107,7 +107,7 @@ describe('MoneyStep: the order of the two money fields', () => {
 
   it('neither field carries a tabIndex that would reorder them', () => {
     render(<MoneyStep form={form} onChange={() => {}} />);
-    expect(screen.getByLabelText(/monthly pocket money/i)).not.toHaveAttribute('tabindex');
+    expect(screen.getByLabelText(/monthly income/i)).not.toHaveAttribute('tabindex');
     expect(screen.getByLabelText(/currency/i)).not.toHaveAttribute('tabindex');
   });
 
@@ -115,7 +115,7 @@ describe('MoneyStep: the order of the two money fields', () => {
     const onChange = vi.fn();
     render(<MoneyStep form={form} onChange={onChange} />);
 
-    await userEvent.type(screen.getByLabelText(/monthly pocket money/i), '5');
+    await userEvent.type(screen.getByLabelText(/monthly income/i), '5');
     expect(onChange).toHaveBeenLastCalledWith({ monthlyIncome: '5' });
 
     onChange.mockClear();
@@ -126,7 +126,7 @@ describe('MoneyStep: the order of the two money fields', () => {
   it('loads existing values into the right fields', () => {
     render(<MoneyStep form={{ ...form, monthlyIncome: '25000', currency: 'AED' }} onChange={() => {}} />);
 
-    expect(screen.getByLabelText(/monthly pocket money/i)).toHaveValue(25000);
+    expect(screen.getByLabelText(/monthly income/i)).toHaveValue(25000);
     expect(screen.getByLabelText(/currency/i)).toHaveValue('AED');
   });
 });

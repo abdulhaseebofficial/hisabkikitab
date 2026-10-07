@@ -1,7 +1,7 @@
 import { Pencil, Trash2, Repeat } from 'lucide-react';
 import { useTheme } from '../../../app/providers/ThemeProvider';
 import { categoryColor, categoryEmoji } from '../../../shared/utils/constants';
-import { formatDate, formatMoney } from '../../../shared/utils/format';
+import { formatCalendarDate, formatMoney } from '../../../shared/utils/format';
 
 /** One row in the expense list. */
 export default function ExpenseItem({ expense, currency = 'INR', onEdit, onDelete }) {
@@ -28,7 +28,7 @@ export default function ExpenseItem({ expense, currency = 'INR', onEdit, onDelet
             {expense.category}
           </span>
           <span aria-hidden="true">&middot;</span>
-          <span>{formatDate(expense.date)}</span>
+          <span>{formatCalendarDate(expense.date)}</span>
           <span aria-hidden="true">&middot;</span>
           <span>{expense.paymentMethod}</span>
           {expense.isRecurring && (

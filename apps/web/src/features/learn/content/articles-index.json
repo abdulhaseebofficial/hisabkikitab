@@ -1,0 +1,317 @@
+[
+  {
+    "slug": "beginners-guide-to-personal-budgeting",
+    "category": "budgeting",
+    "title": "A Beginner's Guide to Personal Budgeting",
+    "excerpt": "Learn a straightforward first-month budgeting routine using actual income, essential costs and a flexible review.",
+    "author": "Hisab Ki Kitab Editorial Team",
+    "publishedAt": "2026-09-28",
+    "updatedAt": "2026-09-28",
+    "featured": true,
+    "ads": [],
+    "cta": {
+      "label": "Create your budget in Hisab Ki Kitab",
+      "to": "/budget"
+    },
+    "faqs": [
+      {
+        "question": "Do I need an app to make my first budget?",
+        "answer": "No. Use a method you can keep up with; an app may help organize records and review the plan."
+      },
+      {
+        "question": "What should I do if planned expenses exceed income?",
+        "answer": "Check estimates and flexible costs, protect essential needs, and look at realistic changes in timing or income. Avoid assuming borrowed money solves a recurring shortfall."
+      }
+    ],
+    "readingTime": 2
+  },
+  {
+    "slug": "emergency-fund-how-much-should-you-save",
+    "category": "personal-finance",
+    "title": "Emergency Fund: How Much Should You Save?",
+    "excerpt": "Estimate a personal emergency buffer from essential expenses and your circumstances.",
+    "author": "Hisab Ki Kitab Editorial Team",
+    "publishedAt": "2026-09-28",
+    "updatedAt": "2026-09-28",
+    "featured": true,
+    "ads": [],
+    "cta": {
+      "label": "Set a savings goal",
+      "to": "/goals"
+    },
+    "faqs": [
+      {
+        "question": "How large should an emergency fund be?",
+        "answer": "Estimate from essential costs and your own income stability, dependants and available support. Treat any month target as a planning scenario, not a rule."
+      },
+      {
+        "question": "Should I use an emergency fund for a planned annual bill?",
+        "answer": "A known bill is usually easier to plan for in a separate sinking fund so emergency savings remain available for unexpected needs."
+      }
+    ],
+    "readingTime": 2
+  },
+  {
+    "slug": "how-freelancers-can-manage-irregular-income",
+    "category": "freelancing",
+    "title": "How Freelancers Can Manage Irregular Income",
+    "excerpt": "Build a cash-flow plan around payment dates, essential costs and a buffer between stronger and quieter months.",
+    "author": "Hisab Ki Kitab Editorial Team",
+    "publishedAt": "2026-09-28",
+    "updatedAt": "2026-09-28",
+    "featured": true,
+    "ads": [],
+    "cta": {
+      "label": "Track your income",
+      "to": "/income"
+    },
+    "faqs": [
+      {
+        "question": "Should freelancers budget from their best month?",
+        "answer": "A stronger month may not repeat. Review your own payment history and keep future income estimates cautious."
+      },
+      {
+        "question": "Are invoices the same as income I can spend?",
+        "answer": "An invoice is a request for payment. Until money clears, track it separately from available cash."
+      }
+    ],
+    "readingTime": 2
+  },
+  {
+    "slug": "how-to-create-a-monthly-budget",
+    "category": "budgeting",
+    "title": "How to Create a Monthly Budget",
+    "excerpt": "Build a monthly plan using your actual income, essential costs, and a realistic savings target.",
+    "author": "Hisab Ki Kitab Editorial Team",
+    "publishedAt": "2026-09-28",
+    "updatedAt": "2026-09-28",
+    "featured": true,
+    "ads": [
+      "after-introduction",
+      "before-related"
+    ],
+    "cta": {
+      "label": "Create your budget in Hisab Ki Kitab",
+      "to": "/budget"
+    },
+    "faqs": [
+      {
+        "question": "What should a monthly budget include?",
+        "answer": "Include reliable take-home income, essential bills, variable costs, planned savings and flexible spending."
+      },
+      {
+        "question": "How often should I review a budget?",
+        "answer": "A short weekly review helps catch changes before the month ends. Update the plan when income or bills change."
+      }
+    ],
+    "readingTime": 2
+  },
+  {
+    "slug": "how-to-track-money-you-lend-and-borrow",
+    "category": "lending-borrowing",
+    "title": "How to Keep a Clear Record of Money You Lend and Borrow",
+    "excerpt": "Record who paid, how much is outstanding and when you agreed to review or repay it.",
+    "author": "Hisab Ki Kitab Editorial Team",
+    "publishedAt": "2026-09-28",
+    "updatedAt": "2026-09-28",
+    "featured": true,
+    "ads": [],
+    "cta": {
+      "label": "Manage lending and borrowing",
+      "to": "/debts"
+    },
+    "faqs": [
+      {
+        "question": "What should a loan record include?",
+        "answer": "Record the people involved, original amount, dates, payments, current outstanding amount and what repayment arrangement both people confirmed."
+      },
+      {
+        "question": "Does a personal note replace a formal agreement?",
+        "answer": "A personal record helps with bookkeeping but is not a substitute for a formal agreement or qualified legal advice where those are needed."
+      }
+    ],
+    "readingTime": 2
+  },
+  {
+    "slug": "how-to-manage-household-expenses",
+    "category": "household",
+    "title": "How to Manage Household Expenses",
+    "excerpt": "Bring household bills, grocery spending, and irregular costs into one practical plan.",
+    "author": "Hisab Ki Kitab Editorial Team",
+    "publishedAt": "2026-09-28",
+    "updatedAt": "2026-09-28",
+    "featured": true,
+    "ads": [],
+    "cta": {
+      "label": "Track household expenses",
+      "to": "/expenses"
+    },
+    "faqs": [
+      {
+        "question": "How do I budget for irregular household costs?",
+        "answer": "List known costs and due dates, then set aside an affordable amount across the months before each bill is due."
+      },
+      {
+        "question": "Who should track shared household purchases?",
+        "answer": "Agree who records each purchase and review the shared record together so responsibility does not fall invisibly on one person."
+      }
+    ],
+    "readingTime": 2
+  },
+  {
+    "slug": "how-to-reduce-unnecessary-spending",
+    "category": "saving",
+    "title": "How to Reduce Unnecessary Spending",
+    "excerpt": "Review flexible spending and choose changes that fit your needs instead of relying on blanket cuts.",
+    "author": "Hisab Ki Kitab Editorial Team",
+    "publishedAt": "2026-09-28",
+    "updatedAt": "2026-09-28",
+    "featured": true,
+    "ads": [],
+    "cta": {
+      "label": "Review your expenses",
+      "to": "/expenses"
+    },
+    "faqs": [
+      {
+        "question": "How do I know what spending is unnecessary?",
+        "answer": "Compare a purchase with your priorities and circumstances. The answer can differ between people and months."
+      },
+      {
+        "question": "Should I cut every optional expense?",
+        "answer": "No. A plan should leave room for choices you value and remain workable over time."
+      }
+    ],
+    "readingTime": 2
+  },
+  {
+    "slug": "how-to-save-money-every-month",
+    "category": "saving",
+    "title": "How to Save Money Every Month",
+    "excerpt": "Find a sustainable amount to save and build it into your monthly routine.",
+    "author": "Hisab Ki Kitab Editorial Team",
+    "publishedAt": "2026-09-28",
+    "updatedAt": "2026-09-28",
+    "featured": true,
+    "ads": [],
+    "cta": {
+      "label": "Create a savings goal",
+      "to": "/goals"
+    },
+    "faqs": [
+      {
+        "question": "How much should I save each month?",
+        "answer": "There is no single amount for everyone. Choose a contribution that remains affordable after essential costs and required payments."
+      },
+      {
+        "question": "When should I move money into savings?",
+        "answer": "Many people find it easier to set aside an affordable amount when income arrives, then review the plan regularly."
+      }
+    ],
+    "readingTime": 2
+  },
+  {
+    "slug": "how-to-set-financial-goals",
+    "category": "saving",
+    "title": "How to Set Financial Goals You Can Track",
+    "excerpt": "Turn a money priority into a target, timeline and contribution you can review as circumstances change.",
+    "author": "Hisab Ki Kitab Editorial Team",
+    "publishedAt": "2026-09-28",
+    "updatedAt": "2026-09-28",
+    "featured": true,
+    "ads": [],
+    "cta": {
+      "label": "Create a savings goal",
+      "to": "/goals"
+    },
+    "faqs": [
+      {
+        "question": "How many financial goals should I set at once?",
+        "answer": "Start with the priorities you can track and fund alongside essential costs. There is no required number."
+      },
+      {
+        "question": "What if I cannot make the planned contribution?",
+        "answer": "Review the budget and adjust the amount, target or timeline. Avoid borrowing just to maintain a savings target."
+      }
+    ],
+    "readingTime": 2
+  },
+  {
+    "slug": "how-to-split-expenses-with-roommates",
+    "category": "shared-living",
+    "title": "How to Split Expenses With Roommates",
+    "excerpt": "Agree on a fair split, record payments, and settle shared costs without confusion.",
+    "author": "Hisab Ki Kitab Editorial Team",
+    "publishedAt": "2026-09-28",
+    "updatedAt": "2026-09-28",
+    "featured": true,
+    "ads": [],
+    "cta": {
+      "label": "Track shared expenses",
+      "to": "/dashboard?section=daily"
+    },
+    "faqs": [
+      {
+        "question": "Should roommates always split expenses equally?",
+        "answer": "Only if everyone agrees that an equal share is fair for that cost. Room size, use and agreements can support a different split."
+      },
+      {
+        "question": "How often should shared expenses be settled?",
+        "answer": "Pick a predictable date and agree how receipts, reimbursements and move-out balances will be recorded."
+      }
+    ],
+    "readingTime": 2
+  },
+  {
+    "slug": "how-to-track-monthly-expenses",
+    "category": "financial-habits",
+    "title": "How to Track Monthly Expenses",
+    "excerpt": "Create a simple record of purchases, bills and cash spending you can review at month end.",
+    "author": "Hisab Ki Kitab Editorial Team",
+    "publishedAt": "2026-09-28",
+    "updatedAt": "2026-09-28",
+    "featured": true,
+    "ads": [],
+    "cta": {
+      "label": "Start tracking your expenses",
+      "to": "/expenses"
+    },
+    "faqs": [
+      {
+        "question": "Do small cash purchases need to be tracked?",
+        "answer": "Yes, if you want your month-end total to reflect them. A quick daily note is often enough."
+      },
+      {
+        "question": "Should I include savings transfers as expenses?",
+        "answer": "Keep transfers separate. They move money between your own accounts rather than paying for something."
+      }
+    ],
+    "readingTime": 2
+  },
+  {
+    "slug": "simple-ways-to-track-income-and-expenses",
+    "category": "financial-habits",
+    "title": "Simple Ways to Track Income and Expenses",
+    "excerpt": "Build a short daily routine that makes your income, spending, and balance easier to understand.",
+    "author": "Hisab Ki Kitab Editorial Team",
+    "publishedAt": "2026-09-28",
+    "updatedAt": "2026-09-28",
+    "featured": true,
+    "ads": [],
+    "cta": {
+      "label": "Start tracking your expenses",
+      "to": "/expenses"
+    },
+    "faqs": [
+      {
+        "question": "How often should I record expenses?",
+        "answer": "Recording purchases as they happen or doing one short daily check can reduce forgotten cash spending."
+      },
+      {
+        "question": "Are transfers between my own accounts income?",
+        "answer": "No. A transfer changes where money is held. Record it as a transfer so it is not counted as new income or new spending."
+      }
+    ],
+    "readingTime": 2
+  }
+]

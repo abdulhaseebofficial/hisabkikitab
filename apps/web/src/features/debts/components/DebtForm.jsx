@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,13 +12,17 @@ import useT from '../../../shared/i18n/I18nProvider';
 // Default import: the contracts package is CommonJS, and Rollup cannot prove a
 // named export exists on it at build time.
 import catalogue from '@hisabkikitab/contracts/catalogue';
-import { cn, currencySymbol } from '../../../shared/utils/format';
+import { cn, currencySymbol, toInputDate } from '../../../shared/utils/format';
+import useAsync from '../../../shared/hooks/useAsync';
+import useDebounce from '../../../shared/hooks/useDebounce';
+import debtsApi from '../api/debtsApi';
 
 const PURPOSES = catalogue.idsOf('udhaarPurpose');
 
 const schema = z.object({
   kind: z.enum(['BORROWED', 'LENT']),
-  personName: z.string().min(1, 'Whose money is it?').max(80),
+  contactId: z.string().optional(),
+  personName: z.string().max(80),
   originalAmount: z.coerce
     .number({ invalid_type_error: 'Enter an amount' })
     .positive('Amount must be more than zero'),
@@ -34,7 +39,8 @@ const schema = z.object({
   .refine(
     (v) => !catalogue.listRequiresNote('udhaarPurpose', v.purposeCategory) || Boolean((v.purpose || '').trim()),
     { path: ['purpose'], message: 'Please say a little more' }
-  );
+  ).refine((v) => Boolean(v.contactId) !== Boolean(v.personName.trim()),
+    { path: ['personName'], message: 'Choose a contact or enter a new name' });
 
 /** yyyy-mm-dd, which is what a date input wants. */
 const asDateInput = (value) => (value ? new Date(value).toISOString().slice(0, 10) : '');
@@ -52,6 +58,14 @@ const asDateInput = (value) => (value ? new Date(value).toISOString().slice(0, 1
 export default function DebtForm({ open, onClose, onSubmit, debt = null, currency = 'PKR', defaultKind = 'BORROWED' }) {
   const { categories } = useCategories();
   const editing = Boolean(debt);
+  const [contactSearch, setContactSearch] = useState('');
+  const [contactPage, setContactPage] = useState(1);
+  const debouncedContactSearch = useDebounce(contactSearch, 250);
+  const { data: contactResult, loading: contactsLoading } = useAsync(
+    () => editing ? Promise.resolve({ items: [] }) : debtsApi.contacts({ search: debouncedContactSearch, page: contactPage }),
+    [editing, debouncedContactSearch, contactPage],
+  );
+  const contacts = contactResult?.items || [];
 
   const {
     register,
@@ -63,9 +77,10 @@ export default function DebtForm({ open, onClose, onSubmit, debt = null, currenc
     resolver: zodResolver(schema),
     defaultValues: {
       kind: debt?.kind || defaultKind,
+      contactId: '',
       personName: debt?.personName || '',
       originalAmount: debt?.originalAmount ?? '',
-      transactionDate: asDateInput(debt?.transactionDate) || asDateInput(new Date()),
+      transactionDate: asDateInput(debt?.transactionDate) || toInputDate(new Date()),
       dueDate: asDateInput(debt?.dueDate),
       personContact: debt?.personContact || '',
       category: debt?.category || '',
@@ -76,16 +91,21 @@ export default function DebtForm({ open, onClose, onSubmit, debt = null, currenc
   });
 
   const kind = watch('kind');
+  const contactId = watch('contactId');
   const { t, language } = useT();
 
-  const submit = (values) =>
-    onSubmit({
+  const submit = (values) => {
+    const payload = {
       ...values,
       dueDate: values.dueDate || null,
       category: values.category || null,
       purpose: values.purpose || null,
       purposeCategory: values.purposeCategory || null,
-    });
+    };
+    if (editing || !values.contactId) delete payload.contactId;
+    else delete payload.personName;
+    return onSubmit(payload);
+  };
 
   return (
     <Modal
@@ -126,13 +146,30 @@ export default function DebtForm({ open, onClose, onSubmit, debt = null, currenc
           <input type="hidden" {...register('kind')} />
         </fieldset>
 
+        {!editing && <div className="space-y-3">
+          <Input label={t('udhaar.findContact')} value={contactSearch}
+            onChange={(event) => { setContactSearch(event.target.value); setContactPage(1); setValue('contactId', ''); }} />
+          <Select label={t('udhaar.chooseContact')} hint={contactsLoading ? t('common.loading') : undefined}
+            options={[{ value: '', label: t('udhaar.newContact') },
+              ...contacts.map((contact) => ({ value: contact.id,
+                label: `${contact.displayName}${contact.contactInfo ? ` · ${contact.contactInfo}` : ''} · ${t('udhaar.contactRef')} ${contact.id.slice(-6)}` }))]}
+            {...register('contactId', { onChange: (event) => {
+              if (event.target.value) setValue('personName', '', { shouldValidate: true });
+            } })} />
+          {(contactResult?.hasPrev || contactResult?.hasNext) && <div className="flex items-center justify-between gap-2 text-sm">
+            <Button variant="outline" disabled={!contactResult.hasPrev} onClick={() => { setContactPage((page) => page - 1); setValue('contactId', ''); }}>{t('common.previous')}</Button>
+            <span>{contactPage}</span>
+            <Button variant="outline" disabled={!contactResult.hasNext} onClick={() => { setContactPage((page) => page + 1); setValue('contactId', ''); }}>{t('common.next')}</Button>
+          </div>}
+        </div>}
         <div className="grid gap-4 sm:grid-cols-2">
-          <Input
+          {(!contactId || editing) && <Input
             label={kind === 'BORROWED' ? t('udhaar.whoLentToYou') : t('udhaar.whoDidYouLendTo')}
             placeholder={t('udhaar.personPlaceholder')}
+            hint={editing ? t('udhaar.renameContactHint') : undefined}
             error={errors.personName && errors.personName.message}
             {...register('personName')}
-          />
+          />}
           <Input
             label={t('common.amount')}
             type="number"

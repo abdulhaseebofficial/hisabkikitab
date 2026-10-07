@@ -21,7 +21,7 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..').split(path.sep).join('/');
 // Generated output only: shared by entry discovery, reachability and empty-dir checks.
 const SKIP = new Set([
-  'node_modules', '.git', 'dist', 'build', '.vercel', 'coverage', '.nyc_output',
+  'node_modules', '.git', 'dist', 'dist-ssr', 'build', '.vercel', 'coverage', '.nyc_output',
   'test-results', 'playwright-report', 'blob-report',
   '.cache', '.vite', '.vite-temp', '.vitest', '.turbo',
 ]);
@@ -40,6 +40,9 @@ const FIXED_ENTRIES = [
   'apps/api/server.js',
   'apps/api/src/infrastructure/database/migrate.js',
   'apps/web/src/main.jsx',
+  'apps/web/src/app/prerender.jsx',
+  'apps/web/scripts/prerender.mjs',
+  'apps/web/scripts/verify-public-seo.mjs',
   'database/seeds/demo.js',
 ];
 
@@ -47,7 +50,7 @@ const discoverEntries = (dir) => {
   const full = path.join(ROOT, dir).split(path.sep).join('/');
   if (!fs.existsSync(full)) return [];
   return walk(full)
-    .filter((f) => /\.(js|jsx)$/.test(f))
+    .filter((f) => /\.(js|jsx|mjs|cjs)$/.test(f))
     .map((f) => f.replace(ROOT + '/', ''));
 };
 

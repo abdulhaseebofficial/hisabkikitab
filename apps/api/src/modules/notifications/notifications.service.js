@@ -133,7 +133,10 @@ const checkGoalDeadlines = async (user) => {
   const created = [];
   for (const goal of dueSoon) {
     const daysLeft = daysBetween(new Date(), new Date(goal.deadline));
-    const remaining = Math.max(0, goal.targetAmount - goal.savedAmount);
+    const { minor, minorToApi } = require('../../shared/finance/personalMoney');
+    const difference = minor(goal.targetAmountMinor) - minor(goal.savedAmountMinor);
+    const remainingMinor = difference > 0n ? difference : 0n;
+    const remaining = minorToApi(remainingMinor);
     const overdue = daysLeft < 0;
 
     // The goal's own title is the person's words and is never translated.
@@ -144,7 +147,7 @@ const checkGoalDeadlines = async (user) => {
         title: goal.title,
         remaining: money(user, remaining),
         days: daysLeft,
-        perDay: money(user, Math.ceil(remaining / Math.max(1, daysLeft))),
+        perDay: money(user, minorToApi((remainingMinor + BigInt(Math.max(1, daysLeft)) - 1n) / BigInt(Math.max(1, daysLeft)))),
       },
       meta: { goalId: goal._id, remaining, daysLeft },
       dedupeKey: `goal:${goal._id}:${dayKey()}`,

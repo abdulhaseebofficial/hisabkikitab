@@ -532,7 +532,13 @@ const { ok, section, heading, call, report, requireApi, bailIfRateLimited, curre
   ok('and the answer says whether Google sign-in is on', typeof googleConfig?.enabled === 'boolean',
     JSON.stringify(googleConfig));
   ok('the config endpoint leaks no secret',
-    !JSON.stringify(r.data || {}).match(/secret|password|POSTGRES|JWT_/i), 'client id only');
+    Object.keys(r.data?.data || {}).sort().join(',') === 'google,passwordReset' &&
+      Object.keys(googleConfig || {}).sort().join(',') ===
+        (googleConfig?.enabled ? 'clientId,enabled' : 'enabled') &&
+      Object.keys(r.data?.data?.passwordReset || {}).join(',') === 'enabled' &&
+      typeof r.data.data.passwordReset.enabled === 'boolean' &&
+      (!googleConfig?.enabled || /^[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(googleConfig.clientId)),
+    'only documented public capability fields');
 
   for (const [label, body] of [
     ['no token at all', {}],

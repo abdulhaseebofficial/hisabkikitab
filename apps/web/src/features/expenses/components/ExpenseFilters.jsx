@@ -4,7 +4,7 @@ import Button from '../../../shared/components/ui/Button';
 import Select from '../../../shared/components/ui/Select';
 import Input from '../../../shared/components/ui/Input';
 import { PAYMENT_METHODS } from '../../../shared/utils/constants';
-import { cn } from '../../../shared/utils/format';
+import { cn, toInputDate } from '../../../shared/utils/format';
 import useT from '../../../shared/i18n/I18nProvider';
 
 // Keys, not labels: the preset a person picked must survive a language
@@ -19,20 +19,19 @@ const PRESETS = [
 /** Turns a preset key into a from/to pair. */
 export const presetRange = (key) => {
   const now = new Date();
-  const iso = (d) => d.toISOString().slice(0, 10);
 
   if (key === 'week') {
-    const from = new Date();
+    const from = new Date(now);
     from.setDate(from.getDate() - 6);
-    return { from: iso(from), to: iso(now) };
+    return { from: toInputDate(from), to: toInputDate(now) };
   }
   if (key === 'month') {
-    return { from: iso(new Date(now.getFullYear(), now.getMonth(), 1)), to: iso(now) };
+    return { from: toInputDate(new Date(now.getFullYear(), now.getMonth(), 1)), to: toInputDate(now) };
   }
   if (key === 'prev') {
     const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const end = new Date(now.getFullYear(), now.getMonth(), 0);
-    return { from: iso(start), to: iso(end) };
+    return { from: toInputDate(start), to: toInputDate(end) };
   }
   return { from: '', to: '' };
 };

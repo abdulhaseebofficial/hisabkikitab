@@ -2,7 +2,7 @@
   "name": "hisabkikitab",
   "version": "1.0.0",
   "private": true,
-  "description": "Hisab Ki Kitab - AI-powered financial manager for university hostel students",
+  "description": "Hisab Ki Kitab - individual, household and shared-living financial management",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -17,11 +17,11 @@
     "migrate:deployed": "node -r dotenv/config apps/api/src/infrastructure/database/migrate.js dotenv_config_path=.env.production.local",
     "migrate:status": "npm run migrate:status -w @hisabkikitab/api",
     "test:migrations": "node tests/migrations/fresh-schema.test.js",
-    "test:db": "node tests/db/constraints.test.js && node tests/db/debt-transaction.test.js && node --test tests/db/shared-living.test.js",
+    "test:db": "node tests/db/constraints.test.js && node tests/db/debt-transaction.test.js && node --test tests/db/debt-contacts.test.js && node --test tests/db/shared-living.test.js && node --test tests/db/shared-living-ownership.test.js && node --test tests/db/shared-bill-occurrence.test.js && node --test tests/db/phase1.test.js && node --test tests/db/personal-money-shadow.test.js && node --test tests/db/personal-money-exact.test.js && node --test tests/db/date-boundaries.test.js && node --test tests/db/scheduler.test.js && node --test tests/db/financial-requests.test.js && node --test tests/db/access-token-revocation.test.js",
     "test:security": "node -r dotenv/config tests/security/pentest.js dotenv_config_path=apps/api/.env && node -r dotenv/config tests/security/surface.test.js dotenv_config_path=apps/api/.env && node -r dotenv/config tests/security/auth-storage.test.js dotenv_config_path=apps/api/.env",
     "seed": "npm run seed -w @hisabkikitab/api",
     "test": "node --test tests/unit/*.test.js",
-    "test:e2e": "node tests/e2e/api.test.js && node tests/e2e/settings.test.js && node tests/e2e/debts.test.js && node tests/e2e/refresh.test.js && node --test tests/e2e/shared-living.test.js && npm run test:browser",
+    "test:e2e": "node tests/e2e/api.test.js && node tests/e2e/settings.test.js && node tests/e2e/debts.test.js && node tests/e2e/refresh.test.js && node --test tests/e2e/shared-living.test.js && node tests/e2e/shared-living-ownership.test.js && npm run test:browser",
     "test:browser": "node node_modules/@playwright/test/cli.js test --config tests/browser/config.js",
     "qa": "npm run test:e2e",
     "qa:api": "node tests/e2e/api.test.js",
@@ -30,6 +30,7 @@
     "check": "npm run check:boundaries && npm run check:shadowing && npm run check:dead && npm run test:unit && npm run test:web && npm run test:migrations && npm run test:db && npm run test:e2e && npm run build",
     "test:unit": "node --test tests/unit/*.test.js",
     "test:web": "npm run test -w @hisabkikitab/web",
+    "test:seo": "node --test tests/seo/*.test.mjs",
     "check:boundaries": "node scripts/check-boundaries.js",
     "check:shadowing": "node scripts/check-shadowing.js",
     "check:dead": "node scripts/find-dead-code.js",
@@ -41,7 +42,7 @@
     "concurrently": "^9.0.1"
   },
   "engines": {
-    "node": ">=18"
+    "node": "24.x"
   },
   "keywords": [
     "student",

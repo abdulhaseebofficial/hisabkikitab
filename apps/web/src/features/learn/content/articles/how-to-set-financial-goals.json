@@ -1,0 +1,124 @@
+{
+  "slug": "how-to-set-financial-goals",
+  "category": "saving",
+  "title": "How to Set Financial Goals You Can Track",
+  "excerpt": "Turn a money priority into a target, timeline and contribution you can review as circumstances change.",
+  "introduction": "A clear goal links something you value to a practical amount and a review routine. The example is fictional and in PKR.",
+  "author": "Hisab Ki Kitab Editorial Team",
+  "publishedAt": "2026-09-28",
+  "updatedAt": "2026-09-28",
+  "featured": true,
+  "sections": [
+    {
+      "id": "problem",
+      "title": "The problem",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A vague goal such as ?save more? is difficult to measure. A timeline that ignores rent or required bills may also be hard to maintain."
+        }
+      ]
+    },
+    {
+      "id": "explanation",
+      "title": "How it works",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Name the goal, estimate its cost, identify money already set aside, then divide the remaining amount by a timeline that fits your cash flow. Keep emergency reserves distinct from planned purchases."
+        }
+      ]
+    },
+    {
+      "id": "example",
+      "title": "A practical example",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A student wants to save PKR 36,000 for a laptop and already has PKR 12,000. With eight months available, the remaining contribution is PKR 3,000 each month, assuming no fees, price changes or withdrawals."
+        }
+      ]
+    },
+    {
+      "id": "calculation",
+      "title": "The calculation",
+      "blocks": [
+        {
+          "type": "calculation",
+          "text": "(36,000 - 12,000) ? 8 = PKR 3,000 per month in this example. If that amount does not fit the budget, extend the timeline or revisit the target."
+        }
+      ]
+    },
+    {
+      "id": "steps",
+      "title": "Actionable steps",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Write down what the goal is and why it matters.",
+            "Check the current cost and money already reserved.",
+            "Choose a date that leaves room for essential bills.",
+            "Calculate an affordable regular contribution.",
+            "Review monthly and adjust the contribution or date when needed."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mistakes",
+      "title": "Common mistakes",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Choosing a date only to motivate yourself, without checking cash flow.",
+            "Counting the same savings toward more than one goal.",
+            "Using emergency money for a planned purchase."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tips",
+      "title": "Useful tips",
+      "blocks": [
+        {
+          "type": "tip",
+          "text": "Give each priority its own label so progress is visible and one goal does not quietly consume another."
+        }
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusion",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A useful financial goal is specific enough to review and flexible enough to change as your life changes."
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "title": "CFPB: Your Money, Your Goals toolkit",
+      "url": "https://www.consumerfinance.gov/consumer-tools/educator-tools/your-money-your-goals/toolkit/"
+    }
+  ],
+  "cta": {
+    "label": "Create a savings goal",
+    "to": "/goals"
+  },
+  "faqs": [
+    {
+      "question": "How many financial goals should I set at once?",
+      "answer": "Start with the priorities you can track and fund alongside essential costs. There is no required number."
+    },
+    {
+      "question": "What if I cannot make the planned contribution?",
+      "answer": "Review the budget and adjust the amount, target or timeline. Avoid borrowing just to maintain a savings target."
+    }
+  ],
+  "ads": []
+}

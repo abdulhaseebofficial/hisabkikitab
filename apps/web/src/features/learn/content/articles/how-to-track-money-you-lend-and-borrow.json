@@ -1,0 +1,124 @@
+{
+  "slug": "how-to-track-money-you-lend-and-borrow",
+  "category": "lending-borrowing",
+  "title": "How to Keep a Clear Record of Money You Lend and Borrow",
+  "excerpt": "Record who paid, how much is outstanding and when you agreed to review or repay it.",
+  "introduction": "A clear written record helps both people remember what they agreed. This guide covers simple record-keeping, not contract terms or legal rights. Its fictional examples use PKR.",
+  "author": "Hisab Ki Kitab Editorial Team",
+  "publishedAt": "2026-09-28",
+  "updatedAt": "2026-09-28",
+  "featured": true,
+  "ads": [],
+  "cta": {
+    "label": "Manage lending and borrowing",
+    "to": "/debts"
+  },
+  "faqs": [
+    {
+      "question": "What should a loan record include?",
+      "answer": "Record the people involved, original amount, dates, payments, current outstanding amount and what repayment arrangement both people confirmed."
+    },
+    {
+      "question": "Does a personal note replace a formal agreement?",
+      "answer": "A personal record helps with bookkeeping but is not a substitute for a formal agreement or qualified legal advice where those are needed."
+    }
+  ],
+  "sources": [
+    {
+      "title": "CFPB: Your Money, Your Goals toolkit",
+      "url": "https://www.consumerfinance.gov/consumer-tools/educator-tools/your-money-your-goals/toolkit/"
+    }
+  ],
+  "sections": [
+    {
+      "id": "problem",
+      "title": "The problem",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A verbal promise can be remembered differently later, especially when small repayments happen over several months."
+        }
+      ]
+    },
+    {
+      "id": "explanation",
+      "title": "How the record works",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Write down the original amount, date, people involved and repayment dates you both agreed. Record each payment separately, then update the balance. Confirm the record together and keep it private."
+        }
+      ]
+    },
+    {
+      "id": "example",
+      "title": "A practical example",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A fictional record shows PKR 12,000 lent on 1 September. The parties agreed to review payments monthly. The borrower later pays PKR 3,000, which both confirm."
+        }
+      ]
+    },
+    {
+      "id": "calculation",
+      "title": "Update the balance",
+      "blocks": [
+        {
+          "type": "calculation",
+          "text": "PKR 12,000 original amount - PKR 3,000 confirmed repayment = PKR 9,000 outstanding in this example."
+        }
+      ]
+    },
+    {
+      "id": "steps",
+      "title": "Actionable steps",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Ask whether the other person is comfortable discussing and recording the arrangement.",
+            "Write down the original amount, date, payer, recipient and agreed review or payment dates.",
+            "Share a copy and ask the other person to confirm it is accurate.",
+            "Record each payment once, with its date and amount.",
+            "Check the updated balance together if either person has a question."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mistakes",
+      "title": "Common mistakes",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Counting a promised payment as received before it arrives.",
+            "Changing the balance without showing which payment changed it.",
+            "Assuming people remember informal changes to the original agreement."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tips",
+      "title": "Useful tips",
+      "blocks": [
+        {
+          "type": "tip",
+          "text": "Use a neutral reminder and agree in advance how you will handle a late or missed payment. Consider your own budget before lending money you may need soon."
+        }
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusion",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A shared, up-to-date record can reduce confusion. Keep expectations respectful and seek qualified legal help if a dispute or formal agreement requires it."
+        }
+      ]
+    }
+  ]
+}

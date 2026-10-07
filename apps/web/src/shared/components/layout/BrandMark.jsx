@@ -3,7 +3,7 @@ import { Wallet } from 'lucide-react';
 import { cn } from '../../utils/format';
 
 /**
- * The Hisab Ki Kitab logo: the wallet tile plus the wordmark.
+ * The Hisabki Kitab logo: the wallet tile plus the wordmark.
  *
  * It appeared three times with three slightly different tile sizes and colour
  * treatments - which is how a logo stops being a logo. `inverted` is the
@@ -31,12 +31,12 @@ export default function BrandMark({
       {showName && (
         <span
           className={cn(
-            'text-lg font-extrabold tracking-tight',
+          'font-display text-xl font-semibold tracking-tight',
             inverted ? 'text-white' : 'text-slate-900 dark:text-slate-100',
             nameClassName
           )}
         >
-          Hostel<span className={inverted ? '' : 'text-brand-600 dark:text-brand-400'}>Wallet</span>
+          Hisabki <span className={inverted ? '' : 'text-brand-600 dark:text-brand-400'}>Kitab</span>
         </span>
       )}
     </Link>

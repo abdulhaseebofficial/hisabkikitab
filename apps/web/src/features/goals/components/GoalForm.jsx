@@ -8,10 +8,12 @@ import Button from '../../../shared/components/ui/Button';
 import { GOAL_ICONS } from '../../../shared/utils/constants';
 import { currencySymbol, toInputDate, cn } from '../../../shared/utils/format';
 import useT from '../../../shared/i18n/I18nProvider';
+import { isSupportedMoney } from '../../../shared/utils/money';
 
 const schema = z.object({
   title: z.string().min(1, 'Give your goal a name').max(80, 'Keep the name shorter'),
-  targetAmount: z.coerce.number({ invalid_type_error: 'Enter a target' }).positive('Target must be more than 0'),
+  targetAmount: z.coerce.number({ invalid_type_error: 'Enter a target' }).min(1, 'Target must be at least 1')
+    .refine((value) => isSupportedMoney(value, { minimumMinor: 100n }), 'Use at most two decimal places'),
   deadline: z.string().optional(),
   icon: z.string().min(1),
   note: z.string().max(200).optional(),

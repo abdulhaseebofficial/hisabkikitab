@@ -6,6 +6,7 @@ import Input from '../../../shared/components/ui/Input';
 import ProgressBar from '../../../shared/components/ui/ProgressBar';
 import { currencySymbol, formatMoney, cn } from '../../../shared/utils/format';
 import useT from '../../../shared/i18n/I18nProvider';
+import { toMinor, fromMinor, ratioPercent } from '../../../shared/utils/money';
 
 const QUICK_AMOUNTS = [500, 1000, 2500, 5000];
 
@@ -21,10 +22,12 @@ export default function ContributeModal({ open, goal, currency = 'INR', onClose,
 
   if (!goal) return null;
 
-  const value = Number(amount) || 0;
-  const signed = mode === 'add' ? value : -value;
-  const projected = Math.max(0, goal.savedAmount + signed);
-  const projectedPercent = goal.targetAmount ? Math.min(100, Math.round((projected / goal.targetAmount) * 100)) : 0;
+  let valueMinor = 0n;
+  try { valueMinor = toMinor(amount); } catch { /* submit shows the validation message */ }
+  const signedMinor = mode === 'add' ? valueMinor : -valueMinor;
+  const projectedMinor = toMinor(goal.savedAmount) + signedMinor;
+  const projected = fromMinor(projectedMinor > 0n ? projectedMinor : 0n);
+  const projectedPercent = Math.min(100, ratioPercent(projected, goal.targetAmount));
 
   const close = () => {
     setAmount('');
@@ -34,13 +37,13 @@ export default function ContributeModal({ open, goal, currency = 'INR', onClose,
   };
 
   const submit = async () => {
-    if (value <= 0) return setError('Enter an amount above 0');
-    if (mode === 'withdraw' && value > goal.savedAmount) {
+    if (valueMinor <= 0n) return setError('Enter an amount above 0 with at most two decimals');
+    if (mode === 'withdraw' && valueMinor > toMinor(goal.savedAmount)) {
       return setError(`You only have ${formatMoney(goal.savedAmount, currency)} in this goal`);
     }
 
     setError('');
-    await onSubmit(signed);
+    await onSubmit(fromMinor(signedMinor));
     setAmount('');
     setMode('add');
     return undefined;
@@ -118,7 +121,7 @@ export default function ContributeModal({ open, goal, currency = 'INR', onClose,
           ))}
         </div>
 
-        {value > 0 && (
+        {valueMinor > 0n && (
           <div className="rounded-xl bg-slate-50 p-3.5 dark:bg-slate-950/60">
             <p className="mb-2 text-xs text-slate-600 dark:text-slate-400">
               After this: <strong className="text-slate-900 dark:text-slate-100">{formatMoney(projected, currency)}</strong>{' '}

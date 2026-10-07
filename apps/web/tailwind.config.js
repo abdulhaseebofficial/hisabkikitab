@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 
 /**
- * Hisab Ki Kitab theme.
+ * Hisabki Kitab theme.
  *
  * The look is warm and paper-like rather than the cool blue-grey most dashboards
  * default to: a cream page, near-white cards, a terracotta accent and a serif
@@ -67,7 +67,7 @@ export default {
         // Body: a clean grotesque.
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
         // Headings: an old-style serif, applied to h1 in the base layer.
-        display: ['"Source Serif 4"', 'Iowan Old Style', 'Georgia', 'ui-serif', 'serif'],
+        display: ['"Source Serif 4 Variable"', 'Iowan Old Style', 'Georgia', 'ui-serif', 'serif'],
       },
 
       borderRadius: {

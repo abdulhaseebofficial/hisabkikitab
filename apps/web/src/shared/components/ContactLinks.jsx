@@ -23,7 +23,7 @@ export default function ContactLinks({ variant = 'inline', showEmailAddress = fa
         LinkedIn
       </a>
 
-      <a href={`mailto:${DEVELOPER.email}?subject=Hisab Ki Kitab`} className={cn(styles, className)}>
+      <a href={`mailto:${DEVELOPER.email}?subject=Hisabki Kitab`} className={cn(styles, className)}>
         <Mail className="h-3.5 w-3.5" aria-hidden="true" />
         {showEmailAddress ? DEVELOPER.email : 'Email'}
       </a>

@@ -1,13 +1,68 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "trailingSlash": false,
+  "crons": [
+    {
+      "path": "/api/internal/recurring",
+      "schedule": "5 0 * * *"
+    }
+  ],
   "services": {
     "frontend": {
       "root": "apps/web",
       "framework": "vite",
       "rewrites": [
         {
-          "source": "/(.*)",
+          "source": "/",
           "destination": "/index.html"
+        },
+        {
+          "source": "/tools/:tool",
+          "destination": "/tools/:tool/index.html"
+        },
+        {
+          "source": "/tools",
+          "destination": "/tools/index.html"
+        },
+        {
+          "source": "/learn/:category/:slug",
+          "destination": "/learn/:category/:slug/index.html"
+        },
+        {
+          "source": "/learn/:category",
+          "destination": "/learn/:category/index.html"
+        },
+        {
+          "source": "/learn",
+          "destination": "/learn/index.html"
+        },
+        {
+          "source": "/about",
+          "destination": "/about/index.html"
+        },
+        {
+          "source": "/contact",
+          "destination": "/contact/index.html"
+        },
+        {
+          "source": "/privacy",
+          "destination": "/privacy/index.html"
+        },
+        {
+          "source": "/terms",
+          "destination": "/terms/index.html"
+        },
+        {
+          "source": "/disclaimer",
+          "destination": "/disclaimer/index.html"
+        },
+        {
+          "source": "/reset-password/:token",
+          "destination": "/app.html"
+        },
+        {
+          "source": "/(login|register|forgot-password|onboarding|dashboard|expenses|income|goals|debts|budget|advisor|reports|settings)",
+          "destination": "/app.html"
         }
       ]
     },

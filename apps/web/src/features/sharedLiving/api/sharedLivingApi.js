@@ -7,5 +7,7 @@ export default {
   create: (body) => request("post", "/spaces", body),
   join: (body) => request("post", "/join", body),
   month: (space, month) => request("get", `/spaces/${space}/months/${month}`),
+  transferOwnership: (space, successorUserId) => request("post", `/spaces/${space}/transfer-ownership`, { successor_user_id: successorUserId }),
+  leave: (space) => request("delete", `/spaces/${space}/membership`),
   save: (method, path, body) => request(method, path, body),
 };

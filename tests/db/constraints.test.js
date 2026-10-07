@@ -14,6 +14,7 @@ const path = require('path');
  * Nothing is left behind: all of it runs inside one transaction that is always
  * rolled back, so this is safe to run against a database with real rows in it.
  */
+require('../../scripts/require-test-database');
 require('dotenv').config({ path: path.join(__dirname, '..', '..', 'apps', 'api', '.env') });
 
 const API = path.join(__dirname, '..', '..', 'apps', 'api');
@@ -207,7 +208,7 @@ const mustReject = async (tx, name, sql, params, expected) => {
       `INSERT INTO debts (user_id, kind, person_name, original_amount)
        VALUES (gen_random_uuid(), 'LENT', 'X', 10)`,
       [],
-      'debts_user_id_fkey'
+      ['debts_user_id_fkey', 'debt_contacts_user_id_fkey']
     );
 
     await mustReject(
@@ -249,7 +250,7 @@ const mustReject = async (tx, name, sql, params, expected) => {
       'a nameless debt is refused',
       `INSERT INTO debts (user_id, kind, person_name, original_amount) VALUES ($1, 'LENT', '   ', 10)`,
       [userA],
-      'debts_person_name_check'
+      ['debts_person_name_check', 'debt_contacts_display_name_check']
     );
 
     section('DELETION STAYS CONTAINED');
@@ -276,20 +277,17 @@ const mustReject = async (tx, name, sql, params, expected) => {
     }
 
     const cascades = await tx.query(
-      `SELECT tc.table_name, rc.delete_rule
-         FROM information_schema.table_constraints tc
-         JOIN information_schema.referential_constraints rc
-           ON rc.constraint_name = tc.constraint_name
-         JOIN information_schema.key_column_usage kcu
-           ON kcu.constraint_name = tc.constraint_name
-        WHERE tc.constraint_type = 'FOREIGN KEY'
-          AND kcu.column_name = 'user_id'`
+      `SELECT conrelid::regclass::text AS table_name, confdeltype
+         FROM pg_constraint WHERE contype='f' AND confrelid='users'::regclass
+           AND EXISTS (SELECT 1 FROM unnest(conkey) AS k(attnum)
+             JOIN pg_attribute a ON a.attrelid=conrelid AND a.attnum=k.attnum
+             WHERE a.attname='user_id')`
     );
-    const notCascading = cascades.rows.filter((r) => r.delete_rule !== 'CASCADE');
+    const notCascading = cascades.rows.filter((r) => r.confdeltype !== 'c');
     ok(
       'deleting an account removes every table that references it',
       notCascading.length === 0,
-      notCascading.map((r) => `${r.table_name}=${r.delete_rule}`).join(', ') || 'all CASCADE'
+      notCascading.map((r) => `${r.table_name}=${r.confdeltype}`).join(', ') || 'all CASCADE'
     );
 
     await tx.query('ROLLBACK');

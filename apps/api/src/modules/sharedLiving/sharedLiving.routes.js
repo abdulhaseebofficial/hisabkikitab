@@ -32,6 +32,14 @@ router.patch(
   respond((r) => service.editSpace(r.user, r.params.space, r.body)),
 );
 router.post(
+  "/spaces/:space/transfer-ownership",
+  respond((r) => service.transferOwnership(r.user, r.params.space, r.body)),
+);
+router.delete(
+  "/spaces/:space/membership",
+  respond((r) => service.leaveSpace(r.user, r.params.space)),
+);
+router.post(
   "/spaces/:space/invite",
   respond((r) => service.rotateInvite(r.user, r.params.space, r.body)),
 );
@@ -46,6 +54,10 @@ router.put(
   ),
 );
 router.post(
+  "/spaces/:space/months/:month/start",
+  respond((r) => service.startMonth(r.user, r.params.space, r.params.month)),
+);
+router.post(
   "/spaces/:space/months/:month/copy-bills",
   respond((r) =>
     service.copyBills(r.user, r.params.space, r.params.month, r.body),
@@ -55,19 +67,6 @@ router.post(
   "/spaces/:space/months/:month/preview",
   respond((r) =>
     service.preview(r.user, r.params.space, r.params.month, r.body),
-  ),
-);
-router.put(
-  "/spaces/:space/months/:month/bills/:id/receipt",
-  require("express").raw({ type: "image/png", limit: "512kb" }),
-  respond((r) =>
-    service.receipt(
-      r.user,
-      r.params.space,
-      r.params.month,
-      r.params.id,
-      r.body,
-    ),
   ),
 );
 router.get(

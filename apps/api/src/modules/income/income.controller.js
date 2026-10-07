@@ -19,7 +19,7 @@ const incomeSummary = asyncHandler(async (req, res) => {
 
 /** POST /api/income */
 const createIncome = asyncHandler(async (req, res) => {
-  const entry = await income.create(req.user._id, req.user.financeMode, req.body);
+  const entry = await income.create(req.user._id, req.user.financeMode, req.body, req.financialRequestKey);
   res.status(201).json({ success: true, message: 'Income added', data: { income: entry } });
 });
 

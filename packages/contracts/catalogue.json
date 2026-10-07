@@ -371,8 +371,8 @@
   "financeModes": [
     {
       "id": "student",
-      "en": "Student",
-      "roman_ur": "Student",
+      "en": "Individual / Student",
+      "roman_ur": "Individual / Student",
       "descriptionEn": "Manage pocket money, hostel expenses, education and personal savings.",
       "descriptionRomanUr": "Pocket money, hostel ke kharchay, taleem aur apni bachat manage karein."
     },

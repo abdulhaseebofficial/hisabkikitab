@@ -19,11 +19,13 @@ import { useAuth } from '../../auth';
 import incomeService from '../api/incomeApi';
 // Default import: contracts is CommonJS and Rollup cannot see named exports on it.
 import catalogue from '@hisabkikitab/contracts/catalogue';
-import { currencySymbol, formatDate, formatMoney, toInputDate } from '../../../shared/utils/format';
+import { currencySymbol, formatCalendarDate, formatMoney, toInputDate } from '../../../shared/utils/format';
 import useT from '../../../shared/i18n/I18nProvider';
+import { isSupportedMoney } from '../../../shared/utils/money';
 
 const schema = z.object({
-  amount: z.coerce.number({ invalid_type_error: 'Enter an amount' }).positive('Amount must be more than 0'),
+  amount: z.coerce.number({ invalid_type_error: 'Enter an amount' }).positive('Amount must be more than 0')
+    .refine((value) => isSupportedMoney(value, { minimumMinor: 1n }), 'Use at most two decimal places'),
   // Validated against the catalogue on the server for the person's mode; here
   // it only has to be one of the ids the form offered.
   source: z.string().min(1),
@@ -131,7 +133,7 @@ export default function Income() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{entry.source}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {formatDate(entry.date)}
+                    {formatCalendarDate(entry.date)}
                     {entry.note ? ` \u00B7 ${entry.note}` : ''}
                   </p>
                 </div>

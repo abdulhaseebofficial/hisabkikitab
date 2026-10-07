@@ -1,0 +1,150 @@
+{
+  "slug": "how-to-track-monthly-expenses",
+  "category": "financial-habits",
+  "title": "How to Track Monthly Expenses",
+  "excerpt": "Create a simple record of purchases, bills and cash spending you can review at month end.",
+  "introduction": "Expense tracking gives a budget real evidence. A short, consistent record helps you see what was spent and what still needs attention.",
+  "author": "Hisab Ki Kitab Editorial Team",
+  "publishedAt": "2026-09-28",
+  "updatedAt": "2026-09-28",
+  "featured": true,
+  "sections": [
+    {
+      "id": "problem",
+      "title": "The problem",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Small purchases are easy to forget. At month end, estimates can leave out cash, shared purchases or recurring charges."
+        }
+      ]
+    },
+    {
+      "id": "explanation",
+      "title": "How it works",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Record the date, amount, category, payment method and whether the purchase is shared. Separate transfers between your own accounts from spending."
+        }
+      ]
+    },
+    {
+      "id": "example",
+      "title": "A practical example",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Mina reviews four weeks of fictional transactions and finds PKR 5,500 of caf? purchases that were missing from her rough weekly estimate. The record helps her adjust next month without assuming the same amount will repeat."
+        },
+        {
+          "type": "table",
+          "caption": "Example expense record in PKR",
+          "headers": [
+            "Category",
+            "Amount"
+          ],
+          "rows": [
+            [
+              "Food",
+              "12,000"
+            ],
+            [
+              "Transport",
+              "4,000"
+            ],
+            [
+              "Bills",
+              "7,000"
+            ],
+            [
+              "Other recorded purchases",
+              "5,500"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "calculation",
+      "title": "The calculation",
+      "blocks": [
+        {
+          "type": "calculation",
+          "text": "Add each expense once. At review, compare the recorded total by category with the account balance and receipts; fix missing or duplicate entries."
+        }
+      ]
+    },
+    {
+      "id": "steps",
+      "title": "Actionable steps",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Choose one record-keeping method you can access daily.",
+            "Log purchases near the time they happen; keep cash receipts for a quick daily review.",
+            "Use a short list of categories that fits your spending.",
+            "Record reimbursements and transfers separately from purchases.",
+            "Compare the record with bank or wallet statements at month end."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mistakes",
+      "title": "Common mistakes",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Waiting until month end to remember cash purchases.",
+            "Counting a credit card purchase again when paying the card bill.",
+            "Treating a transfer to personal savings as an expense."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tips",
+      "title": "Useful tips",
+      "blocks": [
+        {
+          "type": "tip",
+          "text": "Keep a note of shared purchases and the people included; a short label can prevent a later disagreement."
+        }
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusion",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A useful expense log is complete enough to guide your next budget, not a perfect audit of every small choice."
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "title": "CFPB: Track your spending with this easy tool",
+      "url": "https://www.consumerfinance.gov/archive/blog/track-your-spending-with-this-easy-tool/"
+    }
+  ],
+  "cta": {
+    "label": "Start tracking your expenses",
+    "to": "/expenses"
+  },
+  "faqs": [
+    {
+      "question": "Do small cash purchases need to be tracked?",
+      "answer": "Yes, if you want your month-end total to reflect them. A quick daily note is often enough."
+    },
+    {
+      "question": "Should I include savings transfers as expenses?",
+      "answer": "Keep transfers separate. They move money between your own accounts rather than paying for something."
+    }
+  ],
+  "ads": []
+}

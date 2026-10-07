@@ -5,15 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && vite build --ssr src/app/prerender.jsx --outDir dist-ssr && node scripts/prerender.mjs && node scripts/verify-public-seo.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "license": "MIT",
   "dependencies": {
-    "@hookform/resolvers": "^3.9.0",
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/source-serif-4": "^5.3.0",
     "@hisabkikitab/contracts": "1.0.0",
+    "@hookform/resolvers": "^3.9.0",
     "axios": "^1.7.7",
     "date-fns": "^3.6.0",
     "lucide-react": "^0.441.0",

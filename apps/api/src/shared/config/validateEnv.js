@@ -98,7 +98,7 @@ const validateEnv = () => {
     // Not fatal - the app is perfectly usable without it - but a student who
     // forgets their password is locked out for good, and that failure is
     // invisible until it happens to someone.
-    if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
+    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
       warnings.push(
         'SMTP is not configured, so password-reset emails cannot be delivered. ' +
           'Anyone who forgets their password will be locked out permanently.'

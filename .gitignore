@@ -3,6 +3,7 @@ node_modules/
 
 # Build and coverage output
 dist/
+dist-ssr/
 build/
 coverage/
 test-results/
@@ -50,3 +51,6 @@ npm-debug.log*
 
 # Vercel
 .vercel
+
+# Supabase CLI local project link/cache
+supabase/.temp/

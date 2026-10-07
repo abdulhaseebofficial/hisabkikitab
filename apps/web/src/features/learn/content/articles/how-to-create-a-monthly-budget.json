@@ -1,0 +1,165 @@
+{
+  "slug": "how-to-create-a-monthly-budget",
+  "category": "budgeting",
+  "title": "How to Create a Monthly Budget",
+  "excerpt": "Build a monthly plan using your actual income, essential costs, and a realistic savings target.",
+  "introduction": "A budget helps you decide what your money needs to do before you spend it. Start with the month ahead, use real numbers, and leave room to adjust. All amounts below are fictional PKR examples, not recommended spending limits.",
+  "author": "Hisab Ki Kitab Editorial Team",
+  "publishedAt": "2026-09-28",
+  "updatedAt": "2026-09-28",
+  "featured": true,
+  "sections": [
+    {
+      "id": "problem",
+      "title": "The problem",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "When bills arrive at different times, a healthy account balance can make you feel you have more spending money than you really do."
+        }
+      ]
+    },
+    {
+      "id": "explanation",
+      "title": "How it works",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Separate money already committed to essentials from money available for flexible spending. Use take-home income rather than salary before deductions. For irregular work, plan around income you can reasonably rely on and revise the plan when money arrives."
+        }
+      ]
+    },
+    {
+      "id": "example",
+      "title": "A practical example",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Ayesha expects PKR 60,000 this month. She sets aside money for rent, food, transport, bills, and savings before choosing a flexible spending limit."
+        },
+        {
+          "type": "table",
+          "caption": "Illustrative amounts in PKR",
+          "headers": [
+            "Monthly allocation",
+            "PKR"
+          ],
+          "rows": [
+            [
+              "Rent",
+              "18,000"
+            ],
+            [
+              "Food",
+              "12,000"
+            ],
+            [
+              "Transport",
+              "5,000"
+            ],
+            [
+              "Bills",
+              "7,000"
+            ],
+            [
+              "Savings",
+              "6,000"
+            ],
+            [
+              "Flexible spending",
+              "12,000"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "calculation",
+      "title": "The calculation",
+      "blocks": [
+        {
+          "type": "calculation",
+          "text": "60,000 - (18,000 + 12,000 + 5,000 + 7,000 + 6,000) = PKR 12,000 available for flexible spending."
+        }
+      ]
+    },
+    {
+      "id": "steps",
+      "title": "Actionable steps",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "List expected take-home income and the dates it should arrive.",
+            "Record fixed bills, due dates, and recent variable costs.",
+            "Reserve money for savings and known upcoming costs.",
+            "Compare planned spending with income; reduce flexible costs if the total is too high.",
+            "Review the plan each week and record what actually happened."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mistakes",
+      "title": "Common mistakes",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Treating a credit limit as income.",
+            "Forgetting annual fees, repairs, or school costs.",
+            "Setting food and travel limits too low to follow."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tips",
+      "title": "Useful tips",
+      "blocks": [
+        {
+          "type": "subheading",
+          "text": "Make it easier to keep going"
+        },
+        {
+          "type": "tip",
+          "text": "A monthly total can hide a shortfall before payday. Check the running balance at each bill date as well."
+        }
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusion",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Your first budget is a starting estimate. A useful plan gets more accurate through review, not through perfect predictions."
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "title": "Consumer.gov: Making a Budget",
+      "url": "https://consumer.gov/your-money/making-budget"
+    }
+  ],
+  "ads": [
+    "after-introduction",
+    "before-related"
+  ],
+  "cta": {
+    "label": "Create your budget in Hisab Ki Kitab",
+    "to": "/budget"
+  },
+  "faqs": [
+    {
+      "question": "What should a monthly budget include?",
+      "answer": "Include reliable take-home income, essential bills, variable costs, planned savings and flexible spending."
+    },
+    {
+      "question": "How often should I review a budget?",
+      "answer": "A short weekly review helps catch changes before the month ends. Update the plan when income or bills change."
+    }
+  ]
+}

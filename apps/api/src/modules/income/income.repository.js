@@ -4,7 +4,8 @@
 
 const { query, queryOne } = require('../../infrastructure/database/pool');
 const { toApi, toApiList, buildSet, isUuid } = require('../../infrastructure/database/rows');
-const { startOfMonth, endOfMonth } = require('../../shared/utils/calculations');
+const { startOfCalendarMonth, endOfCalendarMonth } = require('../../shared/utils/calculations');
+const { decimalToMinor, minorToApi } = require('../../shared/finance/personalMoney');
 
 /** Turns the query string into a WHERE clause and its parameters. */
 const buildWhere = (userId, financeMode, q = {}) => {
@@ -16,7 +17,7 @@ const buildWhere = (userId, financeMode, q = {}) => {
 
   if (month && year) {
     clauses.push(`date >= $${n} AND date <= $${n + 1}`);
-    values.push(startOfMonth(Number(year), Number(month)), endOfMonth(Number(year), Number(month)));
+    values.push(startOfCalendarMonth(Number(year), Number(month)), endOfCalendarMonth(Number(year), Number(month)));
     n += 2;
   } else {
     if (from) {
@@ -26,7 +27,7 @@ const buildWhere = (userId, financeMode, q = {}) => {
     }
     if (to) {
       const end = new Date(to);
-      end.setHours(23, 59, 59, 999);
+      end.setUTCHours(23, 59, 59, 999);
       clauses.push(`date <= $${n}`);
       values.push(end);
       n += 1;
@@ -48,23 +49,23 @@ const list = async (userId, financeMode, q = {}) => {
 
   const [items, summary] = await Promise.all([
     query(`SELECT * FROM income WHERE ${where} ORDER BY date DESC, id DESC`, values),
-    queryOne(`SELECT COALESCE(sum(amount), 0) AS sum FROM income WHERE ${where}`, values),
+    queryOne(`SELECT COALESCE(sum(amount_minor), 0)::text AS sum FROM income WHERE ${where}`, values),
   ]);
 
-  return { items: toApiList(items), total: Math.round(Number(summary.sum) * 100) / 100 };
+  return { items: toApiList(items), total: minorToApi(summary.sum) };
 };
 
 /** This month's income grouped by where it came from, biggest first. */
 const totalsBySource = async (userId, financeMode, from, to) => {
   const rows = await query(
-    `SELECT source, sum(amount) AS total
+    `SELECT source, sum(amount_minor)::text AS total
        FROM income
       WHERE user_id = $1 AND finance_mode = $4 AND date >= $2 AND date <= $3
       GROUP BY source
       ORDER BY total DESC`,
     [userId, from, to, financeMode]
   );
-  return rows.map((r) => ({ source: r.source, total: Number(r.total) }));
+  return rows.map((r) => ({ source: r.source, totalMinor: r.total }));
 };
 
 const findById = async (id, financeMode, userId) => {
@@ -76,18 +77,18 @@ const findById = async (id, financeMode, userId) => {
   return toApi(row);
 };
 
-const create = async (userId, data) => {
-  const row = await queryOne(
-    `INSERT INTO income (user_id, finance_mode, amount, source, note, date)
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-    [userId, data.financeMode, data.amount, data.source || 'Pocket Money', data.note || '', data.date]
+const create = async (userId, data, tx = { queryOne }) => {
+  const row = await tx.queryOne(
+    `INSERT INTO income (user_id, finance_mode, amount, amount_minor, source, note, date)
+     VALUES ($1, $2, 0, $3, $4, $5, $6) RETURNING *`,
+    [userId, data.financeMode, decimalToMinor(data.amount, { allowZero: false }).toString(), data.source || 'Pocket Money', data.note || '', data.date]
   );
   return toApi(row);
 };
 
 const update = async (id, financeMode, userId, patch) => {
   const { fragment, values, next } = buildSet({
-    amount: patch.amount,
+    amount_minor: patch.amount === undefined ? undefined : decimalToMinor(patch.amount, { allowZero: false }).toString(),
     source: patch.source,
     note: patch.note,
     date: patch.date,

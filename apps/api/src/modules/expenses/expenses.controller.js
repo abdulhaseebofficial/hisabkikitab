@@ -23,7 +23,7 @@ const getExpense = asyncHandler(async (req, res) => {
 
 /** POST /api/expenses */
 const createExpense = asyncHandler(async (req, res) => {
-  const expense = await expenses.create(req.user, req.body);
+  const expense = await expenses.create(req.user, req.body, req.financialRequestKey);
   res.status(201).json({ success: true, message: 'Expense added', data: { expense } });
 });
 
@@ -41,7 +41,7 @@ const deleteExpense = asyncHandler(async (req, res) => {
 
 /** POST /api/expenses/:id/mark-paid - this bill is settled for this cycle. */
 const markBillPaid = asyncHandler(async (req, res) => {
-  const result = await expenses.markBillPaid(req.params.id, req.user, req.body);
+  const result = await expenses.markBillPaid(req.params.id, req.user, req.body, req.financialRequestKey);
   res.status(201).json({ success: true, message: 'Bill marked as paid', data: result });
 });
 

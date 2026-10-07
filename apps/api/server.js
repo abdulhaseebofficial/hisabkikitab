@@ -28,7 +28,7 @@ const start = async () => {
 
     server = app.listen(PORT, () => {
       console.log('');
-      console.log('  Hisab Ki Kitab API');
+      console.log('  Hisabki Kitab API');
       console.log(`  listening on   http://localhost:${PORT}`);
       console.log(`  environment    ${process.env.NODE_ENV || 'development'}`);
       console.log(

@@ -9,6 +9,22 @@ import { trackEvent } from '../../../shared/analytics/analytics';
  * same arithmetic is two places to get it wrong.
  */
 const debtsApi = {
+  async people(params = {}) {
+    const { data } = await api.get('/debts/people', { params });
+    return data.data;
+  },
+  async personRecords(params = {}) {
+    const { data } = await api.get('/debts/people/records', { params });
+    return data.data;
+  },
+  async contacts(params = {}) {
+    const { data } = await api.get('/debts/contacts', { params });
+    return data.data;
+  },
+  async renameContact(id, displayName) {
+    const { data } = await api.patch(`/debts/contacts/${id}`, { displayName });
+    return data.data.contact;
+  },
   /** `params` maps straight onto the backend query string. */
   async list(params = {}) {
     const { data } = await api.get('/debts', { params });

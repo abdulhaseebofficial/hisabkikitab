@@ -15,7 +15,7 @@ import useAsync from '../../../shared/hooks/useAsync';
 import { useAuth } from '../../auth';
 import reportService from '../api/reportsApi';
 import { getErrorMessage } from '../../../shared/api/client';
-import { MONTH_NAMES, formatChange, formatDate, formatMoney, cn } from '../../../shared/utils/format';
+import { MONTH_NAMES, formatChange, formatCalendarDate, formatMoney, cn } from '../../../shared/utils/format';
 import useT from '../../../shared/i18n/I18nProvider';
 import useCategoryLabel from '../../../shared/i18n/useCategoryLabel';
 
@@ -220,7 +220,7 @@ export default function Reports() {
                     {data.biggestExpense
                       ? t('reports.amountOnDate', {
                           amount: formatMoney(data.biggestExpense.amount, currency),
-                          date: formatDate(data.biggestExpense.date),
+                          date: formatCalendarDate(data.biggestExpense.date),
                         })
                       : '-'}
                   </dd>

@@ -56,7 +56,7 @@ const date = checked(calc.date);
 const month = checked(calc.period);
 const space = (body) => ({
   name: text(body.name, 100, true),
-  currency: choice(body.currency, [
+  currency: choice(body.currency || "PKR", [
     "PKR",
     "BDT",
     "USD",
@@ -66,8 +66,12 @@ const space = (body) => ({
     "AED",
     "SAR",
   ]),
-  residents: integer(body.residents, 1, 500),
+  residents: integer(body.residents ?? 1, 1, 500),
   description: text(body.description),
+  organization_type: choice(body.organization_type || "other", [
+    "university", "company", "hostel", "other",
+  ]),
+  organization_name: text(body.organization_name, 100),
 });
 const member = (body) => {
   const result = {
@@ -107,7 +111,7 @@ const expense = (body, bill = false) => {
   const result = {
     category_id: uuid(body.category_id),
     date: date(body.date),
-    amount_minor: positive(body.amount),
+    amount_minor: bill ? amount(body.amount) : positive(body.amount),
     note: text(body.note),
     method: choice(body.method || "equal", [
       "equal",
@@ -115,6 +119,7 @@ const expense = (body, bill = false) => {
       "custom",
       "percentage",
       "weighted",
+      "later",
     ]),
   };
   if (bill)

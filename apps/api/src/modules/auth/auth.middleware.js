@@ -38,9 +38,15 @@ const protect = asyncHandler(async (req, _res, next) => {
   }
 
   if (payload.type !== 'access') throw ApiError.unauthorized('Invalid token type');
+  if (!Number.isSafeInteger(payload.v) || payload.v < 0)
+    throw ApiError.unauthorized('Session is no longer valid, please log in again');
 
+  // findById is already required to reject deleted accounts and populate
+  // req.user. It selects tokenVersion, so revocation adds no database lookup.
   const user = await usersRepo.findById(payload.sub);
   if (!user) throw ApiError.unauthorized('This account no longer exists');
+  if (payload.v !== user.tokenVersion)
+    throw ApiError.unauthorized('Session is no longer valid, please log in again');
 
   req.user = user;
   next();

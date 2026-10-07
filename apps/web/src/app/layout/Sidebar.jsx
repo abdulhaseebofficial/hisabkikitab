@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
 import { Link, matchPath, useLocation } from 'react-router-dom';
-import { FileBarChart, HandCoins, History, LayoutDashboard, PieChart, Receipt, Settings, Settings2, Sparkles, Target, Users, Utensils, Wallet, X } from 'lucide-react';
+import { BookOpen, FileBarChart, HandCoins, History, LayoutDashboard, PieChart, Receipt, Settings, Settings2, Sparkles, Target, Users, Utensils, Wallet, X } from 'lucide-react';
 import { sharedSection, sharedSectionSearch } from '../../features/sharedLiving';
 import useT from '../../shared/i18n/I18nProvider';
 import { cn } from '../../shared/utils/format';
@@ -16,6 +16,7 @@ export const NAV_ITEMS = [
   { to: '/budget', key: 'budget', icon: PieChart },
   { to: '/advisor', key: 'advisor', icon: Sparkles },
   { to: '/reports', key: 'reports', icon: FileBarChart },
+  { to: '/learn', key: 'learn', icon: BookOpen },
   { to: '/settings', key: 'settings', icon: Settings },
 ];
 
@@ -38,6 +39,7 @@ const SHARED_NAV_ITEMS = [
   { section: 'payments', key: 'shared.payments', icon: Wallet },
   { section: 'manage', key: 'shared.manageSpace', icon: Settings2 },
   { section: 'activity', key: 'shared.activity', icon: History },
+  { to: '/learn', key: 'nav.learn', icon: BookOpen },
   { to: '/settings', key: 'nav.settings', icon: Settings },
 ];
 

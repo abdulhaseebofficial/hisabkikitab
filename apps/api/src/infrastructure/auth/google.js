@@ -91,7 +91,7 @@ const checkClaims = (payload) => {
   /*
    * email_verified is the claim that makes account linking safe.
    *
-   * Signing in with Google is allowed to open an existing Hisab Ki Kitab account
+   * Signing in with Google is allowed to open an existing Hisabki Kitab account
    * that has the same email address. That is only sound if Google has actually
    * confirmed the person owns that address - otherwise anyone able to put an
    * arbitrary unverified address on a Google account could claim somebody

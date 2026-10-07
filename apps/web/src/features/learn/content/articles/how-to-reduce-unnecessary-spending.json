@@ -1,0 +1,124 @@
+{
+  "slug": "how-to-reduce-unnecessary-spending",
+  "category": "saving",
+  "title": "How to Reduce Unnecessary Spending",
+  "excerpt": "Review flexible spending and choose changes that fit your needs instead of relying on blanket cuts.",
+  "introduction": "A spending review can help you protect essentials while making deliberate choices about flexible purchases.",
+  "author": "Hisab Ki Kitab Editorial Team",
+  "publishedAt": "2026-09-28",
+  "updatedAt": "2026-09-28",
+  "featured": true,
+  "sections": [
+    {
+      "id": "problem",
+      "title": "The problem",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A strict cut applied without context may remove a small convenience you value while missing an unused service or a spending trigger."
+        }
+      ]
+    },
+    {
+      "id": "explanation",
+      "title": "How it works",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Separate necessary commitments from flexible choices. Look at timing, frequency and what you actually value before changing a category."
+        }
+      ]
+    },
+    {
+      "id": "example",
+      "title": "A practical example",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "In a fictional month, Hamza finds a PKR 900 unused subscription and notices that unplanned delivery fees were PKR 1,600. He cancels the unused service and sets a weekly meal plan. The potential difference is PKR 2,500 if the pattern continues; it is not guaranteed savings."
+        }
+      ]
+    },
+    {
+      "id": "calculation",
+      "title": "The calculation",
+      "blocks": [
+        {
+          "type": "calculation",
+          "text": "900 + 1,600 = PKR 2,500 in this example month. Future months may differ, so review actual spending rather than assume the same reduction repeats."
+        }
+      ]
+    },
+    {
+      "id": "steps",
+      "title": "Actionable steps",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Review your recent transactions by category.",
+            "Mark each flexible cost as useful, optional or unclear.",
+            "Choose one change that protects health, work, family and other essentials.",
+            "Try the change for one month and record what actually changes.",
+            "Move only confirmed available money to a goal or savings reserve."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mistakes",
+      "title": "Common mistakes",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Calling every non-essential purchase wasteful.",
+            "Cutting essentials and later replacing them at greater cost.",
+            "Counting a planned reduction before it actually happens."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tips",
+      "title": "Useful tips",
+      "blocks": [
+        {
+          "type": "tip",
+          "text": "A short waiting period before an unplanned purchase can help you check whether it fits your priorities."
+        }
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusion",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Start with one informed change. Keep what improves your life and adjust the plan when circumstances change."
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "title": "CFPB: Assess your spending",
+      "url": "https://www.consumerfinance.gov/owning-a-home/prepare/assess-your-spending/"
+    }
+  ],
+  "cta": {
+    "label": "Review your expenses",
+    "to": "/expenses"
+  },
+  "faqs": [
+    {
+      "question": "How do I know what spending is unnecessary?",
+      "answer": "Compare a purchase with your priorities and circumstances. The answer can differ between people and months."
+    },
+    {
+      "question": "Should I cut every optional expense?",
+      "answer": "No. A plan should leave room for choices you value and remain workable over time."
+    }
+  ],
+  "ads": []
+}

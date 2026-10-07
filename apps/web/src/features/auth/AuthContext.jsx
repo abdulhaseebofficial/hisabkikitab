@@ -1,31 +1,35 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useLocation } from 'react-router-dom';
 import authService from './api/authApi';
 import { setSessionExpiredHandler, getErrorMessage, bumpSessionEpoch } from '../../shared/api/client';
 import { trackEvent } from '../../shared/analytics/analytics';
 
 const AuthContext = createContext(null);
+const protectedPaths = new Set(['/onboarding', '/dashboard', '/expenses', '/income', '/goals', '/debts', '/budget', '/advisor', '/reports', '/settings']);
 
 /**
- * Owns the signed-in student, and restores the session on boot.
+ * Owns the signed-in student, and restores the session when a protected page
+ * needs it. Public guides, tools, trust, and sign-in pages work anonymously;
+ * probing cookies there produces unnecessary 401 responses for visitors.
  *
  * Nothing is read from localStorage any more - the access token is not stored
  * anywhere a script can reach it. A fresh page load therefore starts with no
  * token in memory and two ways back in, tried in order:
  *
  *   /auth/me       the httpOnly access cookie authenticates it directly. This
- *                  is the common case and costs no rotation.
- *
- *   /auth/refresh  the access cookie has expired, so the longer-lived refresh
- *                  cookie mints a new session.
+ *                  is the common case and costs no rotation. The API client
+ *                  retries a 401 through /auth/refresh when needed.
  *
  * Trying /auth/me first matters: refreshing on every reload would rotate the
  * refresh token every time somebody pressed F5.
  */
 export function AuthProvider({ children }) {
+  const { pathname } = useLocation();
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  // A page can receive a login click while the initial /me -> /refresh
+  const [restored, setRestored] = useState(false);
+  const loading = protectedPaths.has(pathname) && !restored;
+  // A page can receive a login click while a /me -> /refresh
   // restoration is still in flight. Its late 401 must not clear the newly
   // authenticated user.
   const sessionVersion = useRef(0);
@@ -38,11 +42,15 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     setSessionExpiredHandler(() => {
       clearSession();
-      toast.error('Your session expired. Please log in again.');
+      // Anonymous readers do not need a session to use the public library.
+      if (pathname !== '/' && !/^\/(?:learn|tools)(?:\/|$)/.test(pathname)) {
+        toast.error('Your session expired. Please log in again.');
+      }
     });
-  }, [clearSession]);
+  }, [clearSession, pathname]);
 
   useEffect(() => {
+    if (!protectedPaths.has(pathname) || restored) return undefined;
     let cancelled = false;
 
     const restore = async () => {
@@ -53,16 +61,11 @@ export function AuthProvider({ children }) {
         const me = await authService.me();
         if (!cancelled && version === sessionVersion.current) setUser(me);
       } catch {
-        try {
-          // The access cookie has expired. The refresh cookie outlives it by a
-          // long way, and this is exactly what it is for.
-          const refreshed = await authService.refresh();
-          if (!cancelled && version === sessionVersion.current) setUser(refreshed);
-        } catch {
-          if (!cancelled && version === sessionVersion.current) setUser(null);
-        }
+        // The API client has already attempted refresh for a 401. A second
+        // refresh here would rotate or retry the cookie unnecessarily.
+        if (!cancelled && version === sessionVersion.current) setUser(null);
       } finally {
-        if (!cancelled && version === sessionVersion.current) setLoading(false);
+        if (!cancelled && version === sessionVersion.current) setRestored(true);
       }
     };
 
@@ -70,14 +73,14 @@ export function AuthProvider({ children }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [pathname, restored]);
 
   const login = useCallback(async (credentials) => {
     sessionVersion.current += 1;
     bumpSessionEpoch();
     const loggedIn = await authService.login(credentials);
     setUser(loggedIn);
-    setLoading(false);
+    setRestored(true);
     trackEvent('login_completed', { method: 'password' });
     toast.success(`Welcome back, ${loggedIn.name.split(' ')[0]}!`);
     return loggedIn;
@@ -88,7 +91,7 @@ export function AuthProvider({ children }) {
     bumpSessionEpoch();
     const created = await authService.register(payload);
     setUser(created);
-    setLoading(false);
+    setRestored(true);
     trackEvent('sign_up_completed', { method: 'password' });
     toast.success('Account created. Let us set things up.');
     return created;
@@ -102,6 +105,7 @@ export function AuthProvider({ children }) {
   const loginWithGoogle = useCallback(async (idToken) => {
     const result = await authService.google(idToken);
     setUser(result.user);
+    setRestored(true);
     trackEvent(result.created ? 'sign_up_completed' : 'login_completed', { method: 'google' });
     toast.success(result.created ? 'Account created. Let us set things up.' : 'Welcome back.');
     return result;
@@ -125,6 +129,7 @@ export function AuthProvider({ children }) {
     try {
       const me = await authService.me();
       setUser(me);
+      setRestored(true);
       return me;
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -138,7 +143,7 @@ export function AuthProvider({ children }) {
       loading,
       isAuthenticated: Boolean(user),
       needsOnboarding: Boolean(user) && !user.onboardingCompleted,
-      currency: user ? user.currency : 'INR',
+      currency: user ? user.currency : 'PKR',
       login,
       loginWithGoogle,
       register,

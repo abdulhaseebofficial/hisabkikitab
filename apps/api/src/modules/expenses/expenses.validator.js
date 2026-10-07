@@ -1,5 +1,5 @@
 const { body, query } = require('express-validator');
-const { idParam, amount } = require('../../shared/validation/rules');
+const { idParam, amount, moneyValue } = require('../../shared/validation/rules');
 const { PAYMENT_METHODS, RECURRING_FREQUENCIES } = require('../../shared/constants');
 
 const expenseValidators = {
@@ -15,7 +15,7 @@ const expenseValidators = {
 
   update: [
     idParam('id'),
-    body('amount').optional().isFloat({ gt: 0 }).withMessage('Amount must be positive').toFloat(),
+    moneyValue(body('amount').optional(), { allowZero: false }),
     body('category').optional().trim().notEmpty(),
     body('description').optional().trim().isLength({ max: 200 }),
     body('paymentMethod').optional().isIn(PAYMENT_METHODS),
@@ -29,8 +29,8 @@ const expenseValidators = {
     query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
     query('from').optional().isISO8601().withMessage('Invalid "from" date'),
     query('to').optional().isISO8601().withMessage('Invalid "to" date'),
-    query('minAmount').optional().isFloat({ min: 0 }).toFloat(),
-    query('maxAmount').optional().isFloat({ min: 0 }).toFloat(),
+    moneyValue(query('minAmount').optional()),
+    moneyValue(query('maxAmount').optional()),
   ],
 
   byId: [idParam('id')],
@@ -42,7 +42,7 @@ const expenseValidators = {
    */
   markPaid: [
     idParam('id'),
-    body('amount').optional().isFloat({ gt: 0 }).withMessage('Amount must be more than zero').toFloat(),
+    moneyValue(body('amount').optional(), { allowZero: false }),
     body('paidOn').optional().isISO8601().toDate(),
   ],
 };

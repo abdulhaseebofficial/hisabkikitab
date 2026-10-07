@@ -6,6 +6,8 @@
  * works on a fresh clone with nothing installed beyond the app itself.
  */
 
+require('../../scripts/require-test-database');
+const crypto = require('node:crypto');
 const BASE = process.env.HW_API || 'http://localhost:5000/api';
 
 const state = { pass: 0, failures: [], cookie: '' };
@@ -32,6 +34,15 @@ const heading = (title) => console.log(`\n########## ${title} ##########`);
 async function call(method, path, body, token, opts = {}) {
   const headers = { 'content-type': 'application/json' };
   if (token) headers.authorization = `Bearer ${token}`;
+  const financialPath = (method === 'POST' && (
+    /^\/(expenses|income|debts|goals)$/.test(path) ||
+    path === '/profile/onboarding' ||
+    path === '/profile/onboarding' ||
+    /^\/expenses\/[^/]+\/mark-paid$/.test(path) ||
+    /^\/debts\/[^/]+\/(payments|settle)$/.test(path)
+  )) || (method === 'PATCH' && /^\/goals\/[^/]+\/add$/.test(path));
+  if (financialPath && opts.idempotencyKey !== null)
+    headers['Idempotency-Key'] = opts.idempotencyKey || crypto.randomUUID();
   // `cookie` replays a specific one - needed to prove a superseded refresh
   // token is dead, since the jar has already moved on to the replacement.
   const jarCookie = opts.cookie !== undefined ? opts.cookie : state.cookie;

@@ -16,59 +16,58 @@
 
 const { query, queryOne } = require('../../infrastructure/database/pool');
 const { toApiList } = require('../../infrastructure/database/rows');
+const { minorToApi } = require('../../shared/finance/personalMoney');
 
 /** Total expenses grouped by category, biggest first. */
 const categoryTotals = async (userId, financeMode, from, to) => {
   const rows = await query(
-    `SELECT category AS _id, sum(amount) AS total, count(*)::bigint AS count
+    `SELECT category AS _id, sum(amount_minor)::text AS total_minor, count(*)::bigint AS count
        FROM expenses
       WHERE user_id = $1 AND finance_mode = $4 AND date >= $2 AND date <= $3
       GROUP BY category
-      ORDER BY total DESC`,
+      ORDER BY sum(amount_minor) DESC`,
     [userId, from, to, financeMode]
   );
-  return rows.map((r) => ({ _id: r._id, total: Number(r.total), count: Number(r.count) }));
+  return rows.map((r) => ({ _id: r._id, totalMinor: r.total_minor, count: Number(r.count) }));
 };
 
 /** Total expenses for a date range. */
 const totalSpent = async (userId, financeMode, from, to) => {
   const row = await queryOne(
-    `SELECT COALESCE(sum(amount), 0) AS total FROM expenses
+    `SELECT COALESCE(sum(amount_minor), 0)::text AS total FROM expenses
       WHERE user_id = $1 AND finance_mode = $4 AND date >= $2 AND date <= $3`,
     [userId, from, to, financeMode]
   );
-  return Number(row.total);
+  return row.total;
 };
 
 /** Total logged income for a date range. */
 const totalIncome = async (userId, financeMode, from, to) => {
   const row = await queryOne(
-    `SELECT COALESCE(sum(amount), 0) AS total FROM income
+    `SELECT COALESCE(sum(amount_minor), 0)::text AS total FROM income
       WHERE user_id = $1 AND finance_mode = $4 AND date >= $2 AND date <= $3`,
     [userId, from, to, financeMode]
   );
-  return Number(row.total);
+  return row.total;
 };
 
 /**
  * Spend per day, keyed 'YYYY-MM-DD'.
  *
- * The grouping has to happen in the same timezone the rest of the app counts
- * days in, otherwise the zero-filled trend drifts by a day. `offsetMinutes` is
- * the server's own UTC offset: shifting the stored instant by it and reading
- * the date off gives exactly what `Date#getDate()` would say in this process.
+ * Financial date inputs are stored at UTC midnight. Group on that same UTC
+ * calendar date so the server's timezone cannot put a chosen day in yesterday.
  */
-const dailyTotals = async (userId, financeMode, from, to, offsetMinutes) => {
+const dailyTotals = async (userId, financeMode, from, to) => {
   const rows = await query(
-    `SELECT to_char((date AT TIME ZONE 'UTC') + ($4 || ' minutes')::interval, 'YYYY-MM-DD') AS _id,
-            sum(amount) AS total
+    `SELECT to_char(date AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS _id,
+            sum(amount_minor)::text AS total_minor
        FROM expenses
-      WHERE user_id = $1 AND finance_mode = $5 AND date >= $2 AND date <= $3
+      WHERE user_id = $1 AND finance_mode = $4 AND date >= $2 AND date <= $3
       GROUP BY 1
       ORDER BY 1`,
-    [userId, from, to, String(offsetMinutes), financeMode]
+    [userId, from, to, financeMode]
   );
-  return rows.map((r) => ({ _id: r._id, total: Number(r.total) }));
+  return rows.map((r) => ({ _id: r._id, totalMinor: r.total_minor }));
 };
 
 /** How many expenses fall in a range. */
@@ -84,14 +83,14 @@ const countExpenses = async (userId, financeMode, from, to) => {
 /** The single biggest expenses in a range. */
 const topExpenses = async (userId, financeMode, from, to, limit = 5) => {
   const rows = await query(
-    `SELECT id, amount, category, description, date FROM expenses
+    `SELECT id, amount_minor, category, description, date FROM expenses
       WHERE user_id = $1 AND finance_mode = $4 AND date >= $2 AND date <= $3
-      ORDER BY amount DESC LIMIT $5`,
+      ORDER BY amount_minor DESC LIMIT $5`,
     [userId, from, to, financeMode, limit]
   );
   return rows.map((r) => ({
     _id: r.id,
-    amount: Number(r.amount),
+    amount: minorToApi(r.amount_minor),
     category: r.category,
     description: r.description,
     date: r.date,
@@ -105,7 +104,7 @@ const topExpenses = async (userId, financeMode, from, to, limit = 5) => {
  */
 const budgetLimitsFor = async (userId, financeMode, month, year) => {
   const rows = await query(
-    `SELECT id, user_id, category, "limit", month, year, created_at, updated_at
+    `SELECT id, user_id, category, "limit", limit_minor, month, year, created_at, updated_at
        FROM budgets WHERE user_id = $1 AND finance_mode = $4 AND month = $2 AND year = $3
        ORDER BY category`,
     [userId, month, year, financeMode]

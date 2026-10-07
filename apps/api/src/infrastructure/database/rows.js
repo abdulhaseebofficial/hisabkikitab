@@ -21,12 +21,28 @@ const camel = (key) => {
  * `omit` drops columns that must never leave the server - the password hash,
  * the reset token, the token version.
  */
+const { minorToApi } = require('../../shared/finance/personalMoney');
+const MONEY_PAIRS = [
+  ['amount', 'amount_minor'], ['monthly_income', 'monthly_income_minor'],
+  ['target_amount', 'target_amount_minor'], ['saved_amount', 'saved_amount_minor'],
+  ['limit', 'limit_minor'],
+];
+
 const toApi = (row, omit = []) => {
   if (!row) return null;
   const out = {};
   for (const [key, value] of Object.entries(row)) {
     if (omit.includes(key)) continue;
     out[camel(key)] = value;
+  }
+  for (const [legacy, exact] of MONEY_PAIRS) {
+    if (Object.hasOwn(row, legacy) && row[exact] != null && !omit.includes(legacy)) {
+      out[camel(legacy)] = minorToApi(row[exact]);
+      out[camel(exact)] = String(row[exact]);
+    }
+  }
+  if (Array.isArray(out.contributions)) {
+    out.contributions = out.contributions.map((entry) => ({ ...entry, amount: minorToApi(entry.amount) }));
   }
   return out;
 };

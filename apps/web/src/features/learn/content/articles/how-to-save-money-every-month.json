@@ -1,0 +1,150 @@
+{
+  "slug": "how-to-save-money-every-month",
+  "category": "saving",
+  "title": "How to Save Money Every Month",
+  "excerpt": "Find a sustainable amount to save and build it into your monthly routine.",
+  "introduction": "Saving works best when the amount fits your real life. This guide uses a fictional PKR example to show how a small change can become a repeatable routine. No return or outcome is guaranteed.",
+  "author": "Hisab Ki Kitab Editorial Team",
+  "publishedAt": "2026-09-28",
+  "updatedAt": "2026-09-28",
+  "featured": true,
+  "sections": [
+    {
+      "id": "problem",
+      "title": "The problem",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Waiting until the last day of the month to save often leaves nothing to move aside."
+        }
+      ]
+    },
+    {
+      "id": "explanation",
+      "title": "How it works",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Start by observing your spending. Choose one flexible cost you can reduce without cutting essentials, then set a savings amount that still leaves enough for bills. If essentials already exceed income, the immediate task is resolving that shortfall."
+        }
+      ]
+    },
+    {
+      "id": "example",
+      "title": "A practical example",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Bilal reduces optional takeout spending by PKR 1,500 and cancels an unused PKR 500 subscription. He chooses to save that PKR 2,000 each month."
+        },
+        {
+          "type": "table",
+          "caption": "Illustrative amounts in PKR",
+          "headers": [
+            "Change",
+            "Monthly amount freed (PKR)"
+          ],
+          "rows": [
+            [
+              "Less takeout",
+              "1,500"
+            ],
+            [
+              "Unused subscription",
+              "500"
+            ],
+            [
+              "Total",
+              "2,000"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "calculation",
+      "title": "The calculation",
+      "blocks": [
+        {
+          "type": "calculation",
+          "text": "PKR 2,000 ? 12 months = PKR 24,000 contributed in one year, before any fees or returns, assuming no withdrawals."
+        }
+      ]
+    },
+    {
+      "id": "steps",
+      "title": "Actionable steps",
+      "blocks": [
+        {
+          "type": "steps",
+          "items": [
+            "Review the last month of transactions.",
+            "Pick one or two flexible expenses to reduce.",
+            "Choose an affordable savings amount after essential bills.",
+            "Move the money to a separate savings pot when income arrives.",
+            "Review after one month and adjust if the target caused a shortfall."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mistakes",
+      "title": "Common mistakes",
+      "blocks": [
+        {
+          "type": "list",
+          "items": [
+            "Saving so aggressively that you need to borrow for food.",
+            "Counting a discount as savings when you bought something unnecessary.",
+            "Ignoring fees on the account used for savings."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tips",
+      "title": "Useful tips",
+      "blocks": [
+        {
+          "type": "subheading",
+          "text": "Make it easier to keep going"
+        },
+        {
+          "type": "tip",
+          "text": "If income varies, try a small contribution when each payment arrives and reassess essentials first."
+        }
+      ]
+    },
+    {
+      "id": "conclusion",
+      "title": "Conclusion",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A modest amount you can repeat is a useful beginning. Increase it when your circumstances allow."
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "title": "CFPB: Your Money, Your Goals toolkit",
+      "url": "https://www.consumerfinance.gov/consumer-tools/educator-tools/your-money-your-goals/toolkit/"
+    }
+  ],
+  "ads": [],
+  "cta": {
+    "label": "Create a savings goal",
+    "to": "/goals"
+  },
+  "faqs": [
+    {
+      "question": "How much should I save each month?",
+      "answer": "There is no single amount for everyone. Choose a contribution that remains affordable after essential costs and required payments."
+    },
+    {
+      "question": "When should I move money into savings?",
+      "answer": "Many people find it easier to set aside an affordable amount when income arrives, then review the plan regularly."
+    }
+  ]
+}

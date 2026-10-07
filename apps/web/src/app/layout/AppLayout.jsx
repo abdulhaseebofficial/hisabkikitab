@@ -93,7 +93,7 @@ export default function AppLayout() {
 
         <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 lg:h-full lg:overflow-y-auto">
           {/* pb-28 leaves room for the mobile tab bar and its raised button */}
-          <div className="mx-auto w-full max-w-6xl px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-10">
+          <div className="mx-auto w-full max-w-6xl px-4 pb-28 pt-4 sm:px-6 lg:px-8 lg:pb-8">
             <Suspense fallback={<PageSpinner label={t('common.loading')} />}>
               {shared && !['/dashboard', '/settings'].includes(location.pathname) ? <Navigate to="/dashboard" replace /> : <Outlet />}
             </Suspense>
@@ -161,7 +161,7 @@ function MobileTab({ item: { to, key, icon: Icon }, shared = false }) {
         className={
           cn(
             // min-h-[52px] keeps every tap target above the 44px guideline.
-            'flex min-h-[52px] flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition',
+            'flex min-h-[56px] flex-col items-center justify-center gap-0.5 px-0.5 text-[11px] font-medium leading-tight transition',
             isActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-500 dark:text-slate-400'
           )
         }

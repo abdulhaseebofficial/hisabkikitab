@@ -43,7 +43,13 @@ const personName = (chain) =>
 const debtValidators = {
   create: [
     body('kind').isIn(KINDS).withMessage('Say whether you borrowed or lent'),
-    personName(body('personName').exists({ checkFalsy: true }).bail()),
+    body('contactId').optional().isUUID().withMessage('Invalid debt contact id'),
+    personName(body('personName').optional()),
+    body().custom((value) => {
+      if (Boolean(value.contactId) === Boolean(value.personName))
+        throw new Error('Provide either contactId or personName');
+      return true;
+    }),
     amount('originalAmount'),
     body('personContact').optional().isString().trim().isLength({ max: 120 }),
     body('transactionDate').optional().isISO8601().toDate(),
@@ -97,6 +103,20 @@ const debtValidators = {
     query('dueTo').optional().isISO8601(),
     query('page').optional().isInt({ min: 1 }).toInt(),
     query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
+  ],
+  people: [
+    query('search').optional().isString().trim().isLength({ max: 80 }),
+    query('page').optional().isInt({ min: 1 }).toInt(),
+  ],
+  personRecords: [
+    query('contactId').isUUID().withMessage('Invalid debt contact id'),
+    query('page').optional().isInt({ min: 1 }).toInt(),
+  ],
+  contacts: [query('search').optional().isString().trim().isLength({ max: 80 }),
+    query('page').optional().isInt({ min: 1 }).toInt()],
+  renameContact: [
+    idParam('id'),
+    body('displayName').isString().trim().isLength({ min: 1, max: 80 }),
   ],
 };
 

@@ -15,6 +15,7 @@ const {
   PASSWORD_MESSAGES,
 } = require('@hisabkikitab/contracts/validation');
 const { CURRENCIES } = require('../constants');
+const { decimalToMinor } = require('../finance/personalMoney');
 
 const CURRENCY_CODES = CURRENCIES.map((c) => c.code);
 
@@ -92,14 +93,15 @@ const accepted = (field, message) =>
     .custom((value) => value === true || value === 'true' || value === 'on')
     .withMessage(message);
 
-const amount = (field = 'amount') =>
-  body(field)
-    .exists({ checkFalsy: true })
-    .withMessage('Amount is required')
-    .bail()
-    .isFloat({ gt: 0, max: 100000000 })
-    .withMessage('Amount must be a positive number')
-    .toFloat();
+const moneyValue = (chain, options = {}) => chain.custom((value) => {
+  try {
+    const cents = decimalToMinor(value, options);
+    if (options.minMinor !== undefined && cents < options.minMinor) throw new RangeError();
+    return true;
+  }
+  catch { throw new Error('Amount must be within range and have at most two decimal places'); }
+});
+const amount = (field = 'amount') => moneyValue(body(field).exists().bail(), { allowZero: false });
 
 /* ------------------------------- auth -------------------------------- */
 
@@ -111,5 +113,6 @@ module.exports = {
   confirmPassword,
   accepted,
   amount,
+  moneyValue,
   CURRENCY_CODES,
 };

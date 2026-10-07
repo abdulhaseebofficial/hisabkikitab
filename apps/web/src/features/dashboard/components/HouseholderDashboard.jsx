@@ -10,6 +10,7 @@ import CategoryGroups from './CategoryGroups';
 import UpcomingBills from './UpcomingBills';
 import { BudgetHealth, SpendingCharts } from './DashboardShared';
 import { HOUSEHOLDER_GROUPS, totalsByGroup } from '../dashboardGroups';
+import { sumMoney } from '../../../shared/utils/money';
 
 /**
  * The month as a household experiences it.
@@ -32,7 +33,7 @@ export default function HouseholderDashboard({ data, currency, onNavigate, onQui
   const overspending = totals.income > 0 && totals.remaining < 0;
   const groups = totalsByGroup(HOUSEHOLDER_GROUPS, categoryBreakdown);
 
-  const billsTotal = (upcomingBills || []).reduce((sum, bill) => sum + Number(bill.amount || 0), 0);
+  const billsTotal = sumMoney((upcomingBills || []).map((bill) => bill.amount || 0));
 
   return (
     <>

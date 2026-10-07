@@ -1,4 +1,4 @@
--- Hisab Ki Kitab schema.
+-- Hisabki Kitab schema.
 --
 -- Applied by `node db/migrate.js`, which runs this file as one transaction.
 -- Every statement is idempotent, so re-running it is safe and is exactly what
