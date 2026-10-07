@@ -16,8 +16,8 @@ export default function PublicSiteLayout({ children }) {
       } />
       <main id="main-content" tabIndex={-1} className="mx-auto min-w-0 w-full max-w-7xl px-4 py-8 sm:px-8 sm:py-10 lg:px-12 lg:py-14">
         {children}
-        <PublicFooter />
       </main>
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-8 lg:px-12"><PublicFooter /></div>
     </div>
   );
 }

@@ -50,7 +50,7 @@ const discoverEntries = (dir) => {
   const full = path.join(ROOT, dir).split(path.sep).join('/');
   if (!fs.existsSync(full)) return [];
   return walk(full)
-    .filter((f) => /\.(js|jsx)$/.test(f))
+    .filter((f) => /\.(js|jsx|mjs|cjs)$/.test(f))
     .map((f) => f.replace(ROOT + '/', ''));
 };
 

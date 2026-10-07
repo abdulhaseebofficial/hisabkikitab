@@ -15,7 +15,7 @@ describe('trust pages', () => {
 
   it('uses the configured contact address instead of a placeholder', () => {
     render(<MemoryRouter><TrustContent page={trustPages.contact} /></MemoryRouter>);
-    expect(screen.getByRole('link', { name: 'Email Hisabki Kitab' })).toHaveAttribute('href', expect.stringContaining(`mailto:${DEVELOPER.email}`));
+    expect(screen.getByRole('link', { name: 'Email Hisab Ki Kitab' })).toHaveAttribute('href', expect.stringContaining(`mailto:${DEVELOPER.email}`));
     expect(screen.getByText(DEVELOPER.email)).toBeInTheDocument();
   });
 
@@ -32,7 +32,7 @@ describe('trust pages', () => {
     }
   });
 
-  it('does not promise that Hisabki Kitab never collects or sells data', () => {
+  it('does not promise that Hisab Ki Kitab never collects or sells data', () => {
     const copy = JSON.stringify(trustPages.privacy).toLowerCase();
     expect(copy).not.toContain('we never collect data');
     expect(copy).not.toContain('we do not sell');

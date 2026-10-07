@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import '@fontsource-variable/inter';
+import '@fontsource-variable/source-serif-4';
 import App from './app/App';
 import './index.css';
 
@@ -7,7 +9,7 @@ import './index.css';
 // Its canonical/Article tags must not leak onto private or auth screens.
 if (window.location.pathname !== '/' && !/^\/(?:learn|tools)(?:\/|$)/.test(window.location.pathname)) {
   document.head.querySelectorAll('[data-learn-seo]').forEach((node) => node.remove());
-  document.title = 'Hisabki Kitab - Smart money manager for hostel students';
+  document.title = 'Hisab Ki Kitab';
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(

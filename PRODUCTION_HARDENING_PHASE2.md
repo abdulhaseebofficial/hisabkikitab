@@ -1,5 +1,9 @@
 # Hisab Ki Kitab — Production Hardening Phase 2
 
+## Supabase restore gate — 5 October 2026
+
+The linked production Supabase project is on the Free plan. Its dashboard reports no managed backups, PITR as a Pro add-on, and restore to a new project as requiring Pro or above with physical backups enabled. No independent dump or isolated restore was available. No production database operation, restore, plan change, migration, or deployment was performed. The restored-history and backup/restore launch gates remain **blocked**; Phase 2 is **not ready for production rollout**. The exact next steps are in `docs/PRELAUNCH_VERIFICATION.md`.
+
 ## Follow-up verification — 5 October 2026
 
 Local unit tests **225/225**, web tests **260/260**, boundary/shadow/dead-code checks, and the canonical-origin production build passed on the current uncommitted tree. A fresh npm registry audit of production dependencies returned **four moderate package entries, zero high or critical** (`node-cron`, `uuid`, `react-router`, `react-router-dom`). The earlier audit endpoint failure below describes the prior attempt; the current count is now confirmed for this local lockfile. Owner security signoff and a final-revision audit are still required. No application, migration, dependency or production configuration was changed. There is still no independently verified restored production database, hosted CI access, or provider evidence. **NOT READY FOR PRODUCTION ROLLOUT.**

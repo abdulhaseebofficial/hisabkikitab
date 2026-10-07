@@ -21,7 +21,7 @@ test('all public routes render, have metadata, and fit the viewport', async ({ p
     await expect(page).not.toHaveURL(/\/login/);
     await expect(page.getByText('Your session expired. Please log in again.')).toHaveCount(0);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', new RegExp(`${route === '/' ? '/$' : route + '$'}`));
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'index,follow');
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', ['/learn/earning', '/learn/small-business'].includes(route) ? 'noindex,follow' : 'index,follow');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
   expect(errors).toEqual([]);

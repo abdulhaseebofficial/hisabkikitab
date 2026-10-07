@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "trailingSlash": false,
   "crons": [
     {
       "path": "/api/internal/recurring",
@@ -56,7 +57,11 @@
           "destination": "/disclaimer/index.html"
         },
         {
-          "source": "/(.*)",
+          "source": "/reset-password/:token",
+          "destination": "/app.html"
+        },
+        {
+          "source": "/(login|register|forgot-password|onboarding|dashboard|expenses|income|goals|debts|budget|advisor|reports|settings)",
           "destination": "/app.html"
         }
       ]

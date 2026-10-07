@@ -13,15 +13,18 @@ export default function NotFound() {
 
       <p className="text-5xl font-extrabold text-slate-900 dark:text-slate-100">404</p>
       <h1 className="mt-2 text-lg font-bold text-slate-900 dark:text-slate-100">{t('app.pageNotFound')}</h1>
-      <p className="mt-1.5 max-w-sm text-sm text-slate-500 dark:text-slate-400">
-        The link may be old, or the page moved. Your money is still safe on the dashboard.
-      </p>
+      <p className="mt-1.5 max-w-sm text-sm text-slate-500 dark:text-slate-400">The link may be old, or the page may have moved.</p>
 
       <Link to="/dashboard" className="mt-6">
         <Button icon={Home} size="lg">
           Back to dashboard
         </Button>
       </Link>
+      <nav aria-label="Helpful public pages" className="mt-5 flex flex-wrap justify-center gap-5 text-sm">
+        <Link to="/" className="min-h-11 content-center text-brand-700 underline dark:text-brand-300">Home</Link>
+        <Link to="/learn" className="min-h-11 content-center text-brand-700 underline dark:text-brand-300">Financial guides</Link>
+        <Link to="/tools" className="min-h-11 content-center text-brand-700 underline dark:text-brand-300">Calculators</Link>
+      </nav>
     </div>
   );
 }

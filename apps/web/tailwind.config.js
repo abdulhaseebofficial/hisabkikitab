@@ -67,7 +67,7 @@ export default {
         // Body: a clean grotesque.
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
         // Headings: an old-style serif, applied to h1 in the base layer.
-        display: ['"Source Serif 4"', 'Iowan Old Style', 'Georgia', 'ui-serif', 'serif'],
+        display: ['"Source Serif 4 Variable"', 'Iowan Old Style', 'Georgia', 'ui-serif', 'serif'],
       },
 
       borderRadius: {

@@ -51,3 +51,6 @@ npm-debug.log*
 
 # Vercel
 .vercel
+
+# Supabase CLI local project link/cache
+supabase/.temp/

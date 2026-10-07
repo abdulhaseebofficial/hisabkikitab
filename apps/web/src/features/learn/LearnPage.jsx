@@ -6,36 +6,13 @@ import LearnContent from './LearnContent';
 import { resolvePage } from './content';
 import { pageMetadata } from './metadata';
 import { trackEvent } from '../../shared/analytics/analytics';
+import { replacePageHead } from '../../shared/seo/head';
 
 function useMetadata(page) {
   useEffect(() => {
-    // Replace build-time tags as well as tags from client-side navigation.
-    const originalTitle = 'Hisabki Kitab - Smart money manager for hostel students';
-    const existing = [...document.head.querySelectorAll('meta[name="description"], [data-learn-seo], [data-tools-seo]')];
-    existing.forEach((node) => node.remove());
     const origin = import.meta.env.VITE_SITE_URL || window.location.origin;
     const metadata = pageMetadata(page, new URL(origin).origin);
-    document.title = metadata.title;
-    const nodes = metadata.tags.map(([attribute, key, value]) => {
-      const node = document.createElement('meta');
-      node.setAttribute(attribute, key);
-      node.content = value;
-      return node;
-    });
-    const canonical = document.createElement('link');
-    canonical.rel = 'canonical';
-    canonical.href = metadata.canonical;
-    const schema = document.createElement('script');
-    schema.type = 'application/ld+json';
-    schema.textContent = JSON.stringify(metadata.schema);
-    nodes.push(canonical, schema);
-    nodes.forEach((node) => { node.dataset.learnSeo = ''; document.head.appendChild(node); });
-    return () => {
-      nodes.forEach((node) => node.remove());
-      // Do not restore stale public metadata when navigating to private screens.
-      existing.filter((node) => !node.hasAttribute('data-learn-seo')).forEach((node) => document.head.appendChild(node));
-      document.title = originalTitle;
-    };
+    return replacePageHead(metadata, 'data-learn-seo');
   }, [page.path]);
 }
 

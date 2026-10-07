@@ -30,9 +30,9 @@ export default function PublicHeader({ controls }) {
   return (
     <header className="relative z-30 border-b border-slate-200/80 bg-canvas-card/95 backdrop-blur dark:border-slate-800 dark:bg-canvas-darkCard/95">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-[76px] sm:px-8 lg:px-12">
-        <Link to="/" className="flex min-w-0 items-center gap-2.5 text-slate-900 dark:text-slate-100" aria-label="Hisabki Kitab home">
+        <Link to="/" className="flex min-w-0 items-center gap-2.5 text-slate-900 dark:text-slate-100" aria-label="Hisab Ki Kitab home">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white"><Wallet className="h-5 w-5" aria-hidden="true" /></span>
-          <span className="truncate font-display text-xl font-semibold tracking-tight sm:text-2xl">Hisabki Kitab</span>
+          <span className="truncate font-display text-xl font-semibold tracking-tight sm:text-2xl">Hisab Ki Kitab</span>
         </Link>
         <nav aria-label="Public navigation" className="hidden items-center gap-1 lg:flex">{links.map(({ to, label }) => navLink(to, label))}</nav>
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">

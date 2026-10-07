@@ -30,6 +30,7 @@
     "check": "npm run check:boundaries && npm run check:shadowing && npm run check:dead && npm run test:unit && npm run test:web && npm run test:migrations && npm run test:db && npm run test:e2e && npm run build",
     "test:unit": "node --test tests/unit/*.test.js",
     "test:web": "npm run test -w @hisabkikitab/web",
+    "test:seo": "node --test tests/seo/*.test.mjs",
     "check:boundaries": "node scripts/check-boundaries.js",
     "check:shadowing": "node scripts/check-shadowing.js",
     "check:dead": "node scripts/find-dead-code.js",

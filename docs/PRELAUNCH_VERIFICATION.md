@@ -2,6 +2,12 @@
 
 Status on 5 October 2026: **not ready for production rollout**. This is a procedure and evidence form, not evidence that a production restore, hosted CI run, provider job, or deployment occurred. Keep identifiers, row samples, credentials, and provider screenshots in a private operations record. Commit only aggregate counts and pass/fail conclusions.
 
+### Linked Supabase restore check — 5 October 2026
+
+The linked production project's Supabase dashboard identifies its organization plan as **Free**. The Scheduled backups page says Free projects do not include project backups. The Point in time page offers PITR as a Pro Plan add-on. The Restore to new project page says it requires Pro Plan or above with physical backups enabled. There is no provider-managed backup to select or restore in this account at this time. No restore, database dump, plan change, production query, migration, or deployment was performed. An owner-supplied independent backup may exist elsewhere, but none was available in this workspace. **Backup/PITR/restore gate: blocked; restored-production-history reconciliation: Cannot confirm.**
+
+To resume the provider-managed route, the owner must arrange a plan and backup capability that includes an isolated restore, confirm a usable backup exists, and identify a disposable restore destination. An independently created PostgreSQL dump and separate restore environment is another route if the owner can provide them. In either case, complete the isolation and pre/post reconciliation steps below before any production migration. Do not interpret a new empty Supabase project or the CLI's linked-project metadata as a restored copy.
+
 ## 1. Isolate and identify the restore
 
 1. The owner creates a new disposable restore from a named backup/PITR timestamp. Disconnect it from the production API and scheduler. Use different credentials, a localhost listener, and a database name starting `test_` or ending `_test`. Do not use a tunnel to the live database.
@@ -44,7 +50,7 @@ For personal `expenses.date`, `income.date`, `goal_contributions.date`, `debts.t
 
 | Gate | Required non-secret evidence | Current state |
 |---|---|
-| Backup/PITR/restore | Schedule, retention, PITR window, backup ID/time, timed restore into isolated copy, successful boot and reconciliation | Cannot confirm |
+| Backup/PITR/restore | Schedule, retention, PITR window, backup ID/time, timed restore into isolated copy, successful boot and reconciliation | **Blocked:** linked Supabase Free project has no managed backups; no independent dump or restore was provided. PITR and restore drill cannot be confirmed. |
 | Hosted CI | Run URL, revision SHA matching release artifact, install/test/DB/migration/build outcomes, HTTPS prerender origin | Cannot confirm |
 | Production cron | `CRON_SECRET` present (never value), active `/api/internal/recurring` at `5 0 * * *`, one observed authorized run, rejected unauthorized probe on safe non-production route or provider test, logs, failure alert, duration/connection headroom | Cannot confirm |
 | DB/runtime | Pool maximum (`PG_POOL_MAX` or default 10) times possible function instances within provider limits; migration direct connection; TLS; function duration | Cannot confirm |

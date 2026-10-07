@@ -43,6 +43,9 @@ jobs:
           VITE_SITE_URL: https://hisabkikitab.com
         run: npm run build
 
+      - name: Generated SEO checks
+        run: npm run test:seo
+
       # Advisory: a vulnerable transitive dependency should be visible without
       # failing every unrelated pull request over it.
       - name: Dependency audit
