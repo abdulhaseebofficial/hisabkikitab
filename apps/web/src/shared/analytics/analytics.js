@@ -1,3 +1,6 @@
+import { analyticsConsent, initializeConsent } from './consent';
+import { canonicalPagePath, isPublicPage, routePath } from '../seo/urls';
+
 const ID_PATTERN = /^G-[A-Z0-9]{10}$/i;
 const SCRIPT_ID = 'hkk-ga4-script';
 
@@ -32,7 +35,7 @@ let lastPagePath = null;
 const defaultOptions = () => ({
   measurementId: import.meta.env.VITE_GA_MEASUREMENT_ID,
   enabled:
-    import.meta.env.PROD ||
+    (import.meta.env.PROD && typeof window !== 'undefined' && window.location.origin === String(import.meta.env.VITE_SITE_URL || '').replace(/\/$/, '')) ||
     String(import.meta.env.VITE_GA_ENABLE_LOCAL || '').toLowerCase() === 'true',
 });
 
@@ -50,7 +53,8 @@ export const analyticsConfigured = (options = defaultOptions()) =>
   Boolean(options.enabled && ID_PATTERN.test(String(options.measurementId || '').trim()));
 
 export const initializeAnalytics = (options = defaultOptions()) => {
-  if (initialized || typeof window === 'undefined' || typeof document === 'undefined' || !analyticsConfigured(options)) {
+  initializeConsent();
+  if (initialized || analyticsConsent() !== 'granted' || typeof window === 'undefined' || typeof document === 'undefined' || !analyticsConfigured(options)) {
     return false;
   }
 
@@ -69,6 +73,8 @@ export const initializeAnalytics = (options = defaultOptions()) => {
   window.gtag('js', new Date());
   window.gtag('config', measurementId, {
     send_page_view: false,
+    page_location: `${window.location.origin}${normalizePage(window.location.pathname)}`,
+    page_referrer: '',
     allow_google_signals: false,
     allow_ad_personalization_signals: false,
   });
@@ -80,11 +86,11 @@ export const normalizePage = (pathname) => {
   const path = String(pathname || '/').split(/[?#]/, 1)[0] || '/';
   if (path === '/') return '/';
   if (/^\/reset-password\/[^/]+\/?$/i.test(path)) return '/reset-password/:token';
-  return path;
+  return isPublicPage(path) ? canonicalPagePath(path) : routePath(path);
 };
 
 export const trackPageView = (pathname, title = '') => {
-  if (!initialized || typeof window.gtag !== 'function') return false;
+  if (!initialized || analyticsConsent() !== 'granted' || typeof window.gtag !== 'function') return false;
   const pagePath = normalizePage(pathname);
   if (pagePath === lastPagePath) return false;
   lastPagePath = pagePath;
@@ -98,7 +104,7 @@ export const trackPageView = (pathname, title = '') => {
 };
 
 export const trackEvent = (eventName, parameters = {}) => {
-  if (!initialized || typeof window.gtag !== 'function') return false;
+  if (!initialized || analyticsConsent() !== 'granted' || typeof window.gtag !== 'function') return false;
   const safe = safeParameters(eventName, parameters);
   if (!safe) return false;
   window.gtag('event', eventName, safe);
@@ -106,7 +112,7 @@ export const trackEvent = (eventName, parameters = {}) => {
 };
 
 export const setAnalyticsUserProperties = ({ financeMode, language } = {}) => {
-  if (!initialized || typeof window.gtag !== 'function') return false;
+  if (!initialized || analyticsConsent() !== 'granted' || typeof window.gtag !== 'function') return false;
   const properties = {};
   if (SAFE_VALUES.finance_mode.has(financeMode)) properties.finance_mode = financeMode;
   if (SAFE_VALUES.language.has(language)) properties.app_language = language;

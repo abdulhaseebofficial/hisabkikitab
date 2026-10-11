@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import Link from '../../shared/seo/PublicLink';
 import { ArrowRight, BookOpen, ChartNoAxesCombined, HandCoins, House, PieChart, Receipt, Sparkles, Target, Users, Wallet } from 'lucide-react';
 import { articles } from './content';
 

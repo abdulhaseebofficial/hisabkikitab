@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('@fontsource-variable/inter/files/inter-latin-wght-normal.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family: 'Source Serif 4 Variable';
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url('@fontsource-variable/source-serif-4/files/source-serif-4-latin-wght-normal.woff2') format('woff2-variations');
+}
+
 @layer base {
   :root {
     color-scheme: light;
@@ -72,6 +87,16 @@
 }
 
 @layer components {
+  .hw-discovery-card {
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .hw-discovery-card:hover,
+    .hw-discovery-card:focus-within {
+      transform: translateY(-2px);
+      @apply border-brand-400 shadow-lift;
+    }
+  }
   /* Surfaces are separated by a hairline, not a drop shadow. */
   .hw-card {
     @apply rounded-2xl border border-slate-200 bg-canvas-card shadow-raised;

@@ -18,7 +18,7 @@ export default function ProtectedRoute({ requireOnboarding = true }) {
   if (loading) return <PageSpinner label={t('app.gettingReady')} />;
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login/" state={{ from: location }} replace />;
   }
 
   if (requireOnboarding && needsOnboarding && location.pathname !== '/onboarding') {

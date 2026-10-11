@@ -1,11 +1,13 @@
+import { canonicalPagePath } from '../../shared/seo/urls';
+
 export function pageMetadata(page, origin) {
-  const canonical = page.type === 'not-found' ? null : new URL(page.path, origin).href;
+  const canonical = page.type === 'not-found' ? null : new URL(canonicalPagePath(page.path), origin).href;
   const title = `${page.title}${page.type === 'home' ? '' : ' | Hisab Ki Kitab'}`;
-  const crumbs = [{ name: 'Home', item: `${origin}/` }, ...(page.type === 'home' ? [] : [{ name: 'Learn', item: `${origin}/learn` }]),
-    ...(page.category ? [{ name: page.category.name, item: `${origin}/learn/${page.category.slug}` }] : []),
+  const crumbs = [{ name: 'Home', item: `${origin}/` }, ...(page.type === 'home' ? [] : [{ name: 'Learn', item: `${origin}/learn/` }]),
+    ...(page.category ? [{ name: page.category.name, item: `${origin}/learn/${page.category.slug}/` }] : []),
     ...(page.article ? [{ name: page.title, item: canonical }] : [])];
   const schema = page.type === 'not-found' ? [] : [
-    { '@context': 'https://schema.org', '@type': 'WebPage', name: title, description: page.description, url: canonical, inLanguage: 'en', isPartOf: { '@type': 'WebSite', name: 'Hisab Ki Kitab', url: origin } },
+    { '@context': 'https://schema.org', '@type': 'WebPage', name: title, description: page.description, url: canonical, inLanguage: 'en', isPartOf: { '@type': 'WebSite', name: 'Hisab Ki Kitab', url: `${origin}/` } },
     ...(page.type === 'home' ? [
       { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Hisab Ki Kitab', url: `${origin}/`, inLanguage: 'en' },
       { '@context': 'https://schema.org', '@type': 'Organization', name: 'Hisab Ki Kitab', url: `${origin}/` },

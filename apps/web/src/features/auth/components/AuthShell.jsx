@@ -1,6 +1,7 @@
 import { PiggyBank, Sparkles, TrendingDown } from 'lucide-react';
 import BrandMark from '../../../shared/components/layout/BrandMark';
 import ContactLinks from '../../../shared/components/ContactLinks';
+import { PrivacyChoices } from '../../../shared/analytics/ConsentBanner';
 import { DEVELOPER } from '../../../shared/utils/constants';
 import useT from '../../../shared/i18n/I18nProvider';
 
@@ -86,6 +87,7 @@ export default function AuthShell({ title, subtitle, children, footer }) {
             </p>
             <div className="mt-2.5 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-slate-500 dark:text-slate-400">
               <ContactLinks />
+              <PrivacyChoices />
             </div>
           </div>
         </div>

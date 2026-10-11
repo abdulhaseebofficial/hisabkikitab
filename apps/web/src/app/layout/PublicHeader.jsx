@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
+import Link from '../../shared/seo/PublicLink';
 import { ArrowUpRight, Menu, Wallet, X } from 'lucide-react';
 
 const links = [
@@ -11,6 +12,7 @@ const links = [
 
 export default function PublicHeader({ controls }) {
   const location = useLocation();
+  const pathname = location.pathname.replace(/\/+$/, '') || '/';
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => setMenuOpen(false), [location.pathname]);
@@ -22,7 +24,7 @@ export default function PublicHeader({ controls }) {
   }, [menuOpen]);
 
   const navLink = (to, label) => (
-    <Link key={to} to={to} aria-current={location.pathname === to || (to !== '/' && location.pathname.startsWith(`${to}/`)) ? 'page' : undefined} onClick={() => setMenuOpen(false)} className="inline-flex min-h-11 items-center rounded-full px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 aria-[current=page]:bg-brand-50 aria-[current=page]:text-brand-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:aria-[current=page]:bg-brand-500/15 dark:aria-[current=page]:text-brand-300">
+    <Link key={to} to={to} aria-current={pathname === to || (to !== '/' && pathname.startsWith(`${to}/`)) ? 'page' : undefined} onClick={() => setMenuOpen(false)} className="inline-flex min-h-11 items-center rounded-full px-4 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 aria-[current=page]:bg-brand-50 aria-[current=page]:text-brand-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:aria-[current=page]:bg-brand-500/15 dark:aria-[current=page]:text-brand-300">
       {label}
     </Link>
   );

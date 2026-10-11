@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import authService from './api/authApi';
 import { setSessionExpiredHandler, getErrorMessage, bumpSessionEpoch } from '../../shared/api/client';
 import { trackEvent } from '../../shared/analytics/analytics';
+import { routePath } from '../../shared/seo/urls';
 
 const AuthContext = createContext(null);
 const protectedPaths = new Set(['/onboarding', '/dashboard', '/expenses', '/income', '/goals', '/debts', '/budget', '/advisor', '/reports', '/settings']);
@@ -25,7 +26,8 @@ const protectedPaths = new Set(['/onboarding', '/dashboard', '/expenses', '/inco
  * refresh token every time somebody pressed F5.
  */
 export function AuthProvider({ children }) {
-  const { pathname } = useLocation();
+  const { pathname: currentPathname } = useLocation();
+  const pathname = routePath(currentPathname);
   const [user, setUser] = useState(null);
   const [restored, setRestored] = useState(false);
   const loading = protectedPaths.has(pathname) && !restored;

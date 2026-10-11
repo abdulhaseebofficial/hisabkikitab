@@ -5,16 +5,17 @@ import { AuthProvider } from '../features/auth/index';
 import { ThemeProvider } from './providers/ThemeProvider';
 import LanguageProvider from './providers/LanguageProvider';
 import ProtectedRoute, { PublicOnlyRoute } from './routes/ProtectedRoute';
-import AppLayout from './layout/AppLayout';
 import { PageSpinner } from '../shared/components/ui/Spinner';
 import AnalyticsObserver from './providers/AnalyticsObserver';
 import SeoBoundary from './routes/SeoBoundary';
+import ConsentBanner from '../shared/analytics/ConsentBanner';
 
 // Auth screens load eagerly - they are the first thing most visitors see.
-import Login from '../features/auth/pages/LoginPage';
-import Register from '../features/auth/pages/RegisterPage';
-import ForgotPassword from '../features/auth/pages/ForgotPasswordPage';
-import ResetPassword from '../features/auth/pages/ResetPasswordPage';
+const Login = lazy(() => import('../features/auth/pages/LoginPage'));
+const Register = lazy(() => import('../features/auth/pages/RegisterPage'));
+const ForgotPassword = lazy(() => import('../features/auth/pages/ForgotPasswordPage'));
+const ResetPassword = lazy(() => import('../features/auth/pages/ResetPasswordPage'));
+const AppLayout = lazy(() => import('./layout/AppLayout'));
 
 // The rest is code-split so the initial bundle stays small on a phone.
 const Onboarding = lazy(() => import('../features/onboarding/pages/OnboardingPage'));
@@ -28,9 +29,26 @@ const AIAdvisor = lazy(() => import('../features/advisor/pages/AdvisorPage'));
 const Reports = lazy(() => import('../features/reports/pages/ReportsPage'));
 const SettingsPage = lazy(() => import('../features/settings/pages/SettingsPage'));
 const NotFound = lazy(() => import('./routes/NotFoundPage'));
-const LearnPage = lazy(() => import('../features/learn/LearnPage'));
-const ToolsPage = lazy(() => import('../features/tools/pages/ToolsPage'));
-const TrustPage = lazy(() => import('../features/trust/TrustPage'));
+let initialPublicRoute;
+const LazyLearnPage = lazy(() => import('../features/learn/LearnPage'));
+const LazyToolsPage = lazy(() => import('../features/tools/pages/ToolsPage'));
+const LazyTrustPage = lazy(() => import('../features/trust/TrustPage'));
+const LearnPage = (props) => { const Component = initialPublicRoute?.kind === 'learn' ? initialPublicRoute.Component : LazyLearnPage; return <Component {...props} />; };
+const ToolsPage = (props) => { const Component = initialPublicRoute?.kind === 'tools' ? initialPublicRoute.Component : LazyToolsPage; return <Component {...props} />; };
+const TrustPage = (props) => { const Component = initialPublicRoute?.kind === 'trust' ? initialPublicRoute.Component : LazyTrustPage; return <Component {...props} />; };
+
+export async function prepareInitialRoute(path) {
+  if (path === '/' || /^\/learn(?:\/|$)/.test(path)) {
+    const { default: Component } = await import('../features/learn/LearnPage');
+    initialPublicRoute = { kind: 'learn', Component };
+  } else if (/^\/tools(?:\/|$)/.test(path)) {
+    const { default: Component } = await import('../features/tools/pages/ToolsPage');
+    initialPublicRoute = { kind: 'tools', Component };
+  } else if (/^\/(about|contact|privacy|terms|disclaimer)\/?$/.test(path)) {
+    const { default: Component } = await import('../features/trust/TrustPage');
+    initialPublicRoute = { kind: 'trust', Component };
+  }
+}
 
 export default function App() {
   return (
@@ -39,6 +57,7 @@ export default function App() {
         <AuthProvider>
           <LanguageProvider>
             <AnalyticsObserver />
+            <ConsentBanner />
             <SeoBoundary />
             <Suspense fallback={<PageSpinner />}>
               <Routes>

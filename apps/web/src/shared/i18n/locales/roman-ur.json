@@ -937,5 +937,13 @@
     "staleWrite": "Aap ke edit karte waqt yeh record badal gaya. Mahina dobara load karke koshish karein.",
     "setupComplete": "Sab tayyar hai. Hisabki Kitab mein khush aamdeed!",
     "setupStep": "Qadam {step}, kul {count}"
+  },
+  "consent": {
+    "title": "Aap ki privacy ka intikhab",
+    "description": "Zaroori storage sign-in aur aap ki pasand ko kaam karne deta hai. Aap ki ijazat se Google Analytics cookies istemal karta hai taake hum visits samajh saken aur website behtar bana saken. Aap analytics mana kar sakte hain ya baad mein apna intikhab badal sakte hain.",
+    "policy": "Privacy policy",
+    "reject": "Analytics mana karein",
+    "accept": "Analytics ki ijazat dein",
+    "choices": "Privacy ka intikhab"
   }
 }

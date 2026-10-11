@@ -108,7 +108,7 @@ describe('the password screens', () => {
     signedOut(null, <ForgotPasswordPage />);
     expect(await screen.findByText('Password reset is unavailable')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Send reset link' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Contact us' })).toHaveAttribute('href', '/contact');
+    expect(screen.getByRole('link', { name: 'Contact us' })).toHaveAttribute('href', '/contact/');
     config.mockRestore();
   });
 

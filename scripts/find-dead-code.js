@@ -157,6 +157,7 @@ for (const pkgPath of all.filter((f) => f.endsWith('package.json'))) {
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
   const dir = path.posix.dirname(pkgPath);
   const text = code.filter((f) => f.startsWith(dir + '/')).map((f) => body.get(f)).join('\n') +
+    all.filter((f) => f.startsWith(dir + '/') && f.endsWith('.css')).map((f) => fs.readFileSync(f, 'utf8')).join('\n') +
     JSON.stringify(pkg.scripts || {});
   for (const dep of Object.keys(pkg.dependencies || {})) {
     const escaped = dep.replace(/[/\\^$*+?.()|[\]{}]/g, '\\$&');

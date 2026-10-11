@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import Link from '../../shared/seo/PublicLink';
 import { Mail } from 'lucide-react';
 import { DEVELOPER } from '../../shared/utils/constants';
 
@@ -16,7 +16,7 @@ export default function TrustContent({ page }) {
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-700 dark:text-brand-300">Hisab Ki Kitab · Trust &amp; information</p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">{page.title}</h1>
         <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-300">{page.intro}</p>
-        {page.lastUpdated && <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Last updated: <time dateTime="2026-09-28">{page.lastUpdated}</time></p>}
+        {page.lastUpdated && <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Last updated: <time dateTime="2026-10-11">{page.lastUpdated}</time></p>}
       </header>
 
       <div className="space-y-7 text-sm leading-7 text-slate-700 dark:text-slate-300 sm:text-base">

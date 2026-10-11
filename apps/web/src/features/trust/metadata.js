@@ -1,5 +1,7 @@
+import { canonicalPagePath } from '../../shared/seo/urls';
+
 export function trustMetadata(page, origin) {
-  const canonical = new URL(page.path, origin).href;
+  const canonical = new URL(canonicalPagePath(page.path), origin).href;
   const title = `${page.title} | Hisab Ki Kitab`;
   const breadcrumbs = [
     { name: 'Home', item: `${origin}/` },
@@ -10,7 +12,7 @@ export function trustMetadata(page, origin) {
     canonical,
     schema: [
       { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: breadcrumbs.map((item, index) => ({ '@type': 'ListItem', position: index + 1, ...item })) },
-      { '@context': 'https://schema.org', '@type': 'WebPage', name: title, description: page.description, url: canonical, inLanguage: 'en', isPartOf: { '@type': 'WebSite', name: 'Hisab Ki Kitab', url: origin } },
+      { '@context': 'https://schema.org', '@type': 'WebPage', name: title, description: page.description, url: canonical, inLanguage: 'en', isPartOf: { '@type': 'WebSite', name: 'Hisab Ki Kitab', url: `${origin}/` } },
     ],
     tags: [
       ['name', 'description', page.description],

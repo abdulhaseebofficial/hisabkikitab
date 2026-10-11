@@ -937,5 +937,13 @@
     "staleWrite": "This record changed while you were editing. Reload the month and try again.",
     "setupComplete": "All set. Welcome to Hisabki Kitab!",
     "setupStep": "Step {step} of {count}"
+  },
+  "consent": {
+    "title": "Your privacy choices",
+    "description": "Essential storage keeps sign-in and your preferences working. With your permission, Google Analytics uses cookies to help us understand visits and improve the site. You can reject analytics or change your choice later.",
+    "policy": "Privacy policy",
+    "reject": "Reject analytics",
+    "accept": "Accept analytics",
+    "choices": "Privacy choices"
   }
 }

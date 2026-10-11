@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "trailingSlash": false,
   "crons": [
     {
       "path": "/api/internal/recurring",
@@ -17,47 +16,51 @@
           "destination": "/index.html"
         },
         {
-          "source": "/tools/:tool",
+          "source": "/tools/:tool/",
           "destination": "/tools/:tool/index.html"
         },
         {
-          "source": "/tools",
+          "source": "/tools/",
           "destination": "/tools/index.html"
         },
         {
-          "source": "/learn/:category/:slug",
+          "source": "/learn/:category/:slug/",
           "destination": "/learn/:category/:slug/index.html"
         },
         {
-          "source": "/learn/:category",
+          "source": "/learn/:category/",
           "destination": "/learn/:category/index.html"
         },
         {
-          "source": "/learn",
+          "source": "/learn/",
           "destination": "/learn/index.html"
         },
         {
-          "source": "/about",
+          "source": "/about/",
           "destination": "/about/index.html"
         },
         {
-          "source": "/contact",
+          "source": "/contact/",
           "destination": "/contact/index.html"
         },
         {
-          "source": "/privacy",
+          "source": "/privacy/",
           "destination": "/privacy/index.html"
         },
         {
-          "source": "/terms",
+          "source": "/terms/",
           "destination": "/terms/index.html"
         },
         {
-          "source": "/disclaimer",
+          "source": "/disclaimer/",
           "destination": "/disclaimer/index.html"
         },
         {
           "source": "/reset-password/:token",
+          "destination": "/app.html"
+        },
+        {
+          "source": "/(login|register|forgot-password)/",
           "destination": "/app.html"
         },
         {
@@ -84,6 +87,97 @@
       "destination": {
         "service": "frontend"
       }
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/learn",
+      "destination": "/learn/",
+      "statusCode": 301
+    },
+    {
+      "source": "/learn/:category([a-z0-9-]+)",
+      "destination": "/learn/:category/",
+      "statusCode": 301
+    },
+    {
+      "source": "/learn/:category([a-z0-9-]+)/:slug([a-z0-9-]+)",
+      "destination": "/learn/:category/:slug/",
+      "statusCode": 301
+    },
+    {
+      "source": "/tools",
+      "destination": "/tools/",
+      "statusCode": 301
+    },
+    {
+      "source": "/tools/:tool([a-z0-9-]+)",
+      "destination": "/tools/:tool/",
+      "statusCode": 301
+    },
+    {
+      "source": "/about",
+      "destination": "/about/",
+      "statusCode": 301
+    },
+    {
+      "source": "/contact",
+      "destination": "/contact/",
+      "statusCode": 301
+    },
+    {
+      "source": "/privacy",
+      "destination": "/privacy/",
+      "statusCode": 301
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms/",
+      "statusCode": 301
+    },
+    {
+      "source": "/disclaimer",
+      "destination": "/disclaimer/",
+      "statusCode": 301
+    },
+    {
+      "source": "/login",
+      "destination": "/login/",
+      "statusCode": 301
+    },
+    {
+      "source": "/register",
+      "destination": "/register/",
+      "statusCode": 301
+    },
+    {
+      "source": "/forgot-password",
+      "destination": "/forgot-password/",
+      "statusCode": 301
+    }
+  ],
+  "headers": [
+    {
+      "source": "/assets/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/:path*",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
     }
   ]
 }

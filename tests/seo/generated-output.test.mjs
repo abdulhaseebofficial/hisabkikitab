@@ -20,7 +20,7 @@ test('sitemap is valid XML with unique canonical HTTPS public URLs only', async 
   const urls = [...xml.getElementsByTagName('loc')].map((node) => node.textContent);
   assert.equal(urls.length, sitemapPaths.length);
   assert.equal(new Set(urls).size, urls.length);
-  assert.deepEqual(new Set(urls), new Set(sitemapPaths.map((path) => new URL(path, origin).href)));
+  assert.deepEqual(new Set(urls), new Set(sitemapPaths.map((path) => new URL(path === '/' ? '/' : `${path}/`, origin).href)));
   assert.ok(urls.every((url) => url.startsWith(`${origin}/`) && !new URL(url).search));
   assert.equal(xml.getElementsByTagName('lastmod').length, 0);
   assert.ok(!urls.some((url) => /\/(login|register|forgot-password|reset-password|dashboard|expenses|income|goals|debts|budget|advisor|reports|settings|onboarding|api)(\/|$)/.test(new URL(url).pathname)));
@@ -31,7 +31,7 @@ test('every indexable page has one H1 and unique complete metadata', async () =>
   const descriptions = new Set();
   for (const path of sitemapPaths) {
     const doc = await html(path);
-    const canonical = new URL(path, origin).href;
+    const canonical = new URL(path === '/' ? '/' : `${path}/`, origin).href;
     assert.equal(doc.querySelectorAll('title').length, 1, path);
     assert.equal(doc.querySelectorAll('meta[name="description"]').length, 1, path);
     assert.equal(doc.querySelectorAll('link[rel="canonical"]').length, 1, path);
@@ -70,7 +70,7 @@ test('page-specific JSON-LD is valid and matches visible pages', async () => {
     assert.equal(types.includes('WebApplication'), /^\/tools\/[^/]+$/.test(path), path);
     assert.equal(types.includes('FAQPage'), !!doc.querySelector('#faqs'), path);
     for (const node of schema) {
-      if (node.url) assert.equal(node.url, new URL(path, origin).href, path);
+      if (node.url) assert.equal(node.url, new URL(path === '/' ? '/' : `${path}/`, origin).href, path);
       if (node['@type'] === 'Article') {
         assert.equal(node.headline, doc.querySelector('h1').textContent, path);
         assert.ok(doc.querySelector(`time[datetime="${node.datePublished}"]`), path);
@@ -110,12 +110,13 @@ test('private SPA shell and static 404 do not carry public canonicals or data', 
   assert.equal(getMeta(missing, 'robots'), 'noindex,follow');
   assert.equal(missing.querySelectorAll('h1').length, 1);
   assert.equal(missing.querySelector('link[rel="canonical"]'), null);
-  for (const path of ['/', '/learn', '/tools']) assert.ok(missing.querySelector(`a[href="${path}"]`));
+  for (const path of ['/', '/learn/', '/tools/']) assert.ok(missing.querySelector(`a[href="${path}"]`));
 });
 
 test('hosting config routes known app paths without a catch-all 200 rewrite', async () => {
   const config = JSON.parse(await readFile(resolve('vercel.json'), 'utf8'));
-  assert.equal(config.trailingSlash, false);
+  assert.equal(config.trailingSlash, undefined, 'Global normalization must not redirect API endpoints');
+  assert.ok(config.redirects.every(rule => rule.statusCode === 301 && rule.destination.endsWith('/')));
   const rewrites = config.services.frontend.rewrites;
   assert.ok(rewrites.some((rule) => rule.source === '/reset-password/:token' && rule.destination === '/app.html'));
   assert.ok(rewrites.some((rule) => rule.source.includes('dashboard') && rule.destination === '/app.html'));

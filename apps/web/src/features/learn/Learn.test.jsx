@@ -18,7 +18,7 @@ describe('Learn publishing contract', () => {
   it('provides canonical and Article metadata with matching dates', () => {
     for (const article of articles) {
       const metadata = pageMetadata(resolvePage(articlePath(article)), 'https://example.com');
-      expect(metadata.canonical).toBe(`https://example.com${articlePath(article)}`);
+      expect(metadata.canonical).toBe(`https://example.com${articlePath(article)}/`);
       const schema = metadata.schema.find((item) => item['@type'] === 'Article');
       expect(schema.datePublished).toBe(article.publishedAt);
       expect(schema.dateModified).toBe(article.updatedAt);

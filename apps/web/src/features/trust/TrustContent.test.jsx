@@ -25,7 +25,7 @@ describe('trust pages', () => {
     expect(new Set(metadata.map((item) => item.title)).size).toBe(pages.length);
     expect(new Set(metadata.map((item) => item.tags.find((tag) => tag[1] === 'description')[2])).size).toBe(pages.length);
     for (const [index, item] of metadata.entries()) {
-      expect(item.canonical).toBe(`https://hisabkikitab.com${pages[index].path}`);
+      expect(item.canonical).toBe(`https://hisabkikitab.com${pages[index].path}/`);
       expect(item.schema.some((node) => node['@type'] === 'WebPage')).toBe(true);
       expect(item.schema.some((node) => node['@type'] === 'BreadcrumbList')).toBe(true);
       expect(item.schema.some((node) => node['@type'] === 'Article')).toBe(false);

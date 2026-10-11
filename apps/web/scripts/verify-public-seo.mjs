@@ -22,6 +22,7 @@ const descriptions = new Set();
 const types = new Set();
 for (const url of urls) {
   const pathname = new URL(url).pathname;
+  if (!pathname.endsWith('/')) throw new Error(`Sitemap page must end with a slash: ${url}`);
   const file = resolve(dist, pathname === '/' ? 'index.html' : `${pathname.slice(1)}/index.html`);
   await access(file);
   const html = await readFile(file, 'utf8');
@@ -50,11 +51,11 @@ for (const url of urls) {
   findUrls(schema);
   if (schemaUrls.some((value) => new URL(value).origin !== origin)) throw new Error(`Structured data uses a non-production origin on ${pathname}`);
   for (const item of Array.isArray(schema) ? schema : [schema]) types.add(item['@type']);
-  if (pathname.startsWith('/learn/') && pathname.split('/').length === 4 && !schema.some((item) => item['@type'] === 'Article')) throw new Error(`Missing Article schema on ${pathname}`);
+  if (pathname.startsWith('/learn/') && pathname.split('/').filter(Boolean).length === 3 && !schema.some((item) => item['@type'] === 'Article')) throw new Error(`Missing Article schema on ${pathname}`);
   if (pathname === '/learn' || pathname.startsWith('/learn/') || pathname.startsWith('/tools')) {
     if (!schema.some((item) => item['@type'] === 'BreadcrumbList')) throw new Error(`Missing Breadcrumb schema on ${pathname}`);
   }
-  if (['/about', '/contact', '/privacy', '/terms', '/disclaimer'].includes(pathname)) {
+  if (['/about/', '/contact/', '/privacy/', '/terms/', '/disclaimer/'].includes(pathname)) {
     if (schema.some((item) => item['@type'] === 'Article')) throw new Error(`Legal/trust page has inappropriate Article schema on ${pathname}`);
     if (!schema.some((item) => item['@type'] === 'WebPage') || !schema.some((item) => item['@type'] === 'BreadcrumbList')) throw new Error(`Missing WebPage or breadcrumb schema on ${pathname}`);
   }

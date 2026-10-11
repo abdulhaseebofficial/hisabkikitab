@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import Link from '../../shared/seo/PublicLink';
 import TrustFooterLinks from './TrustFooterLinks';
 
 export default function PublicFooter() {

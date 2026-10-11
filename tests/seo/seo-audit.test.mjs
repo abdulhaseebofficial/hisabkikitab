@@ -20,16 +20,16 @@ test('generated route inventory and sitemap exactly match index directives', asy
   const xml = new JSDOM(await readFile(resolve(dist, 'sitemap.xml'), 'utf8'), { contentType: 'text/xml' }).window.document;
   const listed = [...xml.getElementsByTagName('loc')].map((node) => node.textContent);
   assert.equal(new Set(generated).size, generated.length, 'duplicate generated route');
-  assert.deepEqual(new Set(listed), new Set(sitemapPaths.map((path) => new URL(path, origin).href)));
+  assert.deepEqual(new Set(listed), new Set(sitemapPaths.map((path) => new URL(path === '/' ? '/' : `${path}/`, origin).href)));
   for (const path of generated) {
     const doc = await documentFor(path);
     const indexable = meta(doc, 'robots') === 'index,follow';
     assert.equal(indexable, sitemapPaths.includes(path), `${path}: index directive and sitemap differ`);
     assert.equal(doc.querySelectorAll('link[rel="canonical"]').length, 1, `${path}: expected one canonical`);
-    assert.equal(doc.querySelector('link[rel="canonical"]').href, new URL(path, origin).href, `${path}: non-production or alternate canonical`);
+    assert.equal(doc.querySelector('link[rel="canonical"]').href, new URL(path === '/' ? '/' : `${path}/`, origin).href, `${path}: non-production or alternate canonical`);
     assert.equal(doc.querySelectorAll('meta[name="robots"]').length, 1, `${path}: duplicate robots tag`);
     assert.equal(doc.querySelectorAll('meta[name="description"]').length, 1, `${path}: duplicate description`);
-    assert.equal(meta(doc, 'og:url', 'property'), new URL(path, origin).href, `${path}: og:url mismatch`);
+    assert.equal(meta(doc, 'og:url', 'property'), new URL(path === '/' ? '/' : `${path}/`, origin).href, `${path}: og:url mismatch`);
     for (const node of doc.querySelectorAll('link[rel="canonical"], meta[property="og:url"]')) {
       assert.ok(!/localhost|127\.0\.0\.1|\.vercel\.app/i.test(node.outerHTML), `${path}: development URL leakage`);
     }
@@ -49,15 +49,15 @@ test('server-rendered JSON-LD has supported types and matching route URLs', asyn
     assert.equal(types.includes('BreadcrumbList'), path !== '/', path);
     for (const node of schema) {
       assert.equal(node['@context'], 'https://schema.org', `${path}: invalid context`);
-      if (node.url) assert.equal(node.url, new URL(path, origin).href, `${path}: schema URL mismatch`);
+      if (node.url) assert.equal(node.url, new URL(path === '/' ? '/' : `${path}/`, origin).href, `${path}: schema URL mismatch`);
       if (node['@type'] === 'Article') {
-        assert.equal(node.mainEntityOfPage, new URL(path, origin).href, path);
+        assert.equal(node.mainEntityOfPage, new URL(path === '/' ? '/' : `${path}/`, origin).href, path);
         assert.equal(node.headline, doc.querySelector('h1')?.textContent, path);
       }
       if (node['@type'] === 'BreadcrumbList') {
         const items = node.itemListElement;
         assert.equal(items[0].item, `${origin}/`, path);
-        assert.equal(items.at(-1).item, new URL(path, origin).href, path);
+        assert.equal(items.at(-1).item, new URL(path === '/' ? '/' : `${path}/`, origin).href, path);
         assert.deepEqual(items.map((item) => item.position), items.map((_, index) => index + 1), path);
       }
     }

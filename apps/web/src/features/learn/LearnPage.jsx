@@ -7,6 +7,7 @@ import { resolvePage } from './content';
 import { pageMetadata } from './metadata';
 import { trackEvent } from '../../shared/analytics/analytics';
 import { replacePageHead } from '../../shared/seo/head';
+import { routePath } from '../../shared/seo/urls';
 
 function useMetadata(page) {
   useEffect(() => {
@@ -29,7 +30,7 @@ export default function LearnPage() {
       if (!anchor) return;
       const target = new URL(anchor.href, window.location.origin);
       if (target.origin !== window.location.origin) return;
-      if (page.type === 'article' && target.pathname.startsWith('/learn/') && target.pathname !== page.path) {
+      if (page.type === 'article' && target.pathname.startsWith('/learn/') && routePath(target.pathname) !== page.path) {
         trackEvent('related_article_clicked', { content_category: page.article.category });
       }
       const feature = featureByPath[target.pathname];

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
+import Link from '../../../shared/seo/PublicLink';
 import { BriefcaseBusiness, HandCoins, PieChart, Scale, ShieldCheck, Target, Users, ArrowRight } from 'lucide-react';
 import Card from '../../../shared/components/ui/Card';
 import Button from '../../../shared/components/ui/Button';
@@ -7,6 +8,7 @@ import PublicSiteLayout from '../../../app/layout/PublicSiteLayout';
 import { calculate, fields, tools } from '../content/calculations';
 import { trackEvent } from '../../../shared/analytics/analytics';
 import { replacePageHead } from '../../../shared/seo/head';
+import { canonicalPagePath, routePath } from '../../../shared/seo/urls';
 
 const icons = { BriefcaseBusiness, HandCoins, PieChart, Scale, ShieldCheck, Target, Users };
 const formatter = new Intl.NumberFormat('en', { maximumFractionDigits: 2, minimumFractionDigits: 0 });
@@ -21,18 +23,18 @@ const toolGuides = {
 };
 
 export function toolsMetadata(tool, pathname, origin) {
-  const missing = !tool && pathname !== '/tools';
+  const missing = !tool && routePath(pathname) !== '/tools';
   const page = tool ? { title: `${tool.title} | Hisab Ki Kitab`, description: tool.description } : missing ? {
     title: 'Calculator not found | Hisab Ki Kitab', description: 'This calculator is unavailable. Browse the available financial tools.',
   } : {
     title: 'Financial Calculators & Tools | Hisab Ki Kitab',
     description: 'Free, practical money calculators to complement budgeting, expense tracking, savings goals and financial management with Hisab Ki Kitab.',
   };
-  const canonical = missing ? null : new URL(tool ? `/tools/${tool.slug}` : '/tools', origin).href;
+  const canonical = missing ? null : new URL(canonicalPagePath(tool ? `/tools/${tool.slug}` : '/tools'), origin).href;
   const schema = missing ? [] : [
     { '@context':'https://schema.org','@type':'WebPage','name':page.title,'description':page.description,'url':canonical,'inLanguage':'en' },
     ...(tool ? [{ '@context':'https://schema.org','@type':'WebApplication','name':tool.title,'description':page.description,'applicationCategory':'FinanceApplication','url':canonical,'isAccessibleForFree':true }] : []),
-    { '@context':'https://schema.org','@type':'BreadcrumbList','itemListElement':[ { '@type':'ListItem','position':1,'name':'Home','item':`${origin}/` }, { '@type':'ListItem','position':2,'name':'Financial tools','item':`${origin}/tools` }, ...(tool ? [{ '@type':'ListItem','position':3,'name':tool.title,'item':canonical }] : []) ] },
+    { '@context':'https://schema.org','@type':'BreadcrumbList','itemListElement':[ { '@type':'ListItem','position':1,'name':'Home','item':`${origin}/` }, { '@type':'ListItem','position':2,'name':'Financial tools','item':`${origin}/tools/` }, ...(tool ? [{ '@type':'ListItem','position':3,'name':tool.title,'item':canonical }] : []) ] },
   ];
   return { ...page, canonical, schema, tags:[['name','description',page.description],['name','robots',missing?'noindex,follow':'index,follow'],['property','og:title',page.title],['property','og:description',page.description],...(canonical ? [['property','og:url',canonical]] : []),['property','og:type','website'],['property','og:site_name','Hisab Ki Kitab'],['name','twitter:card','summary'],['name','twitter:title',page.title],['name','twitter:description',page.description]] };
 }
@@ -48,7 +50,7 @@ function useToolsMetadata(tool) {
 
 function ToolCard({ tool }) {
   const Icon=icons[tool.icon]||PieChart;
-  return <Link to={`/tools/${tool.slug}`} className="hw-card p-5 transition-colors hover:border-brand-400"><Icon className="mb-4 h-6 w-6 text-brand-600 dark:text-brand-400" aria-hidden="true"/><h3 className="font-semibold">{tool.title}</h3><p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">{tool.description}</p><span className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-brand-700 dark:text-brand-300">Open calculator <ArrowRight className="h-4 w-4" aria-hidden="true"/></span></Link>;
+  return <Link to={`/tools/${tool.slug}`} className="hw-card hw-discovery-card p-5 hover:border-brand-400"><Icon className="mb-4 h-6 w-6 text-brand-600 dark:text-brand-400" aria-hidden="true"/><h3 className="font-semibold">{tool.title}</h3><p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">{tool.description}</p><span className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-brand-700 dark:text-brand-300">Open calculator <ArrowRight className="h-4 w-4" aria-hidden="true"/></span></Link>;
 }
 
 function ToolExplanation({ tool }) {

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CONSENT_KEY, resetConsentForTests, setAnalyticsConsent } from './consent';
 import {
   __resetAnalyticsForTests,
   initializeAnalytics,
@@ -10,6 +11,8 @@ import {
 
 beforeEach(() => {
   __resetAnalyticsForTests();
+  resetConsentForTests();
+  window.localStorage.setItem(CONSENT_KEY, JSON.stringify({ choice: 'granted', at: Date.now() }));
   delete window.gtag;
   delete window.dataLayer;
   document.getElementById('hkk-ga4-script')?.remove();
@@ -33,9 +36,30 @@ it('initializes once with asynchronous loading and automatic page views disabled
   const script = document.getElementById('hkk-ga4-script');
   expect(script.async).toBe(true);
   expect(script.src).toContain('G-TEST123456');
-  expect(window.dataLayer).toHaveLength(2);
-  expect(window.dataLayer[1][0]).toBe('config');
-  expect(window.dataLayer[1][2]).toMatchObject({ send_page_view: false });
+  expect(window.dataLayer[0][0]).toBe('consent');
+  expect(window.dataLayer[0][2]).toMatchObject({ analytics_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' });
+  const config = window.dataLayer.find(call => call[0] === 'config');
+  expect(config[2]).toMatchObject({ send_page_view: false });
+});
+
+it('blocks GA before a choice and after rejection or withdrawal', () => {
+  localStorage.removeItem(CONSENT_KEY);
+  expect(initializeAnalytics({ enabled: true, measurementId: 'G-TEST123456' })).toBe(false);
+  expect(document.getElementById('hkk-ga4-script')).toBeNull();
+  setAnalyticsConsent('granted');
+  expect(initializeAnalytics({ enabled: true, measurementId: 'G-TEST123456' })).toBe(true);
+  document.cookie = '_ga=private; path=/';
+  setAnalyticsConsent('denied');
+  expect(trackPageView('/learn/', 'Learn')).toBe(false);
+  expect(trackEvent('expense_created')).toBe(false);
+  expect(window['ga-disable-G-TEST123456']).toBe(true);
+  expect(document.cookie).not.toContain('_ga=');
+});
+
+it('normalizes public slash variants and never sends a reset token or query', () => {
+  expect(normalizePage('/learn/saving/example?private=value')).toBe('/learn/saving/example/');
+  expect(normalizePage('/learn/')).toBe('/learn/');
+  expect(normalizePage('/reset-password/private-token/?email=private')).toBe('/reset-password/:token');
 });
 
 it('tracks one sanitized page view per SPA path', () => {

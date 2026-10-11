@@ -1,4 +1,5 @@
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import Link from '../../shared/seo/PublicLink';
 import { useEffect, useState } from 'react';
 import { ArrowRight, BookOpen, PiggyBank, TrendingUp, PieChart, Wallet, House, Users, HandCoins, Laptop, Store, Repeat } from 'lucide-react';
 import PublicHeader from '../../app/layout/PublicHeader';
@@ -26,18 +27,33 @@ export { PublicHeader };
 function CategoryCards({ items = categories }) {
   return <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{items.map((category) => {
     const Icon = icons[category.icon] || BookOpen;
-    return <Link key={category.slug} to={`/learn/${category.slug}`} className="hw-card group p-5 transition-colors hover:border-brand-400"><Icon className="mb-4 h-6 w-6 text-brand-600 dark:text-brand-400" aria-hidden="true" /><h3 className="font-semibold">{category.name}</h3><p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">{category.description}</p><span className={`${linkStyle} mt-2 text-sm`}>Explore guides <ArrowRight className="h-4 w-4" aria-hidden="true" /></span></Link>;
+    return <Link key={category.slug} to={`/learn/${category.slug}`} className="hw-card hw-discovery-card group p-5 hover:border-brand-400"><Icon className="mb-4 h-6 w-6 text-brand-600 dark:text-brand-400" aria-hidden="true" /><h3 className="font-semibold">{category.name}</h3><p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">{category.description}</p><span className={`${linkStyle} mt-2 text-sm`}>Explore guides <ArrowRight className="h-4 w-4" aria-hidden="true" /></span></Link>;
   })}</div>;
 }
 
 export function ArticleCard({ article }) {
   const category = categories.find((item) => item.slug === article.category);
   const Icon = icons[category.icon];
-  return <Card as="article" padded={false} className="flex flex-col overflow-hidden"><div className="relative flex aspect-[16/7] items-center justify-center border-b border-slate-200 bg-brand-50 dark:border-slate-800 dark:bg-brand-500/10">{article.image?.src ? <img src={article.image.src} alt={article.image.alt || ''} width={article.image.width || 960} height={article.image.height || 420} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" /> : <Icon className="h-12 w-12 text-brand-600/70 dark:text-brand-300/70" aria-hidden="true" />}</div><div className="flex flex-1 flex-col p-5"><Link className={`${linkStyle} text-xs`} to={`/learn/${article.category}`}>{category.name}</Link><h3 className="font-display text-xl font-semibold leading-snug"><Link to={articlePath(article)} className="hover:underline">{article.title}</Link></h3><p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">{article.excerpt}</p><p className="mb-4 mt-4 text-xs text-slate-500 dark:text-slate-400">{article.readingTime} min read · Updated <time dateTime={article.updatedAt}>{date(article.updatedAt)}</time></p><Link className={`${linkStyle} mt-auto text-sm`} to={articlePath(article)} aria-label={`Read Article: ${article.title}`}>Read Article <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link></div></Card>;
+  return <Card as="article" padded={false} className="hw-discovery-card flex flex-col overflow-hidden"><div className="relative flex aspect-[16/7] items-center justify-center border-b border-slate-200 bg-brand-50 dark:border-slate-800 dark:bg-brand-500/10">{article.image?.src ? <img src={article.image.src} alt={article.image.alt || ''} width={article.image.width || 960} height={article.image.height || 420} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" /> : <Icon className="h-12 w-12 text-brand-600/70 dark:text-brand-300/70" aria-hidden="true" />}</div><div className="flex flex-1 flex-col p-5"><Link className={`${linkStyle} text-xs`} to={`/learn/${article.category}`}>{category.name}</Link><h3 className="font-display text-xl font-semibold leading-snug"><Link to={articlePath(article)} className="hover:underline">{article.title}</Link></h3><p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">{article.excerpt}</p><p className="mb-4 mt-4 text-xs text-slate-500 dark:text-slate-400">{article.readingTime} min read · Updated <time dateTime={article.updatedAt}>{date(article.updatedAt)}</time></p><Link className={`${linkStyle} mt-auto text-sm`} to={articlePath(article)} aria-label={`Read Article: ${article.title}`}>Read Article <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link></div></Card>;
 }
 
 function ArticleGrid({ items }) {
   return <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{items.map((article) => <ArticleCard key={articlePath(article)} article={article} />)}</div>;
+}
+
+function GuideExplorer() {
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('');
+  const filtering = Boolean(query.trim() || category);
+  const items = filtering ? articles.filter(article => (!category || article.category === category) && `${article.title} ${article.excerpt}`.toLowerCase().includes(query.trim().toLowerCase())) : articles.filter(article => article.featured).slice(0, 6);
+  return <section aria-label="Find financial guides">
+    <div className="mb-5 grid gap-4 rounded-2xl border border-slate-200 bg-canvas-card p-5 sm:grid-cols-[1fr_15rem] dark:border-slate-800 dark:bg-canvas-darkCard">
+      <label className="text-sm font-medium">Search guides<input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Try budgeting, savings or roommates" className="hw-input mt-2" /></label>
+      <label className="text-sm font-medium">Topic<select value={category} onChange={event => setCategory(event.target.value)} className="hw-input mt-2"><option value="">All topics</option>{indexableCategories.map(item => <option key={item.slug} value={item.slug}>{item.name}</option>)}</select></label>
+    </div>
+    <p aria-live="polite" className="mb-4 text-sm text-slate-600 dark:text-slate-400">{filtering ? `${items.length} ${items.length === 1 ? 'guide' : 'guides'} found` : 'A few practical guides to get you started.'}</p>
+    {items.length ? <ArticleGrid items={items} /> : <Card><p>No guides match your search.</p><button type="button" className={`${linkStyle} mt-2`} onClick={() => { setQuery(''); setCategory(''); }}>Clear filters</button></Card>}
+  </section>;
 }
 
 function Breadcrumbs({ page }) {
@@ -65,13 +81,22 @@ function Article({ article }) {
 }
 
 function ArticleDetail({ summary }) {
-  const [article, setArticle] = useState(null);
+  const [article, setArticle] = useState(() => {
+    if (typeof document === 'undefined') return null;
+    try {
+      const data = JSON.parse(document.getElementById('hkk-article')?.textContent || 'null');
+      return data?.slug === summary.slug ? data : null;
+    } catch { return null; }
+  });
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
     let active = true;
-    getArticle(summary.slug).then((loaded) => { if (active) setArticle(loaded); });
+    if (article) return undefined;
+    getArticle(summary.slug).then((loaded) => { if (active) { setArticle(loaded); setFailed(!loaded); } }).catch(() => { if (active) setFailed(true); });
     return () => { active = false; };
   }, [summary.slug]);
   if (article) return <Article article={article} />;
+  if (failed) return <section role="alert" className="mx-auto max-w-3xl"><h1 className="text-3xl">{summary.title}</h1><p className="mt-5">This guide could not load. Please reload to try again.</p><Link to="/learn" className={`${linkStyle} mt-4`}>Browse financial guides</Link></section>;
   return <article aria-busy="true" className="mx-auto max-w-3xl"><h1 className="font-display text-3xl leading-tight sm:text-5xl">{summary.title}</h1><p className="mt-5 text-sm text-slate-500">Loading guide…</p><div className="mt-8 space-y-4"><div className="hw-skeleton h-5 w-full" /><div className="hw-skeleton h-5 w-5/6" /><div className="hw-skeleton h-5 w-4/6" /></div></article>;
 }
 
@@ -91,5 +116,5 @@ export default function LearnContent({ page }) {
     return <><Breadcrumbs page={page} /><h1 className="text-4xl">{page.category.name}</h1><p className="mb-8 mt-4 max-w-2xl leading-7 text-slate-600 dark:text-slate-400">{page.description}</p><h2 className="mb-5 font-display text-2xl font-semibold">{items.length ? 'Latest guides' : 'New guides are on the way'}</h2>{items.length ? <><ArticleGrid items={pagination.items} /><Pagination page={pagination.page} pages={pagination.pages} category={page.category.slug} /></> : <Card><p className="leading-7 text-slate-600 dark:text-slate-400">We are preparing guides for this category. Start with these practical money essentials in the meantime.</p><Link to="/learn" className={`${linkStyle} mt-3`}>Browse published guides</Link></Card>}{!items.length && <section className="mt-8"><h2 className="mb-5 font-display text-2xl font-semibold">Start with the essentials</h2><ArticleGrid items={articles.slice(0, 3)} /></section>}</>;
   }
   if (page.type === 'home') return <HomeContent ArticleCard={ArticleCard} />;
-  return <><Breadcrumbs page={page} /><section><div className="mb-8 max-w-3xl"><h1 className="text-3xl leading-tight sm:text-5xl">{learnTitle}</h1><p className="mt-5 text-lg leading-8 text-slate-600 dark:text-slate-400">Practical guides to help you save, budget, earn and manage money more effectively.</p><p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">Use what you learn alongside expense tracking, budgeting and financial goals in Hisab Ki Kitab.</p></div><h2 className="mb-5 font-display text-2xl font-semibold">Start here</h2><ArticleGrid items={articles.filter((article) => article.featured).slice(0, 6)} /><div className="mb-5 mt-12"><h2 className="font-display text-2xl font-semibold">Explore by category</h2></div><CategoryCards items={indexableCategories} /><div className="mt-10 rounded-2xl border border-brand-200 bg-brand-50 p-6 dark:border-brand-500/20 dark:bg-brand-500/10"><h2 className="font-display text-2xl font-semibold">Put your plan into practice</h2><p className="mt-2 max-w-2xl leading-7 text-slate-600 dark:text-slate-400">Track expenses, create a budget and set a savings goal in Hisab Ki Kitab.</p><div className="mt-4 flex flex-wrap gap-4"><Link to="/expenses" className={linkStyle}>Track expenses</Link><Link to="/budget" className={linkStyle}>Create a budget</Link><Link to="/goals" className={linkStyle}>Set a savings goal</Link></div></div></section></>;
+  return <><Breadcrumbs page={page} /><section><div className="mb-8 max-w-3xl"><h1 className="text-3xl leading-tight sm:text-5xl">{learnTitle}</h1><p className="mt-5 text-lg leading-8 text-slate-600 dark:text-slate-400">Practical guides to help you save, budget, earn and manage money more effectively.</p><p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">Use what you learn alongside expense tracking, budgeting and financial goals in Hisab Ki Kitab.</p></div><h2 className="mb-5 font-display text-2xl font-semibold">Start here</h2><GuideExplorer /><div className="mb-5 mt-12"><h2 className="font-display text-2xl font-semibold">Explore by category</h2></div><CategoryCards items={indexableCategories} /><div className="mt-10 rounded-2xl border border-brand-200 bg-brand-50 p-6 dark:border-brand-500/20 dark:bg-brand-500/10"><h2 className="font-display text-2xl font-semibold">Put your plan into practice</h2><p className="mt-2 max-w-2xl leading-7 text-slate-600 dark:text-slate-400">Track expenses, create a budget and set a savings goal in Hisab Ki Kitab.</p><div className="mt-4 flex flex-wrap gap-4"><Link to="/expenses" className={linkStyle}>Track expenses</Link><Link to="/budget" className={linkStyle}>Create a budget</Link><Link to="/goals" className={linkStyle}>Set a savings goal</Link></div></div></section></>;
 }
