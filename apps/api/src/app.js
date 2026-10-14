@@ -36,7 +36,8 @@ const {
 } = require('./shared/constants');
 
 /**
- * The origins CORS will accept, from CLIENT_URL plus the deployment's own URL.
+ * The origins CORS will accept: CLIENT_URL, both public hostnames, and the
+ * deployment's own URL.
  *
  * On Vercel the frontend and this API answer on one domain, so the deployment's
  * own URL is same-origin traffic that still arrives with an Origin header.
@@ -48,6 +49,12 @@ const allowedOrigins = () => {
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
+
+  // Both public hostnames serve the same production app. Vercel's production
+  // URL may contain only the apex hostname, while browsers can visit www.
+  if (isProduction()) {
+    origins.push('https://hisabkikitab.com', 'https://www.hisabkikitab.com');
+  }
 
   [process.env.VERCEL_PROJECT_PRODUCTION_URL, process.env.VERCEL_URL]
     .filter(Boolean)
