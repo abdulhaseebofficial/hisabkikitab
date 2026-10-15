@@ -3,15 +3,9 @@
 /**
  * Hisabki Kitab theme.
  *
- * The look is warm and paper-like rather than the cool blue-grey most dashboards
- * default to: a cream page, near-white cards, a terracotta accent and a serif
- * for headings.
- *
- * `slate` is deliberately REDEFINED as a warm taupe ramp instead of Tailwind's
- * cool blue-grey. Every component already speaks in slate-*, so overriding the
- * scale re-skins the whole app from one place with no per-component edits.
- * Every text step below was contrast-checked against the real card and page
- * surfaces (all body pairs clear 4.5:1).
+ * Approved blue light and dark palettes are supplied by CSS custom properties
+ * in index.css. Existing components keep their semantic Tailwind tokens while
+ * the existing theme provider switches the dark class on <html>.
  */
 export default {
   darkMode: 'class',
@@ -19,45 +13,42 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Warm taupe neutrals (replaces Tailwind's cool slate).
         slate: {
-          50: '#faf9f7',
-          100: '#f3f1ec',
-          200: '#e1ddd2',
-          300: '#d6d1c4',
-          400: '#b0aa9c',
-          500: '#726c5d',
-          600: '#5f594d',
-          700: '#47423a',
-          800: '#332f2a',
-          900: '#262421', // dark card
-          950: '#1a1917', // dark page
+          50: 'rgb(var(--slate-50) / <alpha-value>)',
+          100: 'rgb(var(--slate-100) / <alpha-value>)',
+          200: 'rgb(var(--slate-200) / <alpha-value>)',
+          300: 'rgb(var(--slate-300) / <alpha-value>)',
+          400: 'rgb(var(--slate-400) / <alpha-value>)',
+          500: 'rgb(var(--slate-500) / <alpha-value>)',
+          600: 'rgb(var(--slate-600) / <alpha-value>)',
+          700: 'rgb(var(--slate-700) / <alpha-value>)',
+          800: 'rgb(var(--slate-800) / <alpha-value>)',
+          900: 'rgb(var(--slate-900) / <alpha-value>)',
+          950: 'rgb(var(--slate-950) / <alpha-value>)',
         },
 
-        // Terracotta accent.
         brand: {
-          50: '#fbf4f1',
-          100: '#f6e6df',
-          200: '#eccebf',
-          300: '#deab94',
-          400: '#cd8460',
-          500: '#c05f3c',
-          600: '#a94e30',
-          700: '#8c3f28',
-          800: '#713424',
-          900: '#5c2c20',
+          50: 'rgb(var(--brand-50) / <alpha-value>)',
+          100: 'rgb(var(--brand-100) / <alpha-value>)',
+          200: 'rgb(var(--brand-200) / <alpha-value>)',
+          300: 'rgb(var(--brand-300) / <alpha-value>)',
+          400: 'rgb(var(--brand-400) / <alpha-value>)',
+          500: 'rgb(var(--brand-500) / <alpha-value>)',
+          600: 'rgb(var(--brand-600) / <alpha-value>)',
+          700: 'rgb(var(--brand-700) / <alpha-value>)',
+          800: 'rgb(var(--brand-800) / <alpha-value>)',
+          900: 'rgb(var(--brand-900) / <alpha-value>)',
         },
 
-        // The paper the app is printed on.
         canvas: {
-          light: '#f5f4ee',
-          card: '#fdfcfa',
-          dark: '#1a1917',
-          darkCard: '#262421',
+          light: 'rgb(var(--canvas-background) / <alpha-value>)',
+          card: 'rgb(var(--canvas-surface) / <alpha-value>)',
+          dark: 'rgb(var(--canvas-background) / <alpha-value>)',
+          darkCard: 'rgb(var(--canvas-surface) / <alpha-value>)',
+          raised: 'rgb(var(--canvas-raised) / <alpha-value>)',
         },
 
-        // Status colours. Kept clearly distinct from the terracotta accent, and
-        // always paired with an icon + text label so meaning is never colour alone.
+        // Keep baseline financial status colors; the homepage uses brand tokens.
         safe: '#2f7d4f',
         caution: '#a16207',
         danger: '#b3261e',
@@ -65,9 +56,9 @@ export default {
 
       fontFamily: {
         // Body: a clean grotesque.
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
-        // Headings: an old-style serif, applied to h1 in the base layer.
-        display: ['"Source Serif 4 Variable"', 'Iowan Old Style', 'Georgia', 'ui-serif', 'serif'],
+        sans: ['Inter Variable', 'Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        // Headings use the same polished sans-serif as the rest of the interface.
+        display: ['"Inter Variable"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
 
       borderRadius: {
@@ -76,21 +67,12 @@ export default {
       },
 
       boxShadow: {
-        /**
-         * A four-step elevation scale. Every shadow is tinted with the page's
-         * own warm ink (38 36 33) rather than pure black - a grey shadow on a
-         * cream page reads as dirt, which is most of what makes a warm palette
-         * look cheap.
-         *
-         * Surfaces still carry a hairline border; the shadow only says how far
-         * off the page something sits.
-         */
-        card: '0 1px 2px 0 rgb(38 36 33 / 0.04)',
-        raised: '0 1px 2px 0 rgb(38 36 33 / 0.05), 0 2px 6px -2px rgb(38 36 33 / 0.06)',
-        lift: '0 2px 8px -2px rgb(38 36 33 / 0.10), 0 1px 3px -1px rgb(38 36 33 / 0.06)',
-        float: '0 12px 28px -8px rgb(38 36 33 / 0.16), 0 4px 10px -4px rgb(38 36 33 / 0.08)',
-        // For the terracotta panel and primary buttons: the accent's own hue.
-        brand: '0 6px 18px -6px rgb(192 95 60 / 0.45)',
+        // Theme-aware shadows preserve depth across both blue surfaces.
+        card: '0 1px 2px rgb(var(--shadow-ink) / 0.35)',
+        raised: '0 8px 24px -16px rgb(var(--shadow-ink) / 0.8)',
+        lift: '0 14px 34px -18px rgb(var(--shadow-ink) / 0.9)',
+        float: '0 24px 60px -24px rgb(var(--brand-600) / 0.55)',
+        brand: '0 10px 30px -12px rgb(var(--brand-400) / 0.72)',
       },
 
       keyframes: {
