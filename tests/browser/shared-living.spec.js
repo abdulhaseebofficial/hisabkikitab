@@ -20,7 +20,7 @@ const navigateSection = async (page, words, name) => {
   await link.press('Enter');
 };
 
-test('create a space, record shared costs, start a new month and join read-only', async ({ page, browser }, info) => {
+test('create a space, record shared costs, start a new month and join read-only', async ({ page, browser, baseURL }, info) => {
   const language = info.project.name.includes('roman') ? 'roman_ur' : 'en';
   const words = language === 'en' ? en : ur;
   const s = words.shared;
@@ -29,6 +29,7 @@ test('create a space, record shared costs, start a new month and join read-only'
   expect(await registerAccount({ name: 'Browser Owner', email, password,
     confirmPassword: password, acceptTerms: true })).toBe(201);
   await page.goto('/login');
+  await page.getByRole('button', { name: en.consent.reject, exact: true }).click();
   await page.locator('input[name="email"]').fill(email);
   await page.locator('input[name="password"]').fill(password);
   await page.getByRole('button', { name: en.auth.login, exact: true }).click();
@@ -113,6 +114,7 @@ test('create a space, record shared costs, start a new month and join read-only'
     expect(await registerAccount({ name: 'Browser Viewer', email: viewerEmail, password,
       confirmPassword: password, acceptTerms: true })).toBe(201);
     await reader.goto('/login');
+    await reader.getByRole('button', { name: en.consent.reject, exact: true }).click();
     await reader.locator('input[name="email"]').fill(viewerEmail);
     await reader.locator('input[name="password"]').fill(password);
     await reader.getByRole('button', { name: en.auth.login, exact: true }).click();
@@ -155,7 +157,7 @@ test('create a space, record shared costs, start a new month and join read-only'
     deleteDialog = page.getByRole('dialog');
     await deleteDialog.getByLabel(words.settings.typePasswordToConfirm, { exact: true }).fill(password);
     await deleteDialog.getByRole('button', { name: 'Delete forever', exact: true }).click();
-    await expect(page).toHaveURL(/\/login(?:$|\?)/);
+    await expect(page).toHaveURL(new URL('/login/', baseURL).href);
   } finally {
     await viewer.close();
   }

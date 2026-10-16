@@ -6,6 +6,7 @@ test('expense form and filtered total preserve cents', async ({ page }) => {
   // The seeded demo account keeps its English profile locale in both projects.
   const locale = en;
   await page.goto('/login');
+  await page.getByRole('button', { name: en.consent.reject, exact: true }).click();
   await page.locator('input[name="email"]').fill('demo@hisabkikitab.app');
   await page.locator('input[name="password"]').fill('demo1234');
   await page.getByRole('button', { name: locale.auth.login, exact: true }).click();

@@ -12,6 +12,7 @@ for (const { timezoneId, instant, localDay } of [
     test('a saved local-calendar expense is returned by the API and included by This month', async ({ page }, testInfo) => {
       await page.clock.setFixedTime(new Date(instant));
       await page.goto('/login');
+      await page.getByRole('button', { name: en.consent.reject, exact: true }).click();
       await page.locator('input[name="email"]').fill('demo@hisabkikitab.app');
       await page.locator('input[name="password"]').fill('demo1234');
       await page.getByRole('button', { name: en.auth.login, exact: true }).click();

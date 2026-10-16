@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('hw-theme', 'dark'));
 });
 
-test('all public routes render, have metadata, and fit the viewport', async ({ page }) => {
+test('all public routes render, have metadata, and fit the viewport', async ({ page, baseURL }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   const calculatorRoutes=['budget-calculator','savings-goal-calculator','expense-split-calculator','emergency-fund-calculator','debt-repayment-calculator','net-worth-calculator','freelancer-income-calculator'].map((slug)=>`/tools/${slug}`);
@@ -20,7 +20,8 @@ test('all public routes render, have metadata, and fit the viewport', async ({ p
     await expect(page.locator('h1')).toBeVisible();
     await expect(page).not.toHaveURL(/\/login/);
     await expect(page.getByText('Your session expired. Please log in again.')).toHaveCount(0);
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', new RegExp(`${route === '/' ? '/$' : route + '$'}`));
+    const canonical = new URL(route === '/' ? '/' : `${route}/`, process.env.VITE_SITE_URL || baseURL).href;
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonical);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', ['/learn/earning', '/learn/small-business'].includes(route) ? 'noindex,follow' : 'index,follow');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
@@ -143,9 +144,11 @@ test('Learn navigation, table of contents, themes, and missing content', async (
   await page.goto('/learn/budgeting/how-to-create-a-monthly-budget');
   if (isMobile) await page.getByRole('button', { name: 'Open navigation' }).click();
   const nav = page.getByRole('navigation', { name: isMobile ? 'Mobile public navigation' : 'Public navigation' });
-  await expect(nav.locator('a[href="/learn"]')).toHaveAttribute('aria-current', 'page');
+  const guidesLink = nav.getByRole('link', { name: 'Guides', exact: true });
+  await expect(guidesLink).toHaveAttribute('href', '/learn/');
+  await expect(guidesLink).toHaveAttribute('aria-current', 'page');
   if (isMobile) {
-    await nav.locator('a[href="/learn"]').click();
+    await guidesLink.click();
     await expect(page.getByRole('navigation', { name: 'Mobile public navigation' })).toHaveCount(0);
     await page.goto('/learn/budgeting/how-to-create-a-monthly-budget');
   }
@@ -159,20 +162,20 @@ test('Learn navigation, table of contents, themes, and missing content', async (
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex,follow');
 });
 
-test('homepage links and existing private route protection still work', async ({ page }) => {
+test('homepage links and existing private route protection still work', async ({ page, baseURL }) => {
   await page.goto('/');
-  await page.getByRole('link', { name: 'Explore all guides' }).click();
-  await expect(page).toHaveURL(/\/learn$/);
+  await page.getByRole('link', { name: 'Browse all guides' }).click();
+  await expect(page).toHaveURL(new URL('/learn/', baseURL).href);
   await expect(page.getByRole('heading', { name: 'Explore by category' })).toBeVisible();
   for (const route of ['dashboard', 'expenses', 'income', 'goals', 'debts', 'budget', 'advisor', 'reports', 'settings']) {
     await page.goto(`/${route}`);
-    await expect(page).toHaveURL(/\/login/);
+    await expect(page).toHaveURL(new URL('/login/', baseURL).href);
     await expect(page.locator('[data-learn-seo]')).toHaveCount(0);
     await expect(page.locator('[data-ad-slot]')).toHaveCount(0);
   }
 });
 
-test('public homepage and navigation stay usable at common mobile and desktop widths', async ({ page }) => {
+test('public homepage and navigation stay usable at common mobile and desktop widths', async ({ page, baseURL }) => {
   for (const width of [360, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: width < 500 ? 820 : 960 });
     await page.goto('/');
@@ -188,7 +191,7 @@ test('public homepage and navigation stay usable at common mobile and desktop wi
     } else {
       await page.getByRole('navigation', { name: 'Public navigation' }).getByRole('link', { name: 'Guides' }).click();
     }
-    await expect(page).toHaveURL(/\/learn$/);
+    await expect(page).toHaveURL(new URL('/learn/', baseURL).href);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
 });
