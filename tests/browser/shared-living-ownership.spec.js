@@ -18,7 +18,7 @@ const api = async (method, path, body, token) => {
   return { status: response.status, body: await response.json() };
 };
 
-test('owner can transfer, leave and retry account deletion on desktop and mobile', async ({ page }, info) => {
+test('owner can transfer, leave and retry account deletion on desktop and mobile', async ({ page, baseURL }, info) => {
   const language = info.project.name.includes('roman') ? 'roman_ur' : 'en';
   const words = language === 'en' ? en : ur;
   const password = 'BrowserTest123!';
@@ -47,6 +47,7 @@ test('owner can transfer, leave and retry account deletion on desktop and mobile
   expect((await api('POST', '/shared-living/join', { code: space.invite.code }, successor.token)).status).toBe(200);
 
   await page.goto('/login');
+  await page.getByRole('button', { name: en.consent.reject, exact: true }).click();
   await page.locator('input[name="email"]').fill(owner.email);
   await page.locator('input[name="password"]').fill(password);
   await page.getByRole('button', { name: en.auth.login, exact: true }).click();
@@ -93,5 +94,5 @@ test('owner can transfer, leave and retry account deletion on desktop and mobile
   const retry = page.getByRole('dialog');
   await retry.getByLabel(words.settings.typePasswordToConfirm, { exact: true }).fill(password);
   await retry.getByRole('button', { name: 'Delete forever', exact: true }).click();
-  await expect(page).toHaveURL(/\/login(?:$|\?)/);
+  await expect(page).toHaveURL(new URL('/login/', baseURL).href);
 });

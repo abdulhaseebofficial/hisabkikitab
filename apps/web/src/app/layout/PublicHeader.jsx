@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Link from '../../shared/seo/PublicLink';
-import { ArrowUpRight, Menu, Wallet, X } from 'lucide-react';
+import { ArrowUpRight, Menu, X } from 'lucide-react';
+import OfficialLogo from '../../shared/components/layout/OfficialLogo';
 
 const links = [
   { to: '/', label: 'Home' },
@@ -30,11 +31,11 @@ export default function PublicHeader({ controls }) {
   );
 
   return (
-    <header className="relative z-30 border-b border-slate-200/80 bg-canvas-card/95 backdrop-blur dark:border-slate-800 dark:bg-canvas-darkCard/95">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-[76px] sm:px-8 lg:px-12">
-        <Link to="/" className="flex min-w-0 items-center gap-2.5 text-slate-900 dark:text-slate-100" aria-label="Hisab Ki Kitab home">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white"><Wallet className="h-5 w-5" aria-hidden="true" /></span>
-          <span className="truncate font-display text-xl font-semibold tracking-tight sm:text-2xl">Hisab Ki Kitab</span>
+    <header className="relative z-30 px-4 pt-4 sm:px-8 lg:px-12">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 rounded-2xl border border-brand-100 bg-canvas-card/85 px-4 shadow-raised backdrop-blur-xl sm:h-[76px] sm:px-7 dark:border-slate-700 dark:bg-canvas-darkCard/85">
+        <Link to="/" className="flex min-w-0 items-center gap-2.5 text-slate-900 dark:text-slate-100" aria-label="HisabKi Kitab home">
+          <OfficialLogo className="h-9 w-9" />
+          <span className="truncate font-display text-xl font-semibold tracking-tight sm:text-2xl">HisabKi Kitab</span>
         </Link>
         <nav aria-label="Public navigation" className="hidden items-center gap-1 lg:flex">{links.map(({ to, label }) => navLink(to, label))}</nav>
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
@@ -46,7 +47,7 @@ export default function PublicHeader({ controls }) {
           </button>
         </div>
       </div>
-      {menuOpen && <nav id="public-mobile-nav" aria-label="Mobile public navigation" className="border-t border-slate-200 bg-canvas-card px-4 pb-4 pt-2 lg:hidden dark:border-slate-800 dark:bg-canvas-darkCard">
+      {menuOpen && <nav id="public-mobile-nav" aria-label="Mobile public navigation" className="mx-auto mt-2 max-w-7xl rounded-2xl border border-brand-100 bg-canvas-card px-4 pb-4 pt-2 shadow-raised lg:hidden dark:border-slate-700 dark:bg-canvas-darkCard">
         <div className="mx-auto grid max-w-7xl gap-1">{links.map(({ to, label }) => navLink(to, label))}<Link to="/login" onClick={() => setMenuOpen(false)} className="inline-flex min-h-11 items-center rounded-full px-4 text-sm font-medium text-slate-700 sm:hidden dark:text-slate-200">Sign in</Link><Link to="/register" onClick={() => setMenuOpen(false)} className="mt-2 inline-flex min-h-11 items-center justify-center rounded-full bg-brand-600 px-5 text-sm font-semibold text-white">Get started</Link></div>
       </nav>}
     </header>

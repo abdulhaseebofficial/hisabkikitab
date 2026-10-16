@@ -38,7 +38,7 @@ export default function AuthShell({ title, subtitle, children, footer }) {
           <h1 className="text-3xl font-extrabold leading-[1.15] xl:text-4xl">
             {t('authShell.headline')}
           </h1>
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-brand-100">
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-white">
             {t('authShell.lede')}
           </p>
 
@@ -50,14 +50,14 @@ export default function AuthShell({ title, subtitle, children, footer }) {
                 </span>
                 <div>
                   <p className="text-sm font-semibold">{t(headingKey)}</p>
-                  <p className="mt-0.5 text-xs leading-relaxed text-brand-100">{t(textKey)}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-white">{t(textKey)}</p>
                 </div>
               </li>
             ))}
           </ul>
         </div>
 
-        <p className="absolute inset-x-10 bottom-10 text-xs text-brand-100/90 xl:inset-x-14 xl:bottom-14">
+        <p className="absolute inset-x-10 bottom-10 text-xs text-white xl:inset-x-14 xl:bottom-14">
           {t('authShell.dataIsYours')}
         </p>
       </aside>
