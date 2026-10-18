@@ -120,7 +120,7 @@ export default function Expenses() {
       >
         {/* The tab bar's raised button already covers this on a phone. */}
         {canCreate && (
-          <Button icon={Plus} shortcut="N" onClick={openQuickAdd} className="hidden sm:inline-flex">
+          <Button icon={Plus} shortcut="N" onClick={openQuickAdd} className="max-sm:hidden">
             {t('expenses.add')}
           </Button>
         )}

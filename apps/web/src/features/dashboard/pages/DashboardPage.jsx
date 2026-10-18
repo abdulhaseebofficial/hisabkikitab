@@ -89,7 +89,7 @@ function PersonalDashboard() {
         {/* Hidden on phones: the raised button in the tab bar does this job,
             and two buttons for one action just costs a screenful of space. */}
         {canCreate && (
-          <Button icon={Plus} shortcut="N" onClick={openQuickAdd} className="hidden sm:inline-flex">
+          <Button icon={Plus} shortcut="N" onClick={openQuickAdd} className="max-sm:hidden">
             {t('expenses.add')}
           </Button>
         )}
