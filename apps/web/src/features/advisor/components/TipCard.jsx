@@ -38,7 +38,7 @@ export default function TipCard() {
   }, [load]);
 
   return (
-    <section className="hw-card overflow-hidden border-brand-200 bg-gradient-to-br from-brand-50 to-canvas-card p-5 dark:border-brand-500/20 dark:from-brand-500/10 dark:to-slate-900">
+    <section className="hw-card overflow-hidden border-brand-200 bg-linear-to-br/srgb from-brand-50 to-canvas-card p-5 dark:border-brand-500/20 dark:from-brand-500/10 dark:to-slate-900">
       <div className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white">
           <Lightbulb className="h-5 w-5" />

@@ -37,8 +37,8 @@ jobs:
         run: npm run test:seo
       - name: Install Chromium for browser regression
         run: npx playwright install --with-deps chromium
-      - name: Public, auth-entry, SEO, and browser regression
-        run: npm run test:browser -- tests/browser/seo.spec.js tests/browser/learn.spec.js tests/browser/auth-availability.spec.js tests/browser/homepage-blue-ui.spec.js tests/browser/shared-living-viewport.spec.js tests/browser/debt-ledger-viewport.spec.js
+      - name: Public, auth-entry, SEO, and finance-mode browser regression
+        run: npm run test:browser -- tests/browser/seo.spec.js tests/browser/learn.spec.js tests/browser/auth-availability.spec.js tests/browser/homepage-blue-ui.spec.js tests/browser/finance-mode-viewport.spec.js tests/browser/shared-living-viewport.spec.js tests/browser/debt-ledger-viewport.spec.js
 
   dependency-security:
     name: Production and build dependency audit
