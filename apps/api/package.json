@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
+    "dev": "node --watch server.js",
     "seed": "node ../../database/seeds/demo.js",
     "migrate": "node -r dotenv/config src/infrastructure/database/migrate.js",
     "migrate:status": "node -r dotenv/config -e \"require('./src/infrastructure/database/migrate').status().then(s=>{console.log('applied:',s.applied.map(r=>r.name).join(', ')||'none');console.log('pending:',s.pending.join(', ')||'none')}).finally(()=>require('./src/infrastructure/database/pool').closePool())\""
@@ -32,8 +32,5 @@
     "nodemailer": "^10.0.10",
     "pdfkit": "^0.15.0",
     "pg": "^8.23.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.4"
   }
 }

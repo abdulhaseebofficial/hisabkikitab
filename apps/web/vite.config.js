@@ -7,9 +7,8 @@ export default defineConfig(({ isSsrBuild, mode }) => {
   const buildEnv = loadEnv(mode, process.cwd(), '');
   const siteOrigin = buildEnv.VITE_SITE_URL || (buildEnv.VERCEL_PROJECT_PRODUCTION_URL ? `https://${buildEnv.VERCEL_PROJECT_PRODUCTION_URL}` : '');
   return ({
-  // Vitest 4 uses a newer Vite transform internally. JSX is handled there;
-  // loading the Vite 5 React plugin in tests emits deprecated-transform warnings.
-  plugins: mode === 'test' ? [] : [react()],
+  // Vite 6 is shared by the build and Vitest, so both need the React JSX transform.
+  plugins: [react()],
   define: { 'import.meta.env.VITE_SITE_URL': JSON.stringify(siteOrigin) },
   server: {
     port: frontendConfig.frontendPort,
