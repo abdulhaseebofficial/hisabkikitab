@@ -38,11 +38,13 @@ const DEFAULT_CHART_OF_ACCOUNTS = [
   { code: '1020', name: 'Bank Account', type: 'asset', subtype: 'bank', is_system: true },
   { code: '1030', name: 'Digital Wallet (JazzCash/Easypaisa)', type: 'asset', subtype: 'wallet', is_system: true },
   { code: '1100', name: 'Accounts Receivable (Customers Khata)', type: 'asset', subtype: 'receivable', is_system: true },
+  { code: '1150', name: 'Input Tax / Tax Receivable', type: 'asset', subtype: 'tax_receivable', is_system: true },
   { code: '1200', name: 'Merchandise Inventory', type: 'asset', subtype: 'inventory', is_system: true },
   // Liabilities (2000s)
   { code: '2010', name: 'Accounts Payable (Suppliers Khata)', type: 'liability', subtype: 'payable', is_system: true },
   { code: '2020', name: 'Unpaid Operating Bills', type: 'liability', subtype: 'payable', is_system: true },
   { code: '2030', name: 'Accrued Salaries & Payroll Payable', type: 'liability', subtype: 'payable', is_system: true },
+  { code: '2040', name: 'Goods Received Not Invoiced (GRNI) / Accrued Purchases', type: 'liability', subtype: 'payable', is_system: true },
   { code: '2050', name: 'Sales Tax Payable', type: 'liability', subtype: 'tax_payable', is_system: true },
   // Equity (3000s)
   { code: '3010', name: 'Owner Capital / Investment', type: 'equity', subtype: 'owner_equity', is_system: true },
@@ -56,6 +58,7 @@ const DEFAULT_CHART_OF_ACCOUNTS = [
   { code: '4110', name: 'Sales Returns & Allowances', type: 'revenue', subtype: 'sales_discount', is_system: true },
   // COGS (5000s)
   { code: '5010', name: 'Cost of Goods Sold (COGS)', type: 'expense', subtype: 'cogs', is_system: true },
+  { code: '5020', name: 'Purchase Price Variance', type: 'expense', subtype: 'cogs', is_system: true },
   // Operating Expenses (6000s)
   { code: '6010', name: 'Rent Expense', type: 'expense', subtype: 'operating_expense', is_system: true },
   { code: '6020', name: 'Electricity & Utilities', type: 'expense', subtype: 'operating_expense', is_system: true },
@@ -87,7 +90,11 @@ const AGING_BUCKETS = [
   { key: 'over_90', label: 'Over 90 Days', minDays: 91, maxDays: Infinity },
 ];
 
-const PURCHASE_ORDER_STATUSES = ['draft', 'pending_approval', 'approved', 'partially_received', 'fully_received', 'cancelled', 'closed'];
+const PURCHASE_REQUEST_STATUSES = ['draft', 'pending_approval', 'approved', 'rejected', 'converted_to_po', 'cancelled'];
+const PURCHASE_ORDER_STATUSES = ['draft', 'pending_approval', 'approved', 'rejected', 'sent_to_supplier', 'partially_received', 'fully_received', 'billed', 'closed', 'cancelled'];
+const GRN_STATUSES = ['received', 'inspected', 'cancelled'];
+const SUPPLIER_BILL_STATUSES = ['unpaid', 'partially_paid', 'paid', 'cancelled'];
+const PURCHASE_RETURN_REFUND_METHODS = ['credit_note', 'cash', 'bank'];
 const SALES_RETURN_CONDITIONS = ['restockable', 'damaged'];
 const SHIFT_STATUSES = ['open', 'closed'];
 const ATTENDANCE_STATUSES = ['present', 'absent', 'late', 'leave', 'half_day'];
@@ -98,7 +105,11 @@ module.exports = {
   DEFAULT_CHART_OF_ACCOUNTS,
   PAYMENT_METHODS,
   AGING_BUCKETS,
+  PURCHASE_REQUEST_STATUSES,
   PURCHASE_ORDER_STATUSES,
+  GRN_STATUSES,
+  SUPPLIER_BILL_STATUSES,
+  PURCHASE_RETURN_REFUND_METHODS,
   SALES_RETURN_CONDITIONS,
   SHIFT_STATUSES,
   ATTENDANCE_STATUSES,

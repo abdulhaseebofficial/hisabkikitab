@@ -92,6 +92,42 @@ const BusinessValidator = {
     body('categoryAccountId').notEmpty().withMessage('Account category is required'),
     body('targetAmountMinor').notEmpty().withMessage('Target amount is required'),
   ],
+
+  createPurchaseRequest: [
+    body('items').isArray({ min: 1 }).withMessage('At least one item is required for a purchase request'),
+    body('items.*.productName').trim().notEmpty().withMessage('Product name is required'),
+    body('items.*.quantity').notEmpty().withMessage('Quantity is required'),
+  ],
+
+  createPurchaseOrder: [
+    body('supplierId').notEmpty().withMessage('Supplier ID is required'),
+    body('items').isArray({ min: 1 }).withMessage('At least one item is required for a purchase order'),
+    body('items.*.productId').notEmpty().withMessage('Product ID is required'),
+    body('items.*.quantityOrdered').notEmpty().withMessage('Ordered quantity is required'),
+    body('items.*.unitPriceMinor').notEmpty().withMessage('Unit price is required'),
+  ],
+
+  createGrn: [
+    body('poId').notEmpty().withMessage('Purchase Order ID is required'),
+    body('items').isArray({ min: 1 }).withMessage('At least one received item is required'),
+    body('items.*.poItemId').notEmpty().withMessage('Purchase Order item ID is required'),
+    body('items.*.productId').notEmpty().withMessage('Product ID is required'),
+    body('items.*.quantityReceived').notEmpty().withMessage('Received quantity is required'),
+  ],
+
+  createSupplierBill: [
+    body('supplierId').notEmpty().withMessage('Supplier ID is required'),
+    body('items').isArray({ min: 1 }).withMessage('At least one bill line item is required'),
+    body('items.*.quantity').notEmpty().withMessage('Quantity is required'),
+    body('items.*.unitPriceMinor').notEmpty().withMessage('Unit price is required'),
+  ],
+
+  createPurchaseReturn: [
+    body('supplierId').notEmpty().withMessage('Supplier ID is required'),
+    body('items').isArray({ min: 1 }).withMessage('At least one return item is required'),
+    body('items.*.productId').notEmpty().withMessage('Product ID is required'),
+    body('items.*.quantity').notEmpty().withMessage('Return quantity is required'),
+  ],
 };
 
 module.exports = BusinessValidator;

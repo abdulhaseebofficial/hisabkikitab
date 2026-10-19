@@ -606,6 +606,236 @@ const BusinessController = {
       next(e);
     }
   },
+
+  // ---------------------------------------------------------------------------
+  // Advanced Procurement (V3)
+  // ---------------------------------------------------------------------------
+
+  // 1. Purchase Requests
+  async listPurchaseRequests(req, res, next) {
+    try {
+      const requests = await BusinessService.listPurchaseRequests(req.businessId, req.query);
+      res.json({ success: true, data: requests });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async getPurchaseRequest(req, res, next) {
+    try {
+      const pr = await BusinessService.getPurchaseRequest(req.businessId, req.params.requestId);
+      if (!pr) return res.status(404).json({ success: false, message: 'Purchase request not found' });
+      res.json({ success: true, data: pr });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async createPurchaseRequest(req, res, next) {
+    try {
+      const pr = await BusinessService.createPurchaseRequest(req.businessId, req.user.id, req.body);
+      res.status(201).json({ success: true, data: pr });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async submitPurchaseRequest(req, res, next) {
+    try {
+      const pr = await BusinessService.submitPurchaseRequest(req.businessId, req.user.id, req.params.requestId);
+      res.json({ success: true, data: pr });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async approvePurchaseRequest(req, res, next) {
+    try {
+      const pr = await BusinessService.approvePurchaseRequest(req.businessId, req.user.id, req.params.requestId);
+      res.json({ success: true, data: pr });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async rejectPurchaseRequest(req, res, next) {
+    try {
+      const pr = await BusinessService.rejectPurchaseRequest(req.businessId, req.user.id, req.params.requestId, req.body?.reason || '');
+      res.json({ success: true, data: pr });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  // 2. Purchase Orders
+  async listPurchaseOrders(req, res, next) {
+    try {
+      const orders = await BusinessService.listPurchaseOrders(req.businessId, req.query);
+      res.json({ success: true, data: orders });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async getPurchaseOrder(req, res, next) {
+    try {
+      const po = await BusinessService.getPurchaseOrder(req.businessId, req.params.poId);
+      if (!po) return res.status(404).json({ success: false, message: 'Purchase order not found' });
+      res.json({ success: true, data: po });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async createPurchaseOrder(req, res, next) {
+    try {
+      const po = await BusinessService.createPurchaseOrder(req.businessId, req.user.id, req.body);
+      res.status(201).json({ success: true, data: po });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async submitPurchaseOrder(req, res, next) {
+    try {
+      const po = await BusinessService.submitPurchaseOrder(req.businessId, req.user.id, req.params.poId);
+      res.json({ success: true, data: po });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async approvePurchaseOrder(req, res, next) {
+    try {
+      const po = await BusinessService.approvePurchaseOrder(req.businessId, req.user.id, req.params.poId);
+      res.json({ success: true, data: po });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async rejectPurchaseOrder(req, res, next) {
+    try {
+      const po = await BusinessService.rejectPurchaseOrder(req.businessId, req.user.id, req.params.poId, req.body?.reason || '');
+      res.json({ success: true, data: po });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async sendPurchaseOrder(req, res, next) {
+    try {
+      const po = await BusinessService.sendPurchaseOrder(req.businessId, req.user.id, req.params.poId);
+      res.json({ success: true, data: po });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  // 3. Goods Received Notes (GRN)
+  async listGrns(req, res, next) {
+    try {
+      const grns = await BusinessService.listGrns(req.businessId, req.query);
+      res.json({ success: true, data: grns });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async getGrn(req, res, next) {
+    try {
+      const grn = await BusinessService.getGrn(req.businessId, req.params.grnId);
+      if (!grn) return res.status(404).json({ success: false, message: 'Goods Received Note not found' });
+      res.json({ success: true, data: grn });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async createGrn(req, res, next) {
+    try {
+      const result = req.financialRequestKey
+        ? await BusinessService.createGrnIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
+        : await BusinessService.createGrn(req.businessId, req.user.id, req.body);
+      res.status(201).json({ success: true, data: unwrap(result) });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  // 4. Supplier Bills
+  async listSupplierBills(req, res, next) {
+    try {
+      const bills = await BusinessService.listSupplierBills(req.businessId, req.query);
+      res.json({ success: true, data: bills });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async getSupplierBill(req, res, next) {
+    try {
+      const bill = await BusinessService.getSupplierBill(req.businessId, req.params.billId);
+      if (!bill) return res.status(404).json({ success: false, message: 'Supplier bill not found' });
+      res.json({ success: true, data: bill });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async createSupplierBill(req, res, next) {
+    try {
+      const result = req.financialRequestKey
+        ? await BusinessService.createSupplierBillIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
+        : await BusinessService.createSupplierBill(req.businessId, req.user.id, req.body);
+      res.status(201).json({ success: true, data: unwrap(result) });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  // 5. Supplier Payments
+  async createSupplierPayment(req, res, next) {
+    try {
+      const result = req.financialRequestKey
+        ? await BusinessService.createSupplierPaymentIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
+        : await BusinessService.createSupplierPayment(req.businessId, req.user.id, req.body);
+      res.status(201).json({ success: true, data: unwrap(result) });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  // 6. Purchase Returns
+  async listPurchaseReturns(req, res, next) {
+    try {
+      const returns = await BusinessService.listPurchaseReturns(req.businessId, req.query);
+      res.json({ success: true, data: returns });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async getPurchaseReturn(req, res, next) {
+    try {
+      const prn = await BusinessService.getPurchaseReturn(req.businessId, req.params.returnId);
+      if (!prn) return res.status(404).json({ success: false, message: 'Purchase return not found' });
+      res.json({ success: true, data: prn });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async createPurchaseReturn(req, res, next) {
+    try {
+      const result = req.financialRequestKey
+        ? await BusinessService.createPurchaseReturnIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
+        : await BusinessService.createPurchaseReturn(req.businessId, req.user.id, req.body);
+      res.status(201).json({ success: true, data: unwrap(result) });
+    } catch (e) {
+      next(e);
+    }
+  },
 };
 
 module.exports = BusinessController;

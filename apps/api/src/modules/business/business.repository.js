@@ -265,6 +265,14 @@ const BusinessRepository = {
         FROM biz_purchases
         WHERE business_id = $1 AND supplier_id = $2
       ) UNION ALL (
+        SELECT id, bill_date AS date, 'bill' AS type, bill_number AS reference, total_amount_minor AS credit_minor, amount_paid_minor AS debit_minor, balance_due_minor, notes, created_at
+        FROM biz_supplier_bills
+        WHERE business_id = $1 AND supplier_id = $2
+      ) UNION ALL (
+        SELECT id, return_date AS date, 'return' AS type, return_number AS reference, 0 AS credit_minor, total_amount_minor AS debit_minor, 0 AS balance_due_minor, notes, created_at
+        FROM biz_purchase_returns
+        WHERE business_id = $1 AND supplier_id = $2
+      ) UNION ALL (
         SELECT id, date, 'payment' AS type, reference, amount_minor AS debit_minor, 0 AS credit_minor, 0 AS balance_due_minor, notes, created_at
         FROM biz_payments
         WHERE business_id = $1 AND supplier_id = $2 AND payment_type = 'supplier_payment'
@@ -1045,6 +1053,552 @@ const BusinessRepository = {
       `UPDATE biz_notifications SET is_read = true WHERE id = $1 AND business_id = $2`,
       [notificationId, businessId]
     );
+  },
+
+  // ---------------------------------------------------------------------------
+  // Advanced Procurement (V3)
+  // ---------------------------------------------------------------------------
+
+  async getNextSequenceNumber(client, businessId, table, column, prefix) {
+    const { rows } = await client.query(
+      `SELECT count(*)::int AS count FROM ${table} WHERE business_id = $1`,
+      [businessId]
+    );
+    const count = (rows[0]?.count || 0) + 1;
+    return `${prefix}${String(count).padStart(5, '0')}`;
+  },
+
+  // 1. Purchase Requests
+  async createPurchaseRequest(client, businessId, { branchId, requestNumber, requestedBy, department, requiredByDate, priority, notes, items }) {
+    const { rows } = await client.query(
+      `INSERT INTO biz_purchase_requests (
+        business_id, branch_id, request_number, requested_by, department,
+        required_by_date, priority, status, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'draft', $8)
+      RETURNING *`,
+      [businessId, branchId || null, requestNumber, requestedBy, department || '', requiredByDate || null, priority || 'medium', notes || '']
+    );
+    const pr = rows[0];
+
+    const insertedItems = [];
+    for (const item of items) {
+      const itemRes = await client.query(
+        `INSERT INTO biz_purchase_request_items (
+          request_id, product_id, product_name, quantity, estimated_cost_minor, notes
+        ) VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *`,
+        [pr.id, item.productId || null, item.productName, item.quantity, item.estimatedCostMinor || 0, item.notes || '']
+      );
+      insertedItems.push(itemRes.rows[0]);
+    }
+    pr.items = insertedItems;
+    return pr;
+  },
+
+  async listPurchaseRequests(businessId, { status = '', priority = '', limit = 50, offset = 0 } = {}) {
+    const params = [businessId];
+    let filter = '';
+    let idx = 2;
+
+    if (status) {
+      filter += ` AND pr.status = $${idx++}`;
+      params.push(status);
+    }
+    if (priority) {
+      filter += ` AND pr.priority = $${idx++}`;
+      params.push(priority);
+    }
+
+    params.push(Number(limit) || 50, Number(offset) || 0);
+
+    const { rows } = await getPool().query(
+      `SELECT pr.*, u.name AS requester_name, app.name AS approver_name,
+              COUNT(pri.id)::int AS item_count,
+              COALESCE(SUM(pri.estimated_cost_minor), 0)::bigint AS total_estimated_cost_minor
+       FROM biz_purchase_requests pr
+       JOIN users u ON u.id = pr.requested_by
+       LEFT JOIN users app ON app.id = pr.approved_by
+       LEFT JOIN biz_purchase_request_items pri ON pri.request_id = pr.id
+       WHERE pr.business_id = $1 ${filter}
+       GROUP BY pr.id, u.name, app.name
+       ORDER BY pr.created_at DESC
+       LIMIT $${idx++} OFFSET $${idx++}`,
+      params
+    );
+    return rows;
+  },
+
+  async getPurchaseRequestById(businessId, requestId) {
+    const { rows } = await getPool().query(
+      `SELECT pr.*, u.name AS requester_name, app.name AS approver_name
+       FROM biz_purchase_requests pr
+       JOIN users u ON u.id = pr.requested_by
+       LEFT JOIN users app ON app.id = pr.approved_by
+       WHERE pr.business_id = $1 AND pr.id = $2`,
+      [businessId, requestId]
+    );
+    if (!rows.length) return null;
+    const pr = rows[0];
+
+    const itemsRes = await getPool().query(
+      `SELECT * FROM biz_purchase_request_items WHERE request_id = $1 ORDER BY id ASC`,
+      [requestId]
+    );
+    pr.items = itemsRes.rows;
+    return pr;
+  },
+
+  async updatePurchaseRequestStatus(client, businessId, requestId, status, { approvedBy = null, rejectionReason = '' } = {}) {
+    const { rows } = await client.query(
+      `UPDATE biz_purchase_requests
+       SET status = $1, approved_by = $2, approved_at = CASE WHEN $1 = 'approved' THEN now() ELSE approved_at END,
+           rejection_reason = $3, updated_at = now()
+       WHERE id = $4 AND business_id = $5
+       RETURNING *`,
+      [status, approvedBy, rejectionReason, requestId, businessId]
+    );
+    return rows[0] || null;
+  },
+
+  // 2. Purchase Orders
+  async createPurchaseOrder(client, businessId, { branchId, supplierId, purchaseRequestId, poNumber, date, expectedDeliveryDate, paymentTerms, subtotalMinor, taxMinor, discountMinor, totalAmountMinor, notes, createdBy, items }) {
+    const { rows } = await client.query(
+      `INSERT INTO biz_purchase_orders (
+        business_id, branch_id, supplier_id, purchase_request_id, po_number,
+        date, expected_delivery_date, payment_terms, subtotal_minor, tax_minor,
+        discount_minor, total_amount_minor, status, notes, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'draft', $13, $14)
+      RETURNING *`,
+      [
+        businessId, branchId || null, supplierId, purchaseRequestId || null, poNumber,
+        date, expectedDeliveryDate || null, paymentTerms || 'net_30',
+        subtotalMinor.toString(), taxMinor.toString(), discountMinor.toString(),
+        totalAmountMinor.toString(), notes || '', createdBy
+      ]
+    );
+    const po = rows[0];
+
+    const insertedItems = [];
+    for (const item of items) {
+      const itemRes = await client.query(
+        `INSERT INTO biz_purchase_order_items (
+          po_id, product_id, product_name, quantity_ordered, unit_price_minor,
+          tax_minor, discount_minor, line_total_minor
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *`,
+        [
+          po.id, item.productId, item.productName, item.quantityOrdered,
+          item.unitPriceMinor.toString(), (item.taxMinor || 0).toString(),
+          (item.discountMinor || 0).toString(), item.lineTotalMinor.toString()
+        ]
+      );
+      insertedItems.push(itemRes.rows[0]);
+    }
+    po.items = insertedItems;
+    return po;
+  },
+
+  async listPurchaseOrders(businessId, { status = '', supplierId = '', limit = 50, offset = 0 } = {}) {
+    const params = [businessId];
+    let filter = '';
+    let idx = 2;
+
+    if (status) {
+      filter += ` AND po.status = $${idx++}`;
+      params.push(status);
+    }
+    if (supplierId) {
+      filter += ` AND po.supplier_id = $${idx++}`;
+      params.push(supplierId);
+    }
+
+    params.push(Number(limit) || 50, Number(offset) || 0);
+
+    const { rows } = await getPool().query(
+      `SELECT po.*, s.name AS supplier_name, s.phone AS supplier_phone,
+              u.name AS creator_name, app.name AS approver_name,
+              COUNT(poi.id)::int AS item_count
+       FROM biz_purchase_orders po
+       JOIN biz_suppliers s ON s.id = po.supplier_id
+       LEFT JOIN users u ON u.id = po.created_by
+       LEFT JOIN users app ON app.id = po.approved_by
+       LEFT JOIN biz_purchase_order_items poi ON poi.po_id = po.id
+       WHERE po.business_id = $1 ${filter}
+       GROUP BY po.id, s.name, s.phone, u.name, app.name
+       ORDER BY po.date DESC, po.created_at DESC
+       LIMIT $${idx++} OFFSET $${idx++}`,
+      params
+    );
+    return rows;
+  },
+
+  async getPurchaseOrderById(businessId, poId) {
+    const { rows } = await getPool().query(
+      `SELECT po.*, s.name AS supplier_name, s.phone AS supplier_phone, s.company_name AS supplier_company,
+              u.name AS creator_name, app.name AS approver_name
+       FROM biz_purchase_orders po
+       JOIN biz_suppliers s ON s.id = po.supplier_id
+       LEFT JOIN users u ON u.id = po.created_by
+       LEFT JOIN users app ON app.id = po.approved_by
+       WHERE po.business_id = $1 AND po.id = $2`,
+      [businessId, poId]
+    );
+    if (!rows.length) return null;
+    const po = rows[0];
+
+    const itemsRes = await getPool().query(
+      `SELECT poi.*, p.sku, p.unit
+       FROM biz_purchase_order_items poi
+       JOIN biz_products p ON p.id = poi.product_id
+       WHERE poi.po_id = $1
+       ORDER BY poi.id ASC`,
+      [poId]
+    );
+    po.items = itemsRes.rows;
+    return po;
+  },
+
+  async updatePurchaseOrderStatus(client, businessId, poId, status, { approvedBy = null, rejectionReason = '' } = {}) {
+    const { rows } = await client.query(
+      `UPDATE biz_purchase_orders
+       SET status = $1, approved_by = $2, approved_at = CASE WHEN $1 = 'approved' THEN now() ELSE approved_at END,
+           rejection_reason = $3, updated_at = now()
+       WHERE id = $4 AND business_id = $5
+       RETURNING *`,
+      [status, approvedBy, rejectionReason, poId, businessId]
+    );
+    return rows[0] || null;
+  },
+
+  async updatePoItemReceivedQty(client, poItemId, additionalReceived) {
+    await client.query(
+      `UPDATE biz_purchase_order_items
+       SET quantity_received = quantity_received + $1
+       WHERE id = $2`,
+      [additionalReceived, poItemId]
+    );
+  },
+
+  async updatePoItemBilledQty(client, poItemId, additionalBilled) {
+    await client.query(
+      `UPDATE biz_purchase_order_items
+       SET quantity_billed = quantity_billed + $1
+       WHERE id = $2`,
+      [additionalBilled, poItemId]
+    );
+  },
+
+  // 3. Goods Received Notes (GRN)
+  async createGrn(client, businessId, { branchId, warehouseId, poId, supplierId, grnNumber, receiveDate, deliveryChallanNumber, totalReceivedValueMinor, notes, receivedBy, items }) {
+    const { rows } = await client.query(
+      `INSERT INTO biz_grns (
+        business_id, branch_id, warehouse_id, po_id, supplier_id,
+        grn_number, receive_date, delivery_challan_number, total_received_value_minor,
+        status, notes, received_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'received', $10, $11)
+      RETURNING *`,
+      [
+        businessId, branchId || null, warehouseId || null, poId, supplierId,
+        grnNumber, receiveDate, deliveryChallanNumber || '',
+        totalReceivedValueMinor.toString(), notes || '', receivedBy
+      ]
+    );
+    const grn = rows[0];
+
+    const insertedItems = [];
+    for (const item of items) {
+      const itemRes = await client.query(
+        `INSERT INTO biz_grn_items (
+          grn_id, po_item_id, product_id, quantity_received, unit_cost_minor,
+          total_cost_minor, batch_number, expiry_date
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *`,
+        [
+          grn.id, item.poItemId, item.productId, item.quantityReceived,
+          item.unitCostMinor.toString(), item.totalCostMinor.toString(),
+          item.batchNumber || '', item.expiryDate || null
+        ]
+      );
+      insertedItems.push(itemRes.rows[0]);
+    }
+    grn.items = insertedItems;
+    return grn;
+  },
+
+  async listGrns(businessId, { poId = '', supplierId = '', limit = 50, offset = 0 } = {}) {
+    const params = [businessId];
+    let filter = '';
+    let idx = 2;
+
+    if (poId) {
+      filter += ` AND g.po_id = $${idx++}`;
+      params.push(poId);
+    }
+    if (supplierId) {
+      filter += ` AND g.supplier_id = $${idx++}`;
+      params.push(supplierId);
+    }
+
+    params.push(Number(limit) || 50, Number(offset) || 0);
+
+    const { rows } = await getPool().query(
+      `SELECT g.*, s.name AS supplier_name, po.po_number, u.name AS receiver_name,
+              COUNT(gi.id)::int AS item_count
+       FROM biz_grns g
+       JOIN biz_suppliers s ON s.id = g.supplier_id
+       JOIN biz_purchase_orders po ON po.id = g.po_id
+       LEFT JOIN users u ON u.id = g.received_by
+       LEFT JOIN biz_grn_items gi ON gi.grn_id = g.id
+       WHERE g.business_id = $1 ${filter}
+       GROUP BY g.id, s.name, po.po_number, u.name
+       ORDER BY g.receive_date DESC, g.created_at DESC
+       LIMIT $${idx++} OFFSET $${idx++}`,
+      params
+    );
+    return rows;
+  },
+
+  async getGrnById(businessId, grnId) {
+    const { rows } = await getPool().query(
+      `SELECT g.*, s.name AS supplier_name, po.po_number, u.name AS receiver_name
+       FROM biz_grns g
+       JOIN biz_suppliers s ON s.id = g.supplier_id
+       JOIN biz_purchase_orders po ON po.id = g.po_id
+       LEFT JOIN users u ON u.id = g.received_by
+       WHERE g.business_id = $1 AND g.id = $2`,
+      [businessId, grnId]
+    );
+    if (!rows.length) return null;
+    const grn = rows[0];
+
+    const itemsRes = await getPool().query(
+      `SELECT gi.*, p.name AS product_name, p.sku, p.unit
+       FROM biz_grn_items gi
+       JOIN biz_products p ON p.id = gi.product_id
+       WHERE gi.grn_id = $1
+       ORDER BY gi.id ASC`,
+      [grnId]
+    );
+    grn.items = itemsRes.rows;
+    return grn;
+  },
+
+  // 4. Supplier Bills
+  async createSupplierBill(client, businessId, { supplierId, poId, grnId, billNumber, supplierInvoiceNumber, billDate, dueDate, subtotalMinor, taxMinor, discountMinor, totalAmountMinor, amountPaidMinor, balanceDueMinor, notes, createdBy, items }) {
+    const status = balanceDueMinor === 0n ? 'paid' : (amountPaidMinor > 0n ? 'partially_paid' : 'unpaid');
+    const { rows } = await client.query(
+      `INSERT INTO biz_supplier_bills (
+        business_id, supplier_id, po_id, grn_id, bill_number, supplier_invoice_number,
+        bill_date, due_date, subtotal_minor, tax_minor, discount_minor,
+        total_amount_minor, amount_paid_minor, balance_due_minor, status, notes, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      RETURNING *`,
+      [
+        businessId, supplierId, poId || null, grnId || null, billNumber,
+        supplierInvoiceNumber || '', billDate, dueDate,
+        subtotalMinor.toString(), taxMinor.toString(), discountMinor.toString(),
+        totalAmountMinor.toString(), amountPaidMinor.toString(), balanceDueMinor.toString(),
+        status, notes || '', createdBy
+      ]
+    );
+    const bill = rows[0];
+
+    const insertedItems = [];
+    for (const item of items) {
+      const itemRes = await client.query(
+        `INSERT INTO biz_supplier_bill_items (
+          bill_id, product_id, po_item_id, description, quantity,
+          unit_price_minor, tax_minor, line_total_minor
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *`,
+        [
+          bill.id, item.productId || null, item.poItemId || null, item.description || '',
+          item.quantity, item.unitPriceMinor.toString(), (item.taxMinor || 0).toString(),
+          item.lineTotalMinor.toString()
+        ]
+      );
+      insertedItems.push(itemRes.rows[0]);
+    }
+    bill.items = insertedItems;
+    return bill;
+  },
+
+  async listSupplierBills(businessId, { supplierId = '', status = '', limit = 50, offset = 0 } = {}) {
+    const params = [businessId];
+    let filter = '';
+    let idx = 2;
+
+    if (supplierId) {
+      filter += ` AND sb.supplier_id = $${idx++}`;
+      params.push(supplierId);
+    }
+    if (status) {
+      filter += ` AND sb.status = $${idx++}`;
+      params.push(status);
+    }
+
+    params.push(Number(limit) || 50, Number(offset) || 0);
+
+    const { rows } = await getPool().query(
+      `SELECT sb.*, s.name AS supplier_name, s.company_name AS supplier_company,
+              po.po_number, g.grn_number, u.name AS creator_name
+       FROM biz_supplier_bills sb
+       JOIN biz_suppliers s ON s.id = sb.supplier_id
+       LEFT JOIN biz_purchase_orders po ON po.id = sb.po_id
+       LEFT JOIN biz_grns g ON g.id = sb.grn_id
+       LEFT JOIN users u ON u.id = sb.created_by
+       WHERE sb.business_id = $1 ${filter}
+       ORDER BY sb.bill_date DESC, sb.created_at DESC
+       LIMIT $${idx++} OFFSET $${idx++}`,
+      params
+    );
+    return rows;
+  },
+
+  async getSupplierBillById(businessId, billId) {
+    const { rows } = await getPool().query(
+      `SELECT sb.*, s.name AS supplier_name, s.company_name AS supplier_company,
+              s.phone AS supplier_phone, po.po_number, g.grn_number, u.name AS creator_name
+       FROM biz_supplier_bills sb
+       JOIN biz_suppliers s ON s.id = sb.supplier_id
+       LEFT JOIN biz_purchase_orders po ON po.id = sb.po_id
+       LEFT JOIN biz_grns g ON g.id = sb.grn_id
+       LEFT JOIN users u ON u.id = sb.created_by
+       WHERE sb.business_id = $1 AND sb.id = $2`,
+      [businessId, billId]
+    );
+    if (!rows.length) return null;
+    const bill = rows[0];
+
+    const itemsRes = await getPool().query(
+      `SELECT sbi.*, p.name AS product_name, p.sku
+       FROM biz_supplier_bill_items sbi
+       LEFT JOIN biz_products p ON p.id = sbi.product_id
+       WHERE sbi.bill_id = $1
+       ORDER BY sbi.id ASC`,
+      [billId]
+    );
+    bill.items = itemsRes.rows;
+    return bill;
+  },
+
+  async allocateSupplierPayment(client, paymentId, billId, allocatedAmountMinor) {
+    const { rows } = await client.query(
+      `INSERT INTO biz_supplier_payment_allocations (payment_id, bill_id, allocated_amount_minor)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [paymentId, billId, allocatedAmountMinor.toString()]
+    );
+    return rows[0];
+  },
+
+  async updateSupplierBillPayment(client, businessId, billId, paymentMinor) {
+    const payBig = BigInt(paymentMinor);
+    const { rows } = await client.query(
+      `UPDATE biz_supplier_bills
+       SET amount_paid_minor = amount_paid_minor + $1,
+           balance_due_minor = GREATEST(0, balance_due_minor - $1),
+           status = CASE
+             WHEN (balance_due_minor - $1) <= 0 THEN 'paid'
+             ELSE 'partially_paid'
+           END,
+           updated_at = now()
+       WHERE id = $2 AND business_id = $3
+       RETURNING *`,
+      [payBig.toString(), billId, businessId]
+    );
+    return rows[0] || null;
+  },
+
+  // 5. Purchase Returns
+  async createPurchaseReturn(client, businessId, { branchId, supplierId, poId, billId, returnNumber, returnDate, totalAmountMinor, refundMethod, refundAccountId, reason, notes, createdBy, items }) {
+    const { rows } = await client.query(
+      `INSERT INTO biz_purchase_returns (
+        business_id, branch_id, supplier_id, po_id, bill_id, return_number,
+        return_date, total_amount_minor, refund_method, refund_account_id,
+        reason, notes, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      RETURNING *`,
+      [
+        businessId, branchId || null, supplierId, poId || null, billId || null,
+        returnNumber, returnDate, totalAmountMinor.toString(),
+        refundMethod || 'credit_note', refundAccountId || null,
+        reason || '', notes || '', createdBy
+      ]
+    );
+    const prn = rows[0];
+
+    const insertedItems = [];
+    for (const item of items) {
+      const itemRes = await client.query(
+        `INSERT INTO biz_purchase_return_items (
+          return_id, product_id, quantity, unit_cost_minor, line_total_minor
+        ) VALUES ($1, $2, $3, $4, $5)
+        RETURNING *`,
+        [prn.id, item.productId, item.quantity, item.unitCostMinor.toString(), item.lineTotalMinor.toString()]
+      );
+      insertedItems.push(itemRes.rows[0]);
+    }
+    prn.items = insertedItems;
+    return prn;
+  },
+
+  async listPurchaseReturns(businessId, { supplierId = '', limit = 50, offset = 0 } = {}) {
+    const params = [businessId];
+    let filter = '';
+    let idx = 2;
+
+    if (supplierId) {
+      filter += ` AND prn.supplier_id = $${idx++}`;
+      params.push(supplierId);
+    }
+
+    params.push(Number(limit) || 50, Number(offset) || 0);
+
+    const { rows } = await getPool().query(
+      `SELECT prn.*, s.name AS supplier_name, s.company_name AS supplier_company,
+              po.po_number, sb.bill_number, u.name AS creator_name,
+              COUNT(pri.id)::int AS item_count
+       FROM biz_purchase_returns prn
+       JOIN biz_suppliers s ON s.id = prn.supplier_id
+       LEFT JOIN biz_purchase_orders po ON po.id = prn.po_id
+       LEFT JOIN biz_supplier_bills sb ON sb.id = prn.bill_id
+       LEFT JOIN users u ON u.id = prn.created_by
+       LEFT JOIN biz_purchase_return_items pri ON pri.return_id = prn.id
+       WHERE prn.business_id = $1 ${filter}
+       GROUP BY prn.id, s.name, s.company_name, po.po_number, sb.bill_number, u.name
+       ORDER BY prn.return_date DESC, prn.created_at DESC
+       LIMIT $${idx++} OFFSET $${idx++}`,
+      params
+    );
+    return rows;
+  },
+
+  async getPurchaseReturnById(businessId, returnId) {
+    const { rows } = await getPool().query(
+      `SELECT prn.*, s.name AS supplier_name, s.company_name AS supplier_company,
+              po.po_number, sb.bill_number, u.name AS creator_name
+       FROM biz_purchase_returns prn
+       JOIN biz_suppliers s ON s.id = prn.supplier_id
+       LEFT JOIN biz_purchase_orders po ON po.id = prn.po_id
+       LEFT JOIN biz_supplier_bills sb ON sb.id = prn.bill_id
+       LEFT JOIN users u ON u.id = prn.created_by
+       WHERE prn.business_id = $1 AND prn.id = $2`,
+      [businessId, returnId]
+    );
+    if (!rows.length) return null;
+    const prn = rows[0];
+
+    const itemsRes = await getPool().query(
+      `SELECT pri.*, p.name AS product_name, p.sku, p.unit
+       FROM biz_purchase_return_items pri
+       JOIN biz_products p ON p.id = pri.product_id
+       WHERE pri.return_id = $1
+       ORDER BY pri.id ASC`,
+      [returnId]
+    );
+    prn.items = itemsRes.rows;
+    return prn;
   },
 };
 

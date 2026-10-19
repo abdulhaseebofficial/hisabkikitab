@@ -2015,6 +2015,836 @@ const BusinessService = {
       client.release();
     }
   },
+
+  // ---------------------------------------------------------------------------
+  // Advanced Procurement Subsystem (V3)
+  // ---------------------------------------------------------------------------
+
+  // 1. Purchase Requests
+  async createPurchaseRequest(businessId, userId, payload) {
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN');
+      const reqNumber = await BusinessRepository.getNextSequenceNumber(client, businessId, 'biz_purchase_requests', 'request_number', 'PR-');
+      const pr = await BusinessRepository.createPurchaseRequest(client, businessId, {
+        branchId: payload.branchId,
+        requestNumber: reqNumber,
+        requestedBy: userId,
+        department: payload.department,
+        requiredByDate: payload.requiredByDate,
+        priority: payload.priority,
+        notes: payload.notes,
+        items: payload.items || [],
+      });
+      await BusinessRepository.logAction(businessId, userId, 'create_purchase_request', 'biz_purchase_requests', pr.id, { reqNumber });
+      await client.query('COMMIT');
+      return pr;
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      client.release();
+    }
+  },
+
+  async listPurchaseRequests(businessId, query) {
+    return BusinessRepository.listPurchaseRequests(businessId, query);
+  },
+
+  async getPurchaseRequest(businessId, requestId) {
+    return BusinessRepository.getPurchaseRequestById(businessId, requestId);
+  },
+
+  async submitPurchaseRequest(businessId, userId, requestId) {
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN');
+      const pr = await BusinessRepository.getPurchaseRequestById(businessId, requestId);
+      if (!pr) throw new Error('Purchase request not found');
+      if (pr.status !== 'draft') throw new Error(`Cannot submit purchase request in '${pr.status}' status`);
+
+      const updated = await BusinessRepository.updatePurchaseRequestStatus(client, businessId, requestId, 'pending_approval');
+      await BusinessRepository.logAction(businessId, userId, 'submit_purchase_request', 'biz_purchase_requests', requestId, {});
+      await client.query('COMMIT');
+      return updated;
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      client.release();
+    }
+  },
+
+  async approvePurchaseRequest(businessId, userId, requestId) {
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN');
+      const pr = await BusinessRepository.getPurchaseRequestById(businessId, requestId);
+      if (!pr) throw new Error('Purchase request not found');
+      if (pr.status !== 'pending_approval') throw new Error(`Cannot approve purchase request in '${pr.status}' status`);
+
+      const updated = await BusinessRepository.updatePurchaseRequestStatus(client, businessId, requestId, 'approved', { approvedBy: userId });
+      await BusinessRepository.logAction(businessId, userId, 'approve_purchase_request', 'biz_purchase_requests', requestId, {});
+      await client.query('COMMIT');
+      return updated;
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      client.release();
+    }
+  },
+
+  async rejectPurchaseRequest(businessId, userId, requestId, reason) {
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN');
+      const pr = await BusinessRepository.getPurchaseRequestById(businessId, requestId);
+      if (!pr) throw new Error('Purchase request not found');
+      if (pr.status !== 'pending_approval') throw new Error(`Cannot reject purchase request in '${pr.status}' status`);
+
+      const updated = await BusinessRepository.updatePurchaseRequestStatus(client, businessId, requestId, 'rejected', { approvedBy: userId, rejectionReason: reason });
+      await BusinessRepository.logAction(businessId, userId, 'reject_purchase_request', 'biz_purchase_requests', requestId, { reason });
+      await client.query('COMMIT');
+      return updated;
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      client.release();
+    }
+  },
+
+  // 2. Purchase Orders
+  // INVARIANT: Creating a Purchase Order alone DOES NOT post any general ledger entries.
+  async createPurchaseOrder(businessId, userId, payload) {
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN');
+      const poNumber = await BusinessRepository.getNextSequenceNumber(client, businessId, 'biz_purchase_orders', 'po_number', 'PO-');
+
+      const items = payload.items || [];
+      if (!items.length) throw new Error('Purchase order must contain at least one item');
+
+      let subtotal = 0n;
+      let totalTax = 0n;
+      let totalDiscount = 0n;
+      const verifiedItems = [];
+
+      for (const item of items) {
+        const prodRes = await client.query(
+          `SELECT id, name FROM biz_products WHERE id = $1 AND business_id = $2`,
+          [item.productId, businessId]
+        );
+        if (!prodRes.rows.length) throw new Error(`Product ${item.productId} not found`);
+        const product = prodRes.rows[0];
+
+        const qty = Number(item.quantityOrdered || item.quantity || 1);
+        if (qty <= 0) throw new Error('Quantity must be greater than zero');
+
+        const unitPrice = BigInt(item.unitPriceMinor || 0);
+        const tax = BigInt(item.taxMinor || 0);
+        const discount = BigInt(item.discountMinor || 0);
+        const lineTotal = (unitPrice * BigInt(Math.round(qty))) + tax - discount;
+
+        subtotal += unitPrice * BigInt(Math.round(qty));
+        totalTax += tax;
+        totalDiscount += discount;
+
+        verifiedItems.push({
+          productId: product.id,
+          productName: product.name,
+          quantityOrdered: qty,
+          unitPriceMinor: unitPrice,
+          taxMinor: tax,
+          discountMinor: discount,
+          lineTotalMinor: lineTotal,
+        });
+      }
+
+      const totalAmount = subtotal + totalTax - totalDiscount;
+
+      const po = await BusinessRepository.createPurchaseOrder(client, businessId, {
+        branchId: payload.branchId,
+        supplierId: payload.supplierId,
+        purchaseRequestId: payload.purchaseRequestId,
+        poNumber,
+        date: payload.date || new Date().toISOString().split('T')[0],
+        expectedDeliveryDate: payload.expectedDeliveryDate,
+        paymentTerms: payload.paymentTerms || 'net_30',
+        subtotalMinor: subtotal,
+        taxMinor: totalTax,
+        discountMinor: totalDiscount,
+        totalAmountMinor: totalAmount,
+        notes: payload.notes,
+        createdBy: userId,
+        items: verifiedItems,
+      });
+
+      // If created from PR, mark PR as converted
+      if (payload.purchaseRequestId) {
+        await BusinessRepository.updatePurchaseRequestStatus(client, businessId, payload.purchaseRequestId, 'converted_to_po');
+      }
+
+      await BusinessRepository.logAction(businessId, userId, 'create_purchase_order', 'biz_purchase_orders', po.id, { poNumber, total: totalAmount.toString() });
+      await client.query('COMMIT');
+      return po;
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      client.release();
+    }
+  },
+
+  async listPurchaseOrders(businessId, query) {
+    return BusinessRepository.listPurchaseOrders(businessId, query);
+  },
+
+  async getPurchaseOrder(businessId, poId) {
+    return BusinessRepository.getPurchaseOrderById(businessId, poId);
+  },
+
+  async submitPurchaseOrder(businessId, userId, poId) {
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN');
+      const po = await BusinessRepository.getPurchaseOrderById(businessId, poId);
+      if (!po) throw new Error('Purchase order not found');
+      if (po.status !== 'draft') throw new Error(`Cannot submit purchase order in '${po.status}' status`);
+
+      const updated = await BusinessRepository.updatePurchaseOrderStatus(client, businessId, poId, 'pending_approval');
+      await BusinessRepository.logAction(businessId, userId, 'submit_purchase_order', 'biz_purchase_orders', poId, {});
+      await client.query('COMMIT');
+      return updated;
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      client.release();
+    }
+  },
+
+  async approvePurchaseOrder(businessId, userId, poId) {
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN');
+      const po = await BusinessRepository.getPurchaseOrderById(businessId, poId);
+      if (!po) throw new Error('Purchase order not found');
+      if (po.status !== 'pending_approval' && po.status !== 'draft') throw new Error(`Cannot approve purchase order in '${po.status}' status`);
+
+      const updated = await BusinessRepository.updatePurchaseOrderStatus(client, businessId, poId, 'approved', { approvedBy: userId });
+      await BusinessRepository.logAction(businessId, userId, 'approve_purchase_order', 'biz_purchase_orders', poId, {});
+      await client.query('COMMIT');
+      return updated;
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      client.release();
+    }
+  },
+
+  async rejectPurchaseOrder(businessId, userId, poId, reason) {
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN');
+      const po = await BusinessRepository.getPurchaseOrderById(businessId, poId);
+      if (!po) throw new Error('Purchase order not found');
+      if (po.status !== 'pending_approval') throw new Error(`Cannot reject purchase order in '${po.status}' status`);
+
+      const updated = await BusinessRepository.updatePurchaseOrderStatus(client, businessId, poId, 'rejected', { approvedBy: userId, rejectionReason: reason });
+      await BusinessRepository.logAction(businessId, userId, 'reject_purchase_order', 'biz_purchase_orders', poId, { reason });
+      await client.query('COMMIT');
+      return updated;
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      client.release();
+    }
+  },
+
+  async sendPurchaseOrder(businessId, userId, poId) {
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN');
+      const po = await BusinessRepository.getPurchaseOrderById(businessId, poId);
+      if (!po) throw new Error('Purchase order not found');
+      if (po.status !== 'approved') throw new Error(`Only approved purchase orders can be sent to suppliers`);
+
+      const updated = await BusinessRepository.updatePurchaseOrderStatus(client, businessId, poId, 'sent_to_supplier');
+      await BusinessRepository.logAction(businessId, userId, 'send_purchase_order', 'biz_purchase_orders', poId, {});
+      await client.query('COMMIT');
+      return updated;
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      client.release();
+    }
+  },
+
+  // 3. Goods Received Notes (GRN) & Weighted-Average Costing
+  async createGrn(businessId, userId, payload, existingClient = null) {
+    const client = existingClient || (await getPool().connect());
+    const managesTransaction = !existingClient;
+
+    try {
+      if (managesTransaction) await client.query('BEGIN');
+
+      const po = await BusinessRepository.getPurchaseOrderById(businessId, payload.poId);
+      if (!po) throw new Error('Purchase order not found');
+      if (!['approved', 'sent_to_supplier', 'partially_received'].includes(po.status)) {
+        throw new Error(`Cannot receive goods for purchase order in '${po.status}' status`);
+      }
+
+      const grnNumber = await BusinessRepository.getNextSequenceNumber(client, businessId, 'biz_grns', 'grn_number', 'GRN-');
+      const items = payload.items || [];
+      if (!items.length) throw new Error('GRN must receive at least one item');
+
+      let totalReceivedValue = 0n;
+      const verifiedGrnItems = [];
+
+      for (const item of items) {
+        const poItem = po.items.find((i) => i.id === item.poItemId);
+        if (!poItem) throw new Error(`PO item ${item.poItemId} not found on this Purchase Order`);
+
+        const rcvQty = Number(item.quantityReceived || 0);
+        if (rcvQty <= 0) throw new Error('Received quantity must be greater than zero');
+
+        const remainingQty = Number(poItem.quantity_ordered) - Number(poItem.quantity_received);
+        if (rcvQty > remainingQty) {
+          throw new Error(`Cannot receive ${rcvQty} for '${poItem.product_name}'. Remaining ordered quantity is ${remainingQty}`);
+        }
+
+        const unitCost = BigInt(item.unitCostMinor !== undefined ? item.unitCostMinor : poItem.unit_price_minor);
+        const lineTotal = unitCost * BigInt(Math.round(rcvQty));
+        totalReceivedValue += lineTotal;
+
+        // Fetch product with row lock for stock & weighted-average cost update
+        const prodRes = await client.query(
+          `SELECT id, name, current_stock, purchase_price_minor, inventory_valuation_minor
+           FROM biz_products WHERE id = $1 AND business_id = $2 FOR UPDATE`,
+          [poItem.product_id, businessId]
+        );
+        if (!prodRes.rows.length) throw new Error(`Product ${poItem.product_id} not found`);
+        const product = prodRes.rows[0];
+
+        // Weighted-Average Cost Calculation
+        const oldStock = Number(product.current_stock || 0);
+        const oldValuation = BigInt(product.inventory_valuation_minor || 0);
+        const newStock = oldStock + rcvQty;
+        const newValuation = oldValuation + lineTotal;
+        const newUnitCost = newStock > 0 ? (newValuation / BigInt(Math.round(newStock))) : unitCost;
+
+        await client.query(
+          `UPDATE biz_products
+           SET current_stock = $1, purchase_price_minor = $2, inventory_valuation_minor = $3, updated_at = now()
+           WHERE id = $4 AND business_id = $5`,
+          [newStock, newUnitCost.toString(), newValuation.toString(), product.id, businessId]
+        );
+
+        // Record stock movement (Inventory Ledger)
+        await client.query(
+          `INSERT INTO biz_stock_movements (
+            business_id, branch_id, product_id, movement_type, quantity, unit_cost_minor,
+            total_cost_minor, reference_type, reference_id, reason
+          ) VALUES ($1, $2, $3, 'purchase', $4, $5, $6, 'grn', $7, $8)`,
+          [businessId, po.branch_id || null, product.id, rcvQty, unitCost.toString(), lineTotal.toString(), po.id, `GRN received #${grnNumber}`]
+        );
+
+        // Update PO item received quantity
+        await BusinessRepository.updatePoItemReceivedQty(client, poItem.id, rcvQty);
+
+        verifiedGrnItems.push({
+          poItemId: poItem.id,
+          productId: product.id,
+          quantityReceived: rcvQty,
+          unitCostMinor: unitCost,
+          totalCostMinor: lineTotal,
+          batchNumber: item.batchNumber || '',
+          expiryDate: item.expiryDate || null,
+        });
+      }
+
+      // Create GRN header and items
+      const grn = await BusinessRepository.createGrn(client, businessId, {
+        branchId: po.branch_id,
+        warehouseId: payload.warehouseId,
+        poId: po.id,
+        supplierId: po.supplier_id,
+        grnNumber,
+        receiveDate: payload.receiveDate || new Date().toISOString().split('T')[0],
+        deliveryChallanNumber: payload.deliveryChallanNumber,
+        totalReceivedValueMinor: totalReceivedValue,
+        notes: payload.notes,
+        receivedBy: userId,
+        items: verifiedGrnItems,
+      });
+
+      // Update PO status: check if all items are fully received
+      const refreshedPo = await BusinessRepository.getPurchaseOrderById(businessId, po.id);
+      const isFullyReceived = refreshedPo.items.every((i) => Number(i.quantity_received) >= Number(i.quantity_ordered));
+      await BusinessRepository.updatePurchaseOrderStatus(client, businessId, po.id, isFullyReceived ? 'fully_received' : 'partially_received');
+
+      // Double-Entry Clearing Accounting Posting
+      // Dr Merchandise Inventory (1200)
+      // Cr Goods Received Not Invoiced / Accrued Purchases (2040)
+      const invAcc = await BusinessRepository.getAccountByCode(client, businessId, '1200');
+      let grniAcc = await BusinessRepository.getAccountByCode(client, businessId, '2040');
+
+      if (!grniAcc) {
+        // Fallback: create 2040 if business was initialized before V3
+        const newAcc = await client.query(
+          `INSERT INTO biz_accounts (business_id, code, name, type, subtype, is_system)
+           VALUES ($1, '2040', 'Goods Received Not Invoiced (GRNI)', 'liability', 'payable', true)
+           ON CONFLICT (business_id, code) DO UPDATE SET is_system = true
+           RETURNING *`,
+          [businessId]
+        );
+        grniAcc = newAcc.rows[0];
+      }
+
+      if (totalReceivedValue > 0n && invAcc && grniAcc) {
+        await AccountingEngine.postJournalEntry(client, {
+          businessId,
+          entryNumber: grnNumber,
+          date: grn.receive_date,
+          entryType: 'purchase',
+          referenceType: 'grn',
+          referenceId: grn.id,
+          narration: `Goods Received Note #${grnNumber} for PO #${po.po_number}`,
+          lines: [
+            { accountId: invAcc.id, debitMinor: totalReceivedValue.toString(), creditMinor: 0, description: `Inventory receipt #${grnNumber}` },
+            { accountId: grniAcc.id, debitMinor: 0, creditMinor: totalReceivedValue.toString(), description: `Accrued purchases clearing for GRN #${grnNumber}` },
+          ],
+          userId,
+        });
+      }
+
+      await BusinessRepository.logAction(businessId, userId, 'create_grn', 'biz_grns', grn.id, { grnNumber, totalValue: totalReceivedValue.toString() });
+      if (managesTransaction) await client.query('COMMIT');
+      return grn;
+    } catch (e) {
+      if (managesTransaction) await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      if (managesTransaction) client.release();
+    }
+  },
+
+  async createGrnIdempotent(businessId, userId, idempotencyKey, payload) {
+    return runBusinessIdempotent({
+      businessId,
+      userId,
+      action: 'create_grn',
+      key: idempotencyKey,
+      payload,
+      perform: (client) => this.createGrn(businessId, userId, payload, client),
+    });
+  },
+
+  async listGrns(businessId, query) {
+    return BusinessRepository.listGrns(businessId, query);
+  },
+
+  async getGrn(businessId, grnId) {
+    return BusinessRepository.getGrnById(businessId, grnId);
+  },
+
+  // 4. Supplier Bills (Invoices) & Accounts Payable
+  async createSupplierBill(businessId, userId, payload, existingClient = null) {
+    const client = existingClient || (await getPool().connect());
+    const managesTransaction = !existingClient;
+
+    try {
+      if (managesTransaction) await client.query('BEGIN');
+
+      const billNumber = await BusinessRepository.getNextSequenceNumber(client, businessId, 'biz_supplier_bills', 'bill_number', 'BILL-');
+      const items = payload.items || [];
+      if (!items.length) throw new Error('Supplier bill must contain at least one line item');
+
+      let subtotal = 0n;
+      let totalTax = 0n;
+      let totalDiscount = 0n;
+      const verifiedBillItems = [];
+
+      for (const item of items) {
+        const qty = Number(item.quantity || 1);
+        if (qty <= 0) throw new Error('Quantity must be greater than zero');
+
+        const unitPrice = BigInt(item.unitPriceMinor || 0);
+        const tax = BigInt(item.taxMinor || 0);
+        const lineTotal = (unitPrice * BigInt(Math.round(qty))) + tax;
+
+        subtotal += unitPrice * BigInt(Math.round(qty));
+        totalTax += tax;
+
+        if (item.poItemId) {
+          await BusinessRepository.updatePoItemBilledQty(client, item.poItemId, qty);
+        }
+
+        verifiedBillItems.push({
+          productId: item.productId || null,
+          poItemId: item.poItemId || null,
+          description: item.description || item.productName || 'Bill line item',
+          quantity: qty,
+          unitPriceMinor: unitPrice,
+          taxMinor: tax,
+          lineTotalMinor: lineTotal,
+        });
+      }
+
+      totalDiscount = BigInt(payload.discountMinor || 0);
+      const grandTotal = subtotal + totalTax - totalDiscount;
+      const amountPaid = BigInt(payload.amountPaidMinor || 0);
+      const balanceDue = grandTotal - amountPaid;
+
+      const bill = await BusinessRepository.createSupplierBill(client, businessId, {
+        supplierId: payload.supplierId,
+        poId: payload.poId,
+        grnId: payload.grnId,
+        billNumber,
+        supplierInvoiceNumber: payload.supplierInvoiceNumber,
+        billDate: payload.billDate || new Date().toISOString().split('T')[0],
+        dueDate: payload.dueDate || payload.billDate || new Date().toISOString().split('T')[0],
+        subtotalMinor: subtotal,
+        taxMinor: totalTax,
+        discountMinor: totalDiscount,
+        totalAmountMinor: grandTotal,
+        amountPaidMinor: amountPaid,
+        balanceDueMinor: balanceDue,
+        notes: payload.notes,
+        createdBy: userId,
+        items: verifiedBillItems,
+      });
+
+      // Update Supplier Khata balance: add balance due to accounts payable
+      if (balanceDue > 0n) {
+        await client.query(
+          `UPDATE biz_suppliers
+           SET current_balance_minor = current_balance_minor + $1, updated_at = now()
+           WHERE id = $2 AND business_id = $3`,
+          [balanceDue.toString(), payload.supplierId, businessId]
+        );
+      }
+
+      // Check if PO is completely billed
+      if (payload.poId) {
+        const po = await BusinessRepository.getPurchaseOrderById(businessId, payload.poId);
+        if (po) {
+          const allBilled = po.items.every((i) => Number(i.quantity_billed) >= Number(i.quantity_ordered));
+          if (allBilled) {
+            await BusinessRepository.updatePurchaseOrderStatus(client, businessId, po.id, 'billed');
+          }
+        }
+      }
+
+      // Double-Entry Accounting Posting
+      // When matching GRN:
+      //   Dr GRNI / Accrued Purchases Clearing (2040)
+      //   (Optional: Dr Input Tax Receivable 1150)
+      //   Cr Accounts Payable / Supplier Khata (2010)
+      // If direct bill without GRN:
+      //   Dr Merchandise Inventory (1200) or Expense
+      //   Cr Accounts Payable (2010)
+      const apAcc = await BusinessRepository.getAccountByCode(client, businessId, '2010');
+      let grniAcc = await BusinessRepository.getAccountByCode(client, businessId, '2040');
+      const invAcc = await BusinessRepository.getAccountByCode(client, businessId, '1200');
+
+      const debitAcc = payload.grnId ? (grniAcc || invAcc) : invAcc;
+
+      if (grandTotal > 0n && debitAcc && apAcc) {
+        const journalLines = [
+          { accountId: debitAcc.id, debitMinor: grandTotal.toString(), creditMinor: 0, description: `Goods billed under invoice #${billNumber}` },
+          { accountId: apAcc.id, debitMinor: 0, creditMinor: grandTotal.toString(), description: `Accounts payable for supplier bill #${billNumber}` },
+        ];
+
+        await AccountingEngine.postJournalEntry(client, {
+          businessId,
+          entryNumber: billNumber,
+          date: bill.bill_date,
+          entryType: 'purchase',
+          referenceType: 'supplier_bill',
+          referenceId: bill.id,
+          narration: `Supplier Bill #${billNumber} from supplier invoice ${payload.supplierInvoiceNumber || ''}`,
+          lines: journalLines,
+          userId,
+        });
+      }
+
+      await BusinessRepository.logAction(businessId, userId, 'create_supplier_bill', 'biz_supplier_bills', bill.id, { billNumber, grandTotal: grandTotal.toString() });
+      if (managesTransaction) await client.query('COMMIT');
+      return bill;
+    } catch (e) {
+      if (managesTransaction) await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      if (managesTransaction) client.release();
+    }
+  },
+
+  async createSupplierBillIdempotent(businessId, userId, idempotencyKey, payload) {
+    return runBusinessIdempotent({
+      businessId,
+      userId,
+      action: 'create_supplier_bill',
+      key: idempotencyKey,
+      payload,
+      perform: (client) => this.createSupplierBill(businessId, userId, payload, client),
+    });
+  },
+
+  async listSupplierBills(businessId, query) {
+    return BusinessRepository.listSupplierBills(businessId, query);
+  },
+
+  async getSupplierBill(businessId, billId) {
+    return BusinessRepository.getSupplierBillById(businessId, billId);
+  },
+
+  // 5. Supplier Payments & Allocations
+  async createSupplierPayment(businessId, userId, payload, existingClient = null) {
+    const client = existingClient || (await getPool().connect());
+    const managesTransaction = !existingClient;
+
+    try {
+      if (managesTransaction) await client.query('BEGIN');
+
+      const amountMinor = BigInt(payload.amountMinor || 0);
+      if (amountMinor <= 0n) throw new Error('Payment amount must be greater than zero');
+
+      const supplier = await BusinessRepository.getSupplierById(businessId, payload.supplierId);
+      if (!supplier) throw new Error('Supplier not found');
+
+      // 1. Record payment in biz_payments
+      const payRes = await client.query(
+        `INSERT INTO biz_payments (
+          business_id, payment_type, date, amount_minor, supplier_id,
+          payment_method, payment_account_id, reference, notes, created_by
+        ) VALUES ($1, 'supplier_payment', $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING *`,
+        [
+          businessId, payload.date || new Date().toISOString().split('T')[0],
+          amountMinor.toString(), payload.supplierId,
+          payload.paymentMethod || 'cash', payload.paymentAccountId || null,
+          payload.reference || '', payload.notes || '', userId
+        ]
+      );
+      const payment = payRes.rows[0];
+
+      // 2. If allocated against a specific bill
+      if (payload.billId) {
+        const bill = await BusinessRepository.getSupplierBillById(businessId, payload.billId);
+        if (!bill) throw new Error('Target supplier bill not found');
+        await BusinessRepository.allocateSupplierPayment(client, payment.id, bill.id, amountMinor);
+        await BusinessRepository.updateSupplierBillPayment(client, businessId, bill.id, amountMinor);
+      }
+
+      // 3. Reduce Supplier Khata balance
+      await client.query(
+        `UPDATE biz_suppliers
+         SET current_balance_minor = current_balance_minor - $1, updated_at = now()
+         WHERE id = $2 AND business_id = $3`,
+        [amountMinor.toString(), payload.supplierId, businessId]
+      );
+
+      // 4. Double-Entry Posting:
+      // Dr Accounts Payable (2010 - Supplier Khata)
+      // Cr Cash/Bank (1010/1020)
+      const apAcc = await BusinessRepository.getAccountByCode(client, businessId, '2010');
+      let payAcc = null;
+      if (payload.paymentAccountId) {
+        payAcc = await client.query('SELECT id FROM biz_accounts WHERE id = $1 AND business_id = $2', [payload.paymentAccountId, businessId]);
+        payAcc = payAcc.rows[0];
+      }
+      if (!payAcc) {
+        const subtype = payload.paymentMethod === 'bank' ? 'bank' : payload.paymentMethod === 'wallet' ? 'wallet' : 'cash';
+        payAcc = await BusinessRepository.getAccountBySubtype(client, businessId, subtype);
+      }
+
+      if (apAcc && payAcc) {
+        await AccountingEngine.postJournalEntry(client, {
+          businessId,
+          entryNumber: `SPAY-${payment.id.slice(0, 8)}`,
+          date: payment.date,
+          entryType: 'payment',
+          referenceType: 'payment',
+          referenceId: payment.id,
+          narration: `Supplier payment of Rs ${(Number(amountMinor) / 100).toFixed(2)} to ${supplier.name}`,
+          lines: [
+            { accountId: apAcc.id, debitMinor: amountMinor.toString(), creditMinor: 0, description: `Reduction in liability to ${supplier.name}` },
+            { accountId: payAcc.id, debitMinor: 0, creditMinor: amountMinor.toString(), description: `Payment disbursed from cash/bank` },
+          ],
+          userId,
+        });
+      }
+
+      await BusinessRepository.logAction(businessId, userId, 'create_supplier_payment', 'biz_payments', payment.id, { amount: amountMinor.toString() });
+      if (managesTransaction) await client.query('COMMIT');
+      return payment;
+    } catch (e) {
+      if (managesTransaction) await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      if (managesTransaction) client.release();
+    }
+  },
+
+  async createSupplierPaymentIdempotent(businessId, userId, idempotencyKey, payload) {
+    return runBusinessIdempotent({
+      businessId,
+      userId,
+      action: 'create_supplier_payment',
+      key: idempotencyKey,
+      payload,
+      perform: (client) => this.createSupplierPayment(businessId, userId, payload, client),
+    });
+  },
+
+  // 6. Purchase Returns (Debit Notes)
+  async createPurchaseReturn(businessId, userId, payload, existingClient = null) {
+    const client = existingClient || (await getPool().connect());
+    const managesTransaction = !existingClient;
+
+    try {
+      if (managesTransaction) await client.query('BEGIN');
+
+      const returnNumber = await BusinessRepository.getNextSequenceNumber(client, businessId, 'biz_purchase_returns', 'return_number', 'PRN-');
+      const items = payload.items || [];
+      if (!items.length) throw new Error('Purchase return must contain at least one item');
+
+      let totalReturnAmount = 0n;
+      const verifiedReturnItems = [];
+
+      for (const item of items) {
+        const prodRes = await client.query(
+          `SELECT id, name, current_stock, purchase_price_minor, inventory_valuation_minor
+           FROM biz_products WHERE id = $1 AND business_id = $2 FOR UPDATE`,
+          [item.productId, businessId]
+        );
+        if (!prodRes.rows.length) throw new Error(`Product ${item.productId} not found`);
+        const product = prodRes.rows[0];
+
+        const retQty = Number(item.quantity || 1);
+        if (retQty <= 0) throw new Error('Return quantity must be greater than zero');
+
+        const unitCost = BigInt(item.unitCostMinor !== undefined ? item.unitCostMinor : product.purchase_price_minor);
+        const lineTotal = unitCost * BigInt(Math.round(retQty));
+        totalReturnAmount += lineTotal;
+
+        // Reduce stock in biz_products
+        const oldStock = Number(product.current_stock || 0);
+        const newStock = Math.max(0, oldStock - retQty);
+        const newValuation = BigInt(product.purchase_price_minor) * BigInt(Math.max(0, Math.round(newStock)));
+
+        await client.query(
+          `UPDATE biz_products
+           SET current_stock = $1, inventory_valuation_minor = $2, updated_at = now()
+           WHERE id = $3 AND business_id = $4`,
+          [newStock, newValuation.toString(), product.id, businessId]
+        );
+
+        // Record stock movement (outward return)
+        await client.query(
+          `INSERT INTO biz_stock_movements (
+            business_id, branch_id, product_id, movement_type, quantity, unit_cost_minor,
+            total_cost_minor, reference_type, reference_id, reason
+          ) VALUES ($1, $2, $3, 'return_out', $4, $5, $6, 'purchase_return', $7, $8)`,
+          [businessId, payload.branchId || null, product.id, retQty, unitCost.toString(), lineTotal.toString(), payload.supplierId, `Purchase Return #${returnNumber}`]
+        );
+
+        verifiedReturnItems.push({
+          productId: product.id,
+          quantity: retQty,
+          unitCostMinor: unitCost,
+          lineTotalMinor: lineTotal,
+        });
+      }
+
+      const prn = await BusinessRepository.createPurchaseReturn(client, businessId, {
+        branchId: payload.branchId,
+        supplierId: payload.supplierId,
+        poId: payload.poId,
+        billId: payload.billId,
+        returnNumber,
+        returnDate: payload.returnDate || new Date().toISOString().split('T')[0],
+        totalAmountMinor: totalReturnAmount,
+        refundMethod: payload.refundMethod || 'credit_note',
+        refundAccountId: payload.refundAccountId,
+        reason: payload.reason,
+        notes: payload.notes,
+        createdBy: userId,
+        items: verifiedReturnItems,
+      });
+
+      // Reduce Supplier Khata balance (debit note decreases what we owe supplier)
+      if (totalReturnAmount > 0n && (payload.refundMethod === 'credit_note' || !payload.refundMethod)) {
+        await client.query(
+          `UPDATE biz_suppliers
+           SET current_balance_minor = current_balance_minor - $1, updated_at = now()
+           WHERE id = $2 AND business_id = $3`,
+          [totalReturnAmount.toString(), payload.supplierId, businessId]
+        );
+
+        if (payload.billId) {
+          await BusinessRepository.updateSupplierBillPayment(client, businessId, payload.billId, totalReturnAmount);
+        }
+      }
+
+      // Double-Entry Accounting Posting:
+      // Dr Accounts Payable (2010 - Supplier Khata) [or Cash if cash refund received]
+      // Cr Merchandise Inventory (1200)
+      const apAcc = await BusinessRepository.getAccountByCode(client, businessId, '2010');
+      const invAcc = await BusinessRepository.getAccountByCode(client, businessId, '1200');
+
+      if (totalReturnAmount > 0n && apAcc && invAcc) {
+        await AccountingEngine.postJournalEntry(client, {
+          businessId,
+          entryNumber: returnNumber,
+          date: prn.return_date,
+          entryType: 'purchase',
+          referenceType: 'purchase_return',
+          referenceId: prn.id,
+          narration: `Debit Note #${returnNumber} for purchase return`,
+          lines: [
+            { accountId: apAcc.id, debitMinor: totalReturnAmount.toString(), creditMinor: 0, description: `Debit note reduction in supplier khata` },
+            { accountId: invAcc.id, debitMinor: 0, creditMinor: totalReturnAmount.toString(), description: `Inventory reduction for purchase return #${returnNumber}` },
+          ],
+          userId,
+        });
+      }
+
+      await BusinessRepository.logAction(businessId, userId, 'create_purchase_return', 'biz_purchase_returns', prn.id, { returnNumber, total: totalReturnAmount.toString() });
+      if (managesTransaction) await client.query('COMMIT');
+      return prn;
+    } catch (e) {
+      if (managesTransaction) await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      if (managesTransaction) client.release();
+    }
+  },
+
+  async createPurchaseReturnIdempotent(businessId, userId, idempotencyKey, payload) {
+    return runBusinessIdempotent({
+      businessId,
+      userId,
+      action: 'create_purchase_return',
+      key: idempotencyKey,
+      payload,
+      perform: (client) => this.createPurchaseReturn(businessId, userId, payload, client),
+    });
+  },
+
+  async listPurchaseReturns(businessId, query) {
+    return BusinessRepository.listPurchaseReturns(businessId, query);
+  },
+
+  async getPurchaseReturn(businessId, returnId) {
+    return BusinessRepository.getPurchaseReturnById(businessId, returnId);
+  },
 };
 
 module.exports = BusinessService;

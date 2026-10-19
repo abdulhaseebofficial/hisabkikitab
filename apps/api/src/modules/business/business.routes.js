@@ -51,10 +51,45 @@ bizScope.get('/sales', ctrl.listSales);
 bizScope.get('/sales/:saleId', ctrl.getSale);
 bizScope.post('/sales', requireBusinessRole(['owner', 'admin', 'cashier']), BusinessValidator.createSale, validate, requireKey, ctrl.createSale);
 
-// Purchases
+// Purchases & Advanced Procurement (V3)
 bizScope.get('/purchases', ctrl.listPurchases);
 bizScope.get('/purchases/:purchaseId', ctrl.getPurchase);
 bizScope.post('/purchases', requireBusinessRole(['owner', 'admin', 'inventory_manager']), BusinessValidator.createPurchase, validate, requireKey, ctrl.createPurchase);
+
+// Purchase Requests (Requisitions)
+bizScope.get('/purchase-requests', ctrl.listPurchaseRequests);
+bizScope.get('/purchase-requests/:requestId', ctrl.getPurchaseRequest);
+bizScope.post('/purchase-requests', requireBusinessRole(['owner', 'admin', 'inventory_manager', 'employee']), BusinessValidator.createPurchaseRequest, validate, ctrl.createPurchaseRequest);
+bizScope.post('/purchase-requests/:requestId/submit', requireBusinessRole(['owner', 'admin', 'inventory_manager', 'employee']), ctrl.submitPurchaseRequest);
+bizScope.post('/purchase-requests/:requestId/approve', requireBusinessRole(['owner', 'admin']), ctrl.approvePurchaseRequest);
+bizScope.post('/purchase-requests/:requestId/reject', requireBusinessRole(['owner', 'admin']), ctrl.rejectPurchaseRequest);
+
+// Purchase Orders (PO)
+bizScope.get('/purchase-orders', ctrl.listPurchaseOrders);
+bizScope.get('/purchase-orders/:poId', ctrl.getPurchaseOrder);
+bizScope.post('/purchase-orders', requireBusinessRole(['owner', 'admin', 'inventory_manager']), BusinessValidator.createPurchaseOrder, validate, ctrl.createPurchaseOrder);
+bizScope.post('/purchase-orders/:poId/submit', requireBusinessRole(['owner', 'admin', 'inventory_manager']), ctrl.submitPurchaseOrder);
+bizScope.post('/purchase-orders/:poId/approve', requireBusinessRole(['owner', 'admin']), ctrl.approvePurchaseOrder);
+bizScope.post('/purchase-orders/:poId/reject', requireBusinessRole(['owner', 'admin']), ctrl.rejectPurchaseOrder);
+bizScope.post('/purchase-orders/:poId/send', requireBusinessRole(['owner', 'admin', 'inventory_manager']), ctrl.sendPurchaseOrder);
+
+// Goods Received Notes (GRN) & Receipts
+bizScope.get('/grns', ctrl.listGrns);
+bizScope.get('/grns/:grnId', ctrl.getGrn);
+bizScope.post('/grns', requireBusinessRole(['owner', 'admin', 'inventory_manager']), BusinessValidator.createGrn, validate, requireKey, ctrl.createGrn);
+
+// Supplier Bills (Invoices) & Khata Integration
+bizScope.get('/supplier-bills', ctrl.listSupplierBills);
+bizScope.get('/supplier-bills/:billId', ctrl.getSupplierBill);
+bizScope.post('/supplier-bills', requireBusinessRole(['owner', 'admin', 'accountant']), BusinessValidator.createSupplierBill, validate, requireKey, ctrl.createSupplierBill);
+
+// Supplier Payments
+bizScope.post('/supplier-payments', requireBusinessRole(['owner', 'admin', 'accountant']), requireKey, ctrl.createSupplierPayment);
+
+// Purchase Returns (Debit Notes)
+bizScope.get('/purchase-returns', ctrl.listPurchaseReturns);
+bizScope.get('/purchase-returns/:returnId', ctrl.getPurchaseReturn);
+bizScope.post('/purchase-returns', requireBusinessRole(['owner', 'admin', 'inventory_manager']), BusinessValidator.createPurchaseReturn, validate, requireKey, ctrl.createPurchaseReturn);
 
 // Expenses
 bizScope.get('/expenses', ctrl.listExpenses);
