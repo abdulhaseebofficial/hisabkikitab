@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
 import { Link, matchPath, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, CreditCard, FileBarChart, HandCoins, History, LayoutDashboard, Package, PieChart, Receipt, Settings, Settings2, Sparkles, Store, Target, Users, Utensils, Wallet, X, ArrowLeftRight } from 'lucide-react';
+import { BookOpen, CreditCard, FileBarChart, HandCoins, History, LayoutDashboard, Package, PieChart, Receipt, Settings, Settings2, Sparkles, Store, Target, Users, Utensils, Wallet, X, ArrowLeftRight, CalendarClock } from 'lucide-react';
 import { sharedSection, sharedSectionSearch } from '../../features/sharedLiving';
 import { useBusiness } from '../../features/business';
 import useT from '../../shared/i18n/I18nProvider';
@@ -28,6 +28,7 @@ export const BUSINESS_NAV_ITEMS = [
   { to: '/business/inventory', key: 'inventory', label: 'Inventory & Stock', icon: Package },
   { to: '/business/khata', key: 'khata', label: 'Khata (Ledgers)', icon: Users },
   { to: '/business/expenses', key: 'businessExpenses', label: 'Business Expenses', icon: CreditCard },
+  { to: '/business/recurring', key: 'recurringExpenses', label: 'Recurring Expenses', icon: CalendarClock },
   { to: '/business/accounts', key: 'businessAccounts', label: 'Cash & Bank Accounts', icon: Wallet },
   { to: '/business/payroll', key: 'businessPayroll', label: 'Staff & Payroll', icon: Users },
   { to: '/business/budgets', key: 'businessBudgets', label: 'Budgets & Targets', icon: Target },

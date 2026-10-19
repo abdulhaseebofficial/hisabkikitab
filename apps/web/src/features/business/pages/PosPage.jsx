@@ -16,6 +16,7 @@ import {
   RotateCcw,
   Clock,
   AlertTriangle,
+  Download,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
@@ -23,6 +24,7 @@ import Button from '../../../shared/components/ui/Button';
 import Modal from '../../../shared/components/ui/Modal';
 import businessApi from '../api/businessApi';
 import { useBusiness } from '../BusinessContext';
+import { downloadDocumentPdf, printDocumentPdf, DOCUMENT_TYPES } from '../utils/businessDocuments';
 import { formatRs } from '../../../shared/utils/money';
 
 export default function PosPage() {
@@ -664,15 +666,36 @@ export default function PosPage() {
               <p className="text-xs font-medium text-slate-600 dark:text-slate-400">Thank you for your visit!</p>
             </div>
 
-            <div className="flex gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <Button variant="secondary" onClick={() => setReceiptOpen(false)} className="flex-1 text-xs">
                 Close
               </Button>
               <Button
-                onClick={handlePrint}
-                className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 text-white text-xs"
+                type="button"
+                onClick={() =>
+                  downloadDocumentPdf({
+                    businessId: activeBusinessId,
+                    docType: DOCUMENT_TYPES.POS_RECEIPT,
+                    docId: completedSale.id,
+                    customFilename: `Receipt-${completedSale.sale_number || completedSale.id}.pdf`,
+                  })
+                }
+                className="flex-1 flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs"
               >
-                <Printer className="h-4 w-4" /> Print Receipt
+                <Download className="h-4 w-4" /> Download PDF
+              </Button>
+              <Button
+                type="button"
+                onClick={() =>
+                  printDocumentPdf({
+                    businessId: activeBusinessId,
+                    docType: DOCUMENT_TYPES.POS_RECEIPT,
+                    docId: completedSale.id,
+                  })
+                }
+                className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+              >
+                <Printer className="h-4 w-4" /> Print Thermal
               </Button>
             </div>
           </div>

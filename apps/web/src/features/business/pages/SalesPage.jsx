@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Plus, Search, FileText, CheckCircle2 } from 'lucide-react';
+import { ShoppingBag, Plus, Search, FileText, CheckCircle2, Download, Printer } from 'lucide-react';
 import Card from '../../../shared/components/ui/Card';
 import Button from '../../../shared/components/ui/Button';
 import businessApi from '../api/businessApi';
 import { useBusiness } from '../BusinessContext';
 import { formatRs } from '../../../shared/utils/money';
+import { downloadDocumentPdf, previewDocumentPdf, DOCUMENT_TYPES } from '../utils/businessDocuments';
 
 export default function SalesPage() {
   const { activeBusinessId } = useBusiness();
@@ -81,6 +82,7 @@ export default function SalesPage() {
                 <th className="px-4 py-3 text-right">Paid</th>
                 <th className="px-4 py-3 text-right">Balance Due</th>
                 <th className="px-4 py-3 text-center">Status</th>
+                <th className="px-4 py-3 text-right">Invoice Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -110,12 +112,46 @@ export default function SalesPage() {
                       Completed
                     </span>
                   </td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          previewDocumentPdf({
+                            businessId: activeBusinessId,
+                            docType: DOCUMENT_TYPES.SALES_INVOICE,
+                            docId: sale.id,
+                          })
+                        }
+                        title="View / Print Invoice PDF"
+                        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                      >
+                        <Printer className="h-3.5 w-3.5" /> Print
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          downloadDocumentPdf({
+                            businessId: activeBusinessId,
+                            docType: DOCUMENT_TYPES.SALES_INVOICE,
+                            docId: sale.id,
+                            customFilename: `Invoice-${sale.sale_number || sale.id}.pdf`,
+                          })
+                        }
+                        title="Download Invoice PDF"
+                        className="flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      >
+                        <Download className="h-3.5 w-3.5" /> PDF
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
 
               {!filteredSales.length && !loading && (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-sm text-slate-400">
+                  <td colSpan={9} className="py-12 text-center text-sm text-slate-400">
                     No sales recorded yet. Click "Open POS Terminal" to make a sale!
                   </td>
                 </tr>

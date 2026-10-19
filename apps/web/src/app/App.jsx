@@ -36,6 +36,7 @@ const PosPage = lazy(() => import('../features/business/pages/PosPage'));
 const InventoryPage = lazy(() => import('../features/business/pages/InventoryPage'));
 const KhataPage = lazy(() => import('../features/business/pages/KhataPage'));
 const BusinessExpensesPage = lazy(() => import('../features/business/pages/BusinessExpensesPage'));
+const BusinessRecurringExpensesPage = lazy(() => import('../features/business/pages/BusinessRecurringExpensesPage'));
 const AccountsPage = lazy(() => import('../features/business/pages/AccountsPage'));
 const BusinessReportsPage = lazy(() => import('../features/business/pages/BusinessReportsPage'));
 const PayrollPage = lazy(() => import('../features/business/pages/PayrollPage'));
@@ -109,6 +110,7 @@ export default function App() {
                       <Route path="/business/inventory" element={<InventoryPage />} />
                       <Route path="/business/khata" element={<KhataPage />} />
                       <Route path="/business/expenses" element={<BusinessExpensesPage />} />
+                      <Route path="/business/recurring" element={<BusinessRecurringExpensesPage />} />
                       <Route path="/business/accounts" element={<AccountsPage />} />
                       <Route path="/business/payroll" element={<PayrollPage />} />
                       <Route path="/business/budgets" element={<BudgetsPage />} />

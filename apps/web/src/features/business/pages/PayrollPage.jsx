@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, UserPlus, Calendar, DollarSign, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Users, UserPlus, Calendar, DollarSign, CheckCircle2, Clock, AlertCircle, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Card from '../../../shared/components/ui/Card';
 import Button from '../../../shared/components/ui/Button';
@@ -7,6 +7,7 @@ import Modal from '../../../shared/components/ui/Modal';
 import businessApi from '../api/businessApi';
 import { useBusiness } from '../BusinessContext';
 import { formatRs } from '../../../shared/utils/money';
+import { downloadDocumentPdf, DOCUMENT_TYPES } from '../utils/businessDocuments';
 
 export default function PayrollPage() {
   const { activeBusinessId } = useBusiness();
@@ -255,6 +256,7 @@ export default function PayrollPage() {
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 text-right">Total Net Salaries</th>
                   <th className="px-4 py-3">Notes</th>
+                  <th className="px-4 py-3 text-right">Payslip</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs dark:divide-slate-800">
@@ -277,11 +279,28 @@ export default function PayrollPage() {
                       {formatRs(run.total_salary_minor)}
                     </td>
                     <td className="px-4 py-3 text-slate-400">{run.notes || '—'}</td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          downloadDocumentPdf({
+                            businessId: activeBusinessId,
+                            docType: DOCUMENT_TYPES.EMPLOYEE_PAYSLIP,
+                            docId: run.id,
+                            customFilename: `Payslip-${run.month}.pdf`,
+                          })
+                        }
+                        className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300"
+                        title="Download Payslip PDF"
+                      >
+                        <Download className="h-3 w-3" /> Payslip PDF
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {!payrollRuns.length && (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400">
+                    <td colSpan={6} className="py-8 text-center text-slate-400">
                       No payroll runs yet. Click "Run Payroll" to generate monthly salary vouchers.
                     </td>
                   </tr>

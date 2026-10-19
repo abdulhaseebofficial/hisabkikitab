@@ -16,6 +16,7 @@ import Button from '../../../shared/components/ui/Button';
 import businessApi from '../api/businessApi';
 import { useBusiness } from '../BusinessContext';
 import { formatRs } from '../../../shared/utils/money';
+import { downloadDocumentPdf, DOCUMENT_TYPES } from '../utils/businessDocuments';
 
 export default function BusinessReportsPage() {
   const { activeBusinessId } = useBusiness();
@@ -210,6 +211,19 @@ export default function BusinessReportsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadPdf = () => {
+    let docType = DOCUMENT_TYPES.PROFIT_AND_LOSS;
+    if (reportType === 'balance_sheet') docType = DOCUMENT_TYPES.BALANCE_SHEET;
+    else if (reportType === 'cash_flow') docType = DOCUMENT_TYPES.CASH_FLOW;
+
+    downloadDocumentPdf({
+      businessId: activeBusinessId,
+      docType,
+      params: { fromDate, toDate, asOfDate: toDate },
+      customFilename: `${docType}-${toDate}.pdf`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -244,6 +258,15 @@ export default function BusinessReportsPage() {
           <Button variant="secondary" onClick={handleExportCsv} className="text-xs">
             <Download className="mr-1.5 h-3.5 w-3.5" /> Export CSV
           </Button>
+
+          {['pnl', 'balance_sheet', 'cash_flow'].includes(reportType) && (
+            <Button
+              onClick={handleDownloadPdf}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs flex items-center gap-1.5"
+            >
+              <FileText className="h-3.5 w-3.5" /> Download PDF
+            </Button>
+          )}
         </div>
       </div>
 

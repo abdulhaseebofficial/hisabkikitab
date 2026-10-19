@@ -93,9 +93,18 @@ export const businessApi = {
   listBudgets: (id, params) => client.get(`/business/${id}/budgets`, { params }).then((r) => r.data.data),
   createBudget: (id, payload) => client.post(`/business/${id}/budgets`, payload).then((r) => r.data.data),
 
-  // Notifications
-  listNotifications: (id, params) => client.get(`/business/${id}/notifications`, { params }).then((r) => r.data.data),
-  markNotificationRead: (id, notificationId) => client.patch(`/business/${id}/notifications/${notificationId}/read`).then((r) => r.data.data),
+  // Recurring Expenses (V3)
+  listRecurringExpenses: (id, params) => client.get(`/business/${id}/recurring-expenses`, { params }).then((r) => r.data.data),
+  getUpcomingRecurringExpenses: (id) => client.get(`/business/${id}/recurring-expenses/upcoming`).then((r) => r.data.data),
+  getOverdueRecurringExpenses: (id) => client.get(`/business/${id}/recurring-expenses/overdue`).then((r) => r.data.data),
+  getRecurringExpense: (id, recurringId) => client.get(`/business/${id}/recurring-expenses/${recurringId}`).then((r) => r.data.data),
+  createRecurringExpense: (id, payload) => client.post(`/business/${id}/recurring-expenses`, payload).then((r) => r.data.data),
+  updateRecurringExpense: (id, recurringId, payload) => client.put(`/business/${id}/recurring-expenses/${recurringId}`, payload).then((r) => r.data.data),
+  pauseRecurringExpense: (id, recurringId) => client.post(`/business/${id}/recurring-expenses/${recurringId}/pause`).then((r) => r.data.data),
+  resumeRecurringExpense: (id, recurringId) => client.post(`/business/${id}/recurring-expenses/${recurringId}/resume`).then((r) => r.data.data),
+  cancelRecurringExpense: (id, recurringId) => client.post(`/business/${id}/recurring-expenses/${recurringId}/cancel`).then((r) => r.data.data),
+  listRecurringOccurrences: (id, recurringId) => client.get(`/business/${id}/recurring-expenses/${recurringId}/occurrences`).then((r) => r.data.data),
+  generateRecurringExpenses: (id, payload) => client.post(`/business/${id}/recurring-expenses/generate`, payload).then((r) => r.data.data),
 };
 
 export default businessApi;

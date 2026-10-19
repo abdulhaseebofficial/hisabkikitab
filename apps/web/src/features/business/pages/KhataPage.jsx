@@ -12,6 +12,8 @@ import {
   Clock,
   AlertTriangle,
   Send,
+  Download,
+  Printer,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Card from '../../../shared/components/ui/Card';
@@ -20,6 +22,7 @@ import Modal from '../../../shared/components/ui/Modal';
 import businessApi from '../api/businessApi';
 import { useBusiness } from '../BusinessContext';
 import { formatRs } from '../../../shared/utils/money';
+import { downloadDocumentPdf, previewDocumentPdf, DOCUMENT_TYPES } from '../utils/businessDocuments';
 
 export default function KhataPage() {
   const { activeBusiness, activeBusinessId } = useBusiness();
@@ -54,6 +57,7 @@ export default function KhataPage() {
   // Statement Ledger Modal
   const [statementOpen, setStatementOpen] = useState(false);
   const [statementData, setStatementData] = useState(null);
+  const [statementIsCustomer, setStatementIsCustomer] = useState(true);
   const [loadingStatement, setLoadingStatement] = useState(false);
 
   const fetchParties = () => {
@@ -167,10 +171,11 @@ export default function KhataPage() {
   };
 
   const openStatement = async (party, isCustomerParty) => {
+    const isCust = isCustomerParty !== undefined ? isCustomerParty : activeTab === 'customers';
+    setStatementIsCustomer(isCust);
     setStatementOpen(true);
     setLoadingStatement(true);
     try {
-      const isCust = isCustomerParty !== undefined ? isCustomerParty : activeTab === 'customers';
       const data = isCust
         ? await businessApi.getCustomer(activeBusinessId, party.id)
         : await businessApi.getSupplier(activeBusinessId, party.id);
@@ -732,8 +737,43 @@ export default function KhataPage() {
               </table>
             </div>
 
-            <div className="flex justify-end pt-2">
-              <Button variant="secondary" onClick={() => setStatementOpen(false)}>
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() =>
+                    previewDocumentPdf({
+                      businessId: activeBusinessId,
+                      docType: statementIsCustomer
+                        ? DOCUMENT_TYPES.CUSTOMER_STATEMENT
+                        : DOCUMENT_TYPES.SUPPLIER_STATEMENT,
+                      docId: statementData?.id,
+                    })
+                  }
+                  className="flex items-center gap-1 text-xs"
+                >
+                  <Printer className="h-3.5 w-3.5" /> Print Statement
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() =>
+                    downloadDocumentPdf({
+                      businessId: activeBusinessId,
+                      docType: statementIsCustomer
+                        ? DOCUMENT_TYPES.CUSTOMER_STATEMENT
+                        : DOCUMENT_TYPES.SUPPLIER_STATEMENT,
+                      docId: statementData?.id,
+                      customFilename: `${statementIsCustomer ? 'Customer' : 'Supplier'}-Statement-${statementData?.name || 'Party'}.pdf`,
+                    })
+                  }
+                  className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+                >
+                  <Download className="h-3.5 w-3.5" /> Download Statement PDF
+                </Button>
+              </div>
+
+              <Button variant="secondary" onClick={() => setStatementOpen(false)} className="text-xs">
                 Close
               </Button>
             </div>
