@@ -976,6 +976,36 @@ const BusinessController = {
       next(e);
     }
   },
+
+  // ---------------------------------------------------------------------------
+  // Offline POS Synchronization (V3)
+  // ---------------------------------------------------------------------------
+  async syncOfflineSale(req, res, next) {
+    try {
+      const rawResult = await BusinessService.syncOfflineSale(req.businessId, req.user.id, req.body);
+      const result = unwrap(rawResult);
+      if (result.status === 'conflict') {
+        return res.status(409).json({
+          success: false,
+          status: 'conflict',
+          data: result,
+          message: result.conflictReason || 'Transaction conflict detected',
+        });
+      }
+      res.status(200).json({ success: true, data: result });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async listOfflineSyncHistory(req, res, next) {
+    try {
+      const history = await BusinessService.listOfflineSyncHistory(req.businessId, req.query.limit);
+      res.status(200).json({ success: true, data: history });
+    } catch (e) {
+      next(e);
+    }
+  },
 };
 
 module.exports = BusinessController;

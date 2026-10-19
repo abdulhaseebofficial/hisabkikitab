@@ -146,6 +146,15 @@ const BusinessValidator = {
   generateRecurringExpenses: [
     body('asOfDate').optional().isISO8601().withMessage('asOfDate must be a valid date (YYYY-MM-DD)'),
   ],
+
+  syncOfflineSale: [
+    body('clientTxId').isUUID().withMessage('clientTxId must be a valid UUID'),
+    body('offlineCreatedAt').notEmpty().withMessage('offlineCreatedAt timestamp is required'),
+    body('items').isArray({ min: 1 }).withMessage('At least one item is required in offline sale'),
+    body('items.*.productId').notEmpty().withMessage('Product ID is required for all items'),
+    body('items.*.quantity').notEmpty().withMessage('Quantity is required for all items'),
+    body('items.*.unitPriceMinor').notEmpty().withMessage('Unit price is required for all items'),
+  ],
 };
 
 module.exports = BusinessValidator;

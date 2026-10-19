@@ -678,8 +678,9 @@ const BusinessRepository = {
   // Audit Logs
   // ---------------------------------------------------------------------------
 
-  async logAction(businessId, userId, action, entity, entityId = null, details = {}) {
-    await getPool().query(
+  async logAction(businessId, userId, action, entity, entityId = null, details = {}, optionalClient = null) {
+    const db = optionalClient || getPool();
+    await db.query(
       `INSERT INTO biz_audit_logs (business_id, user_id, action, entity, entity_id, details)
        VALUES ($1, $2, $3, $4, $5, $6)`,
       [businessId, userId, action, entity, entityId, JSON.stringify(details)]
@@ -1934,6 +1935,91 @@ const BusinessRepository = {
       [businessId]
     );
     return rows;
+  },
+
+  // ---------------------------------------------------------------------------
+  // Offline POS Synchronization (V3)
+  // ---------------------------------------------------------------------------
+
+  async getOfflineSyncRecord(client, businessId, clientTxId) {
+    const db = client || getPool();
+    const { rows } = await db.query(
+      `SELECT * FROM biz_offline_sync_log
+       WHERE business_id = $1 AND client_tx_id = $2`,
+      [businessId, clientTxId]
+    );
+    return rows[0] || null;
+  },
+
+  async recordOfflineSync(client, {
+    businessId,
+    userId,
+    clientTxId,
+    saleId = null,
+    status,
+    conflictCode = null,
+    conflictReason = null,
+    requestPayload = {},
+    responsePayload = {},
+    deviceFingerprint = '',
+    offlineCreatedAt,
+  }) {
+    const db = client || getPool();
+    const { rows } = await db.query(
+      `INSERT INTO biz_offline_sync_log (
+        business_id, user_id, client_tx_id, sale_id, status,
+        conflict_code, conflict_reason, request_payload, response_payload,
+        device_fingerprint, offline_created_at, synced_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, now())
+      ON CONFLICT (business_id, client_tx_id) DO UPDATE SET
+        sale_id = EXCLUDED.sale_id,
+        status = EXCLUDED.status,
+        conflict_code = EXCLUDED.conflict_code,
+        conflict_reason = EXCLUDED.conflict_reason,
+        response_payload = EXCLUDED.response_payload,
+        synced_at = now()
+      RETURNING *`,
+      [
+        businessId,
+        userId || null,
+        clientTxId,
+        saleId,
+        status,
+        conflictCode,
+        conflictReason,
+        JSON.stringify(requestPayload || {}),
+        JSON.stringify(responsePayload || {}),
+        deviceFingerprint || '',
+        offlineCreatedAt || new Date().toISOString(),
+      ]
+    );
+    return rows[0];
+  },
+
+  async listOfflineSyncHistory(businessId, limit = 50) {
+    const { rows } = await getPool().query(
+      `SELECT osl.*, u.full_name AS cashier_name, s.sale_number, s.total_amount_minor
+       FROM biz_offline_sync_log osl
+       LEFT JOIN users u ON u.id = osl.user_id
+       LEFT JOIN biz_sales s ON s.id = osl.sale_id
+       WHERE osl.business_id = $1
+       ORDER BY osl.synced_at DESC
+       LIMIT $2`,
+      [businessId, Number(limit) || 50]
+    );
+    return rows;
+  },
+
+  async getSaleByClientTxId(client, businessId, clientTxId) {
+    const db = client || getPool();
+    const { rows } = await db.query(
+      `SELECT s.*, c.name AS customer_name
+       FROM biz_sales s
+       LEFT JOIN biz_customers c ON c.id = s.customer_id
+       WHERE s.business_id = $1 AND s.client_tx_id = $2`,
+      [businessId, clientTxId]
+    );
+    return rows[0] || null;
   },
 };
 

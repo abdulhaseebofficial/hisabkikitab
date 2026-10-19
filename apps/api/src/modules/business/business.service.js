@@ -382,14 +382,15 @@ const BusinessService = {
         `INSERT INTO biz_sales (
           business_id, sale_number, customer_id, date, subtotal_minor,
           discount_minor, tax_minor, total_amount_minor, amount_paid_minor,
-          balance_due_minor, payment_method, payment_account_id, is_pos, notes, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+          balance_due_minor, payment_method, payment_account_id, is_pos, notes, created_by, client_tx_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         RETURNING *`,
         [
           businessId, saleNumber, payload.customerId || null, saleDate,
           subtotal.toString(), invoiceDiscount.toString(), invoiceTax.toString(),
           grandTotal.toString(), amountPaid.toString(), balanceDue.toString(),
-          paymentMethod, paymentAccountId || null, Boolean(payload.isPos), payload.notes || '', userId
+          paymentMethod, paymentAccountId || null, Boolean(payload.isPos), payload.notes || '', userId,
+          payload.clientTxId || null
         ]
       );
       const sale = saleRes.rows[0];
@@ -469,7 +470,7 @@ const BusinessService = {
         });
       }
 
-      await BusinessRepository.logAction(businessId, userId, 'create_sale', 'biz_sales', sale.id, { saleNumber, total: grandTotal.toString() });
+      await BusinessRepository.logAction(businessId, userId, 'create_sale', 'biz_sales', sale.id, { saleNumber, total: grandTotal.toString() }, client);
       if (managesTransaction) await client.query('COMMIT');
       return sale;
     } catch (e) {
@@ -3253,6 +3254,219 @@ const BusinessService = {
       payload,
       perform: (client) => this.generateRecurringExpenseOccurrences(businessId, userId, payload, client),
     });
+  },
+
+  // ---------------------------------------------------------------------------
+  // Offline POS Synchronization (V3)
+  // ---------------------------------------------------------------------------
+
+  async syncOfflineSale(businessId, userId, payload, externalClient = null) {
+    const { clientTxId, offlineCreatedAt, items = [] } = payload;
+    if (!clientTxId) throw ApiError.badRequest('clientTxId is required for offline sync');
+
+    // 1. Check if already posted
+    const existingSale = await BusinessRepository.getSaleByClientTxId(externalClient, businessId, clientTxId);
+    if (existingSale) {
+      return {
+        status: 'synced',
+        alreadySynced: true,
+        saleId: existingSale.id,
+        saleNumber: existingSale.sale_number,
+        sale: existingSale,
+      };
+    }
+
+    // 2. Execute within financial idempotency runner
+    const result = await runBusinessIdempotent({
+      businessId,
+      userId,
+      action: 'pos_offline_sync',
+      key: clientTxId,
+      existingClient: externalClient,
+      payload: {
+        clientTxId,
+        items,
+        customerId: payload.customerId,
+        paymentMethod: payload.paymentMethod,
+        discountMinor: payload.discountMinor,
+        forceConflictResolution: payload.forceConflictResolution,
+      },
+      perform: async (client) => {
+        const lockedExisting = await BusinessRepository.getSaleByClientTxId(client, businessId, clientTxId);
+        if (lockedExisting) {
+          return {
+            status: 'synced',
+            alreadySynced: true,
+            saleId: lockedExisting.id,
+            saleNumber: lockedExisting.sale_number,
+            sale: lockedExisting,
+          };
+        }
+
+        // 3. Concurrency, Inventory & Conflict Verification
+        const conflicts = [];
+        let grandSubtotal = 0n;
+
+        for (const item of items) {
+          const prodRes = await client.query(
+            `SELECT * FROM biz_products WHERE id = $1 AND business_id = $2 FOR UPDATE`,
+            [item.productId, businessId]
+          );
+          if (!prodRes.rows.length) {
+            conflicts.push({
+              code: 'PRODUCT_NOT_FOUND',
+              productId: item.productId,
+              productName: item.productName || 'Unknown Product',
+              reason: `Product was not found or has been deleted.`,
+            });
+            continue;
+          }
+          const product = prodRes.rows[0];
+
+          if (!product.is_active) {
+            conflicts.push({
+              code: 'PRODUCT_INACTIVE',
+              productId: product.id,
+              productName: product.name,
+              reason: `Product '${product.name}' is currently deactivated.`,
+            });
+            continue;
+          }
+
+          const currentStock = Number(product.current_stock);
+          const requestedQty = Number(item.quantity);
+
+          // Strict negative stock check
+          if (currentStock < requestedQty && !payload.allowNegativeStock && !payload.forceConflictResolution) {
+            conflicts.push({
+              code: 'INSUFFICIENT_STOCK',
+              productId: product.id,
+              productName: product.name,
+              availableStock: currentStock,
+              requestedQty,
+              reason: `Insufficient stock for '${product.name}'. Available: ${currentStock}, Requested: ${requestedQty}.`,
+            });
+          }
+
+          // Price concurrency check
+          const catalogPrice = BigInt(product.selling_price_minor || 0);
+          const offlinePrice = BigInt(item.unitPriceMinor !== undefined ? item.unitPriceMinor : 0);
+          if (payload.enforceCatalogPrice && catalogPrice !== offlinePrice && !payload.forceConflictResolution) {
+            conflicts.push({
+              code: 'PRICE_CHANGED',
+              productId: product.id,
+              productName: product.name,
+              catalogPriceMinor: catalogPrice.toString(),
+              offlinePriceMinor: offlinePrice.toString(),
+              reason: `Catalog price for '${product.name}' changed from ${offlinePrice} to ${catalogPrice}.`,
+            });
+          }
+
+          grandSubtotal += (offlinePrice * BigInt(Math.max(1, Math.round(requestedQty)))) - BigInt(item.discountMinor || 0) + BigInt(item.taxMinor || 0);
+        }
+
+        // Customer credit limit check
+        if (payload.paymentMethod === 'credit' && payload.customerId) {
+          const custRes = await client.query(
+            `SELECT * FROM biz_customers WHERE id = $1 AND business_id = $2 FOR UPDATE`,
+            [payload.customerId, businessId]
+          );
+          if (!custRes.rows.length || !custRes.rows[0].is_active) {
+            conflicts.push({
+              code: 'CUSTOMER_INACTIVE',
+              customerId: payload.customerId,
+              reason: 'Customer was not found or is inactive.',
+            });
+          } else {
+            const customer = custRes.rows[0];
+            const creditLimit = BigInt(customer.credit_limit_minor || 0);
+            if (creditLimit > 0n && !payload.forceConflictResolution) {
+              const currentBal = BigInt(customer.current_balance_minor || 0);
+              const invoiceDiscount = BigInt(payload.discountMinor || 0);
+              const invoiceTax = BigInt(payload.taxMinor || 0);
+              const saleTotal = grandSubtotal - invoiceDiscount + invoiceTax;
+              if (currentBal + saleTotal > creditLimit) {
+                conflicts.push({
+                  code: 'CREDIT_LIMIT_EXCEEDED',
+                  customerId: customer.id,
+                  customerName: customer.name,
+                  creditLimitMinor: creditLimit.toString(),
+                  currentBalanceMinor: currentBal.toString(),
+                  projectedBalanceMinor: (currentBal + saleTotal).toString(),
+                  reason: `Customer credit limit exceeded. Current: ${currentBal}, Sale: ${saleTotal}, Limit: ${creditLimit}.`,
+                });
+              }
+            }
+          }
+        }
+
+        // Return conflict if detected
+        if (conflicts.length > 0) {
+          const primaryConflict = conflicts[0];
+          await BusinessRepository.recordOfflineSync(client, {
+            businessId,
+            userId,
+            clientTxId,
+            status: 'conflict',
+            conflictCode: primaryConflict.code,
+            conflictReason: primaryConflict.reason,
+            requestPayload: payload,
+            responsePayload: { conflicts },
+            deviceFingerprint: payload.deviceFingerprint || '',
+            offlineCreatedAt,
+          });
+
+          return {
+            status: 'conflict',
+            conflictCode: primaryConflict.code,
+            conflictReason: primaryConflict.reason,
+            conflicts,
+          };
+        }
+
+        // 4. Create Sale via double-entry engine
+        const salePayload = {
+          ...payload,
+          clientTxId,
+          isPos: true,
+          date: offlineCreatedAt ? offlineCreatedAt.split('T')[0] : new Date().toISOString().split('T')[0],
+        };
+
+        const sale = await this.createSale(businessId, userId, salePayload, client);
+
+        // 5. Record Successful Sync
+        await BusinessRepository.recordOfflineSync(client, {
+          businessId,
+          userId,
+          clientTxId,
+          saleId: sale.id,
+          status: 'synced',
+          requestPayload: payload,
+          responsePayload: { saleId: sale.id, saleNumber: sale.sale_number },
+          deviceFingerprint: payload.deviceFingerprint || '',
+          offlineCreatedAt,
+        });
+
+        await BusinessRepository.logAction(businessId, userId, 'pos_offline_synced', 'biz_sales', sale.id, {
+          clientTxId,
+          saleNumber: sale.sale_number,
+          totalAmountMinor: sale.total_amount_minor,
+        }, client);
+
+        return {
+          status: 'synced',
+          saleId: sale.id,
+          saleNumber: sale.sale_number,
+          sale,
+        };
+      },
+    });
+
+    return result && typeof result === 'object' && 'value' in result ? result.value : result;
+  },
+
+  async listOfflineSyncHistory(businessId, limit = 50) {
+    return BusinessRepository.listOfflineSyncHistory(businessId, limit);
   },
 };
 

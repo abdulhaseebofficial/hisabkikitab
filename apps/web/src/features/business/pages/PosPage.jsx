@@ -17,6 +17,12 @@ import {
   Clock,
   AlertTriangle,
   Download,
+  Wifi,
+  WifiOff,
+  CloudOff,
+  RefreshCw,
+  XCircle,
+  Check,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
@@ -24,11 +30,30 @@ import Button from '../../../shared/components/ui/Button';
 import Modal from '../../../shared/components/ui/Modal';
 import businessApi from '../api/businessApi';
 import { useBusiness } from '../BusinessContext';
+import { useAuth } from '../../auth';
+import storage from '../services/posOfflineStorage';
+import { usePosOfflineSync } from '../hooks/usePosOfflineSync';
 import { downloadDocumentPdf, printDocumentPdf, DOCUMENT_TYPES } from '../utils/businessDocuments';
 import { formatRs } from '../../../shared/utils/money';
 
 export default function PosPage() {
+  const { user } = useAuth();
   const { activeBusiness, activeBusinessId } = useBusiness();
+  const {
+    isOnline,
+    isSyncing,
+    queuedSales,
+    pendingCount,
+    conflictCount,
+    failedCount,
+    lastSyncTime,
+    queueSale,
+    retrySale,
+    discardSale,
+    syncAllPending,
+    refreshQueue,
+  } = usePosOfflineSync(activeBusinessId, user);
+
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -41,6 +66,13 @@ export default function PosPage() {
   const [submitting, setSubmitting] = useState(false);
   const [completedSale, setCompletedSale] = useState(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
+
+  // V3 Offline Queue & Conflict Modals
+  const [offlineQueueModalOpen, setOfflineQueueModalOpen] = useState(false);
+  const [conflictModalOpen, setConflictModalOpen] = useState(false);
+  const [selectedConflictSale, setSelectedConflictSale] = useState(null);
+  const [resolvingConflict, setResolvingConflict] = useState(false);
+  const [queueTab, setQueueTab] = useState('pending'); // 'pending' | 'synced' | 'all'
 
   // V2 Shift State
   const [activeShift, setActiveShift] = useState(null);
@@ -76,9 +108,34 @@ export default function PosPage() {
 
   const fetchBaseData = () => {
     if (!activeBusinessId) return;
-    businessApi.listProducts(activeBusinessId).then(setProducts).catch(console.error);
+    businessApi
+      .listProducts(activeBusinessId)
+      .then((prods) => {
+        const list = prods || [];
+        setProducts(list);
+        storage.cacheCatalog(activeBusinessId, list, []);
+      })
+      .catch(async (err) => {
+        console.warn('Network error loading products, using offline cache:', err);
+        const cached = await storage.getCachedProducts(activeBusinessId);
+        if (cached && cached.length) setProducts(cached);
+      });
+
     businessApi.listCategories(activeBusinessId).then(setCategories).catch(console.error);
-    businessApi.listCustomers(activeBusinessId).then(setCustomers).catch(console.error);
+
+    businessApi
+      .listCustomers(activeBusinessId)
+      .then((custs) => {
+        const list = custs || [];
+        setCustomers(list);
+        storage.cacheCatalog(activeBusinessId, [], list);
+      })
+      .catch(async (err) => {
+        console.warn('Network error loading customers, using offline cache:', err);
+        const cached = await storage.getCachedCustomers(activeBusinessId);
+        if (cached && cached.length) setCustomers(cached);
+      });
+
     businessApi.getActiveShift(activeBusinessId).then(setActiveShift).catch(console.error);
   };
 
@@ -310,19 +367,51 @@ export default function PosPage() {
     }
 
     setSubmitting(true);
-    try {
-      const salePayload = {
-        customerId: selectedCustomerId || null,
-        paymentMethod,
-        discountMinor,
-        isPos: true,
-        items: cart.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          unitPriceMinor: item.unitPriceMinor,
-        })),
-      };
+    const salePayload = {
+      customerId: selectedCustomerId || null,
+      customerName: customers.find((c) => c.id === selectedCustomerId)?.name || null,
+      paymentMethod,
+      discountMinor,
+      isPos: true,
+      items: cart.map((item) => ({
+        productId: item.productId,
+        productName: item.name,
+        quantity: item.quantity,
+        unitPriceMinor: item.unitPriceMinor,
+        unit: item.unit || 'pcs',
+      })),
+      subtotalMinor,
+      grandTotalMinor,
+      date: new Date().toISOString().split('T')[0],
+    };
 
+    // If offline, save directly to offline queue
+    if (!isOnline) {
+      try {
+        const queued = await queueSale(salePayload);
+        setCompletedSale({
+          ...salePayload,
+          id: queued.clientTxId,
+          sale_number: `OFFLINE-${queued.clientTxId.slice(0, 8).toUpperCase()}`,
+          is_offline: true,
+          status: 'pending_sync',
+          total_amount_minor: grandTotalMinor,
+          created_at: queued.offlineCreatedAt,
+        });
+        setCart([]);
+        setDiscountRs('');
+        setReceiptOpen(true);
+        toast.success('Offline sale queued! Will sync when connection is restored.');
+      } catch (err) {
+        toast.error('Failed to queue offline sale: ' + err.message);
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    // Attempt online checkout
+    try {
       const sale = await businessApi.createSale(activeBusinessId, salePayload);
       setCompletedSale(sale);
       setCart([]);
@@ -331,8 +420,34 @@ export default function PosPage() {
       toast.success(`Sale ${sale.sale_number} completed!`);
 
       // Refresh product stock
-      businessApi.listProducts(activeBusinessId).then(setProducts).catch(console.error);
+      businessApi.listProducts(activeBusinessId).then((prods) => {
+        const list = prods || [];
+        setProducts(list);
+        storage.cacheCatalog(activeBusinessId, list, []);
+      }).catch(console.error);
     } catch (err) {
+      // If network failure or offline dropped during checkout, fallback gracefully to queue
+      if (!err?.response || err.code === 'ERR_NETWORK') {
+        try {
+          const queued = await queueSale(salePayload);
+          setCompletedSale({
+            ...salePayload,
+            id: queued.clientTxId,
+            sale_number: `OFFLINE-${queued.clientTxId.slice(0, 8).toUpperCase()}`,
+            is_offline: true,
+            status: 'pending_sync',
+            total_amount_minor: grandTotalMinor,
+            created_at: queued.offlineCreatedAt,
+          });
+          setCart([]);
+          setDiscountRs('');
+          setReceiptOpen(true);
+          toast.success('Connection interrupted. Sale safely saved locally to offline queue!');
+          return;
+        } catch (queueErr) {
+          toast.error('Failed to save offline sale: ' + queueErr.message);
+        }
+      }
       toast.error(err?.response?.data?.message || err.message || 'Checkout failed');
     } finally {
       setSubmitting(false);
@@ -347,9 +462,59 @@ export default function PosPage() {
     <div className="flex flex-col gap-6 lg:h-[calc(100vh-6.5rem)] lg:flex-row">
       {/* Left: Product Catalog & Search */}
       <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-canvas-darkCard">
-        {/* Top Control Bar: Shifts, Returns, Held Orders */}
+        {/* Top Control Bar: Status, Shifts, Returns, Held Orders, Offline Queue */}
         <div className="flex flex-wrap items-center justify-between border-b border-slate-200 bg-slate-50/70 px-4 py-2 text-xs dark:border-slate-800 dark:bg-slate-900/40">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Connectivity Status Indicator */}
+            {isOnline ? (
+              <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                <Wifi className="h-3.5 w-3.5" /> Online
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 animate-pulse">
+                <WifiOff className="h-3.5 w-3.5" /> Offline Mode
+              </span>
+            )}
+
+            {/* Offline Queue Badge & Trigger */}
+            <button
+              type="button"
+              onClick={() => setOfflineQueueModalOpen(true)}
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-semibold transition ${
+                conflictCount > 0
+                  ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 animate-pulse border border-rose-300'
+                  : pendingCount > 0
+                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300'
+                  : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+              }`}
+            >
+              {isSyncing ? (
+                <RefreshCw className="h-3.5 w-3.5 animate-spin text-blue-600" />
+              ) : conflictCount > 0 ? (
+                <AlertTriangle className="h-3.5 w-3.5 text-rose-600" />
+              ) : (
+                <CloudOff className="h-3.5 w-3.5 text-amber-600" />
+              )}
+              <span>Queue ({queuedSales.length})</span>
+              {pendingCount > 0 && (
+                <span className="ml-0.5 rounded bg-amber-200 px-1.5 py-0.2 text-[10px] font-bold text-amber-900 dark:bg-amber-900 dark:text-amber-100">
+                  {pendingCount} pending
+                </span>
+              )}
+            </button>
+
+            {pendingCount > 0 && isOnline && (
+              <button
+                type="button"
+                onClick={syncAllPending}
+                disabled={isSyncing}
+                className="flex items-center gap-1 rounded-lg bg-blue-50 px-2 py-1 font-semibold text-blue-700 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300"
+              >
+                <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
+                {isSyncing ? 'Syncing...' : 'Sync Now'}
+              </button>
+            )}
+
             {activeShift ? (
               <button
                 type="button"
@@ -389,6 +554,17 @@ export default function PosPage() {
             )}
           </div>
         </div>
+
+        {/* Offline Banner when disconnected */}
+        {!isOnline && (
+          <div className="flex items-center justify-between border-b border-amber-200 bg-amber-500/10 px-4 py-1.5 text-xs text-amber-800 dark:border-amber-900/50 dark:text-amber-300">
+            <div className="flex items-center gap-1.5">
+              <WifiOff className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+              <span>Offline Mode: Catalog cached locally. Checkouts are safely queued and sync automatically upon reconnection.</span>
+            </div>
+            <span className="font-bold">{pendingCount} pending synchronization</span>
+          </div>
+        )}
 
         {/* Search & Barcode Bar */}
         <div className="border-b border-slate-200 p-4 dark:border-slate-800">
@@ -637,22 +813,30 @@ export default function PosPage() {
       <Modal open={receiptOpen} onClose={() => setReceiptOpen(false)} title="Sale Receipt" size="sm">
         {completedSale && (
           <div id="printable-receipt" className="space-y-4 p-2 text-center text-slate-900 dark:text-slate-100">
+            {completedSale.is_offline && (
+              <div className="rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-center text-xs font-bold text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/60 dark:text-amber-300">
+                ⚠️ PENDING SYNC — OFFLINE RECEIPT (NOT FINALIZED)
+              </div>
+            )}
+
             <div className="border-b border-dashed border-slate-300 pb-3">
               <h3 className="text-lg font-bold">{activeBusiness?.name}</h3>
               <p className="text-xs text-slate-500">{activeBusiness?.address || activeBusiness?.city}</p>
               <p className="text-xs text-slate-500">Phone: {activeBusiness?.contact_number || 'N/A'}</p>
-              <p className="mt-2 text-xs font-semibold">Invoice: #{completedSale.sale_number}</p>
-              <p className="text-[10px] text-slate-400">{completedSale.date}</p>
+              <p className="mt-2 text-xs font-semibold">
+                {completedSale.is_offline ? `Offline Ref: ${completedSale.sale_number}` : `Invoice: #${completedSale.sale_number}`}
+              </p>
+              <p className="text-[10px] text-slate-400">{completedSale.date || completedSale.created_at}</p>
             </div>
 
             <div className="space-y-1 text-left text-xs">
               <div className="flex justify-between font-semibold border-b pb-1">
                 <span>Total Amount:</span>
-                <span>{formatRs(completedSale.total_amount_minor)}</span>
+                <span>{formatRs(completedSale.total_amount_minor || completedSale.grandTotalMinor)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Paid ({completedSale.payment_method}):</span>
-                <span>{formatRs(completedSale.amount_paid_minor)}</span>
+                <span>{formatRs(completedSale.amount_paid_minor !== undefined ? completedSale.amount_paid_minor : completedSale.grandTotalMinor)}</span>
               </div>
               {Number(completedSale.balance_due_minor) > 0 && (
                 <div className="flex justify-between text-rose-600 font-semibold">
@@ -670,33 +854,45 @@ export default function PosPage() {
               <Button variant="secondary" onClick={() => setReceiptOpen(false)} className="flex-1 text-xs">
                 Close
               </Button>
-              <Button
-                type="button"
-                onClick={() =>
-                  downloadDocumentPdf({
-                    businessId: activeBusinessId,
-                    docType: DOCUMENT_TYPES.POS_RECEIPT,
-                    docId: completedSale.id,
-                    customFilename: `Receipt-${completedSale.sale_number || completedSale.id}.pdf`,
-                  })
-                }
-                className="flex-1 flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs"
-              >
-                <Download className="h-4 w-4" /> Download PDF
-              </Button>
-              <Button
-                type="button"
-                onClick={() =>
-                  printDocumentPdf({
-                    businessId: activeBusinessId,
-                    docType: DOCUMENT_TYPES.POS_RECEIPT,
-                    docId: completedSale.id,
-                  })
-                }
-                className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
-              >
-                <Printer className="h-4 w-4" /> Print Thermal
-              </Button>
+              {!completedSale.is_offline ? (
+                <>
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      downloadDocumentPdf({
+                        businessId: activeBusinessId,
+                        docType: DOCUMENT_TYPES.POS_RECEIPT,
+                        docId: completedSale.id,
+                        customFilename: `Receipt-${completedSale.sale_number || completedSale.id}.pdf`,
+                      })
+                    }
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs"
+                  >
+                    <Download className="h-4 w-4" /> Download PDF
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() =>
+                      printDocumentPdf({
+                        businessId: activeBusinessId,
+                        docType: DOCUMENT_TYPES.POS_RECEIPT,
+                        docId: completedSale.id,
+                      })
+                    }
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+                  >
+                    <Printer className="h-4 w-4" /> Print Thermal
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={handlePrint}
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs"
+                >
+                  <Printer className="h-4 w-4" /> Print Receipt
+                </Button>
+              )}
             </div>
           </div>
         )}
@@ -947,6 +1143,250 @@ export default function PosPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* V3 Offline Transaction Queue Modal */}
+      <Modal
+        open={offlineQueueModalOpen}
+        onClose={() => setOfflineQueueModalOpen(false)}
+        title="Offline POS Transaction Queue"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3 dark:border-slate-800">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setQueueTab('pending')}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                  queueTab === 'pending'
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+                }`}
+              >
+                Pending & Conflicts ({pendingCount + conflictCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setQueueTab('all')}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                  queueTab === 'all'
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
+                }`}
+              >
+                All Records ({queuedSales.length})
+              </button>
+            </div>
+
+            {pendingCount > 0 && isOnline && (
+              <Button
+                variant="primary"
+                onClick={syncAllPending}
+                loading={isSyncing}
+                className="!py-1 !px-3 text-xs"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 mr-1 ${isSyncing ? 'animate-spin' : ''}`} />
+                Sync All Pending
+              </Button>
+            )}
+          </div>
+
+          {/* Queue List */}
+          <div className="max-h-96 space-y-3 overflow-y-auto">
+            {queuedSales
+              .filter((s) => {
+                if (queueTab === 'pending') {
+                  return s.syncStatus === 'pending_sync' || s.syncStatus === 'conflict' || s.syncStatus === 'failed';
+                }
+                return true;
+              })
+              .map((sale) => (
+                <div
+                  key={sale.clientTxId}
+                  className={`rounded-xl border p-3 text-xs transition ${
+                    sale.syncStatus === 'conflict'
+                      ? 'border-rose-300 bg-rose-50/50 dark:border-rose-900/60 dark:bg-rose-950/20'
+                      : sale.syncStatus === 'synced'
+                      ? 'border-emerald-200 bg-emerald-50/30 dark:border-emerald-900/40 dark:bg-emerald-950/20'
+                      : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-800/40'
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
+                    <div>
+                      <span className="font-bold text-slate-900 dark:text-slate-100">
+                        {sale.serverSaleNumber ? `Invoice #${sale.serverSaleNumber}` : `Offline Ref: ${sale.clientTxId.slice(0, 8).toUpperCase()}`}
+                      </span>
+                      <span className="ml-2 text-slate-400">
+                        {sale.offlineCreatedAt ? new Date(sale.offlineCreatedAt).toLocaleTimeString() : ''}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      {sale.syncStatus === 'synced' && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                          <CheckCircle2 className="h-3 w-3" /> Synced
+                        </span>
+                      )}
+                      {sale.syncStatus === 'syncing' && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-[11px] font-semibold text-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
+                          <RefreshCw className="h-3 w-3 animate-spin" /> Syncing...
+                        </span>
+                      )}
+                      {sale.syncStatus === 'pending_sync' && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                          <CloudOff className="h-3 w-3" /> Pending Sync
+                        </span>
+                      )}
+                      {sale.syncStatus === 'conflict' && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-0.5 text-[11px] font-semibold text-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
+                          <AlertTriangle className="h-3 w-3" /> Conflict
+                        </span>
+                      )}
+                      {sale.syncStatus === 'failed' && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-800 dark:bg-slate-700 dark:text-slate-300">
+                          <XCircle className="h-3 w-3" /> Failed
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="my-2 flex flex-wrap items-center justify-between gap-2 text-slate-600 dark:text-slate-300">
+                    <div>
+                      <span>Customer: </span>
+                      <span className="font-semibold">{sale.customerName || 'Walk-in'}</span>
+                      <span className="ml-3">Method: </span>
+                      <span className="font-semibold uppercase">{sale.paymentMethod}</span>
+                    </div>
+                    <div className="text-right">
+                      <span>Total: </span>
+                      <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                        {formatRs(sale.grandTotalMinor || sale.subtotalMinor || 0)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Conflict description */}
+                  {sale.syncStatus === 'conflict' && sale.conflictReason && (
+                    <div className="mb-2 rounded-lg bg-rose-100/70 p-2 text-rose-900 dark:bg-rose-950/60 dark:text-rose-200">
+                      <p className="font-bold">Conflict Reason:</p>
+                      <p>{sale.conflictReason}</p>
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div className="mt-2 flex justify-end gap-2 border-t border-slate-100 pt-2 dark:border-slate-800">
+                    {sale.syncStatus === 'conflict' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedConflictSale(sale);
+                          setConflictModalOpen(true);
+                        }}
+                        className="rounded bg-rose-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-rose-700"
+                      >
+                        Resolve Conflict
+                      </button>
+                    )}
+
+                    {(sale.syncStatus === 'pending_sync' || sale.syncStatus === 'failed') && (
+                      <button
+                        type="button"
+                        disabled={!isOnline || isSyncing}
+                        onClick={() => retrySale(sale.clientTxId)}
+                        className="rounded bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                      >
+                        Retry Sync
+                      </button>
+                    )}
+
+                    {sale.syncStatus !== 'synced' && (
+                      <button
+                        type="button"
+                        onClick={() => discardSale(sale.clientTxId)}
+                        className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-400"
+                      >
+                        Discard
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+            {!queuedSales.length && (
+              <div className="py-8 text-center text-slate-400">
+                No offline transactions currently in queue.
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <Button variant="secondary" onClick={() => setOfflineQueueModalOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* V3 Conflict Resolution Modal */}
+      <Modal
+        open={conflictModalOpen}
+        onClose={() => setConflictModalOpen(false)}
+        title="Resolve Synchronization Conflict"
+        size="md"
+      >
+        {selectedConflictSale && (
+          <div className="space-y-4 text-xs">
+            <div className="rounded-lg border border-rose-300 bg-rose-50 p-3 text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200">
+              <p className="font-bold text-sm">Conflict Code: {selectedConflictSale.conflictCode || 'CONCURRENCY_ERROR'}</p>
+              <p className="mt-1">{selectedConflictSale.conflictReason}</p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 p-3 space-y-1.5 dark:border-slate-800">
+              <p className="font-semibold text-slate-900 dark:text-slate-100">Transaction Summary:</p>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Total:</span>
+                <span className="font-bold">{formatRs(selectedConflictSale.grandTotalMinor || 0)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Items:</span>
+                <span>{selectedConflictSale.items?.length || 0} product(s)</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  discardSale(selectedConflictSale.clientTxId);
+                  setConflictModalOpen(false);
+                }}
+              >
+                Discard Transaction
+              </Button>
+              <Button
+                variant="primary"
+                loading={resolvingConflict}
+                onClick={async () => {
+                  setResolvingConflict(true);
+                  try {
+                    const res = await retrySale(selectedConflictSale.clientTxId, { forceResolution: true });
+                    if (res?.success) {
+                      toast.success('Conflict overridden and sale posted successfully!');
+                      setConflictModalOpen(false);
+                    }
+                  } catch (err) {
+                    toast.error('Failed to override conflict: ' + err.message);
+                  } finally {
+                    setResolvingConflict(false);
+                  }
+                }}
+              >
+                Force Override & Post Sale
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

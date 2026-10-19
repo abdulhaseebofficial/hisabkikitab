@@ -138,6 +138,10 @@ bizScope.get('/shifts', ctrl.listShifts);
 bizScope.post('/shifts/open', requireBusinessRole(['owner', 'admin', 'cashier']), BusinessValidator.openShift, validate, requireKey, ctrl.openShift);
 bizScope.post('/shifts/close', requireBusinessRole(['owner', 'admin', 'cashier']), BusinessValidator.closeShift, validate, requireKey, ctrl.closeShift);
 
+// Offline POS Synchronization (V3)
+bizScope.post('/pos/sync', requireBusinessRole(['owner', 'admin', 'cashier']), BusinessValidator.syncOfflineSale, validate, ctrl.syncOfflineSale);
+bizScope.get('/pos/sync-history', requireBusinessRole(['owner', 'admin', 'cashier']), ctrl.listOfflineSyncHistory);
+
 // Staff Attendance & Itemized Payroll
 bizScope.get('/attendance', requireBusinessRole(['owner', 'admin']), ctrl.listAttendance);
 bizScope.post('/attendance', requireBusinessRole(['owner', 'admin']), BusinessValidator.logAttendance, validate, ctrl.logAttendance);

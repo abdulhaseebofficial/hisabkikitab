@@ -1,8 +1,8 @@
 /**
- * Database Migration Verification Suite for Phase 5.1 Quality Gate.
+ * Database Migration Verification Suite for Phase 6 Quality Gate.
  * Runs in an isolated temporary schema on Neon Staging PostgreSQL.
- * Verifies migrations 0001 through 0027 sequentially, testing Business Mode V3 invariants:
- * - Migrations 0001-0027 sequential execution
+ * Verifies migrations 0001 through 0028 sequentially, testing Business Mode V3 invariants:
+ * - Migrations 0001-0028 sequential execution
  * - Four-mode constraint
  * - Foreign keys & tenant isolation
  * - Demo account write protection
@@ -10,6 +10,7 @@
  * - General Ledger immutability
  * - Advanced Procurement double-entry & PPV (5020)
  * - Recurring expense creation, occurrence deduplication & bill settlement
+ * - Offline POS sync log, client_tx_id deduplication & demo write protection (0028)
  * - Cascade cleanup and teardown
  */
 
@@ -30,8 +31,10 @@ if (!url) {
 const client = new Client({
   connectionString: url,
   ssl: { rejectUnauthorized: false },
-  connectionTimeoutMillis: 15000,
-  query_timeout: 25000,
+});
+
+client.on('error', (err) => {
+  console.error('[Staging Gate Client Socket Error]:', err.message);
 });
 
 const SCHEMA = `temp_v3_gate_${Date.now()}`;
@@ -48,8 +51,8 @@ async function runGate() {
   };
 
   try {
-    // Set 20s statement timeout for safety
-    await client.query(`SET statement_timeout = '20000'`);
+    // Generous statement timeout for multi-migration cloud DDL
+    await client.query(`SET statement_timeout = '120000'`);
     await client.query(`DROP SCHEMA IF EXISTS ${SCHEMA} CASCADE`);
     await client.query(`CREATE SCHEMA ${SCHEMA}`);
     await client.query(`SET search_path TO ${SCHEMA}`);
@@ -63,9 +66,9 @@ async function runGate() {
     `);
 
     // -------------------------------------------------------------------------
-    // Step 1: Sequential Migration Application (0001 through 0027)
+    // Step 1: Sequential Migration Application (0001 through 0028)
     // -------------------------------------------------------------------------
-    console.log('\n--- Step 1: Applying Migrations 0001 through 0027 sequentially ---');
+    console.log('\n--- Step 1: Applying Migrations 0001 through 0028 sequentially ---');
     const MIGRATIONS_DIR = path.join(__dirname, '..', 'database', 'migrations');
     const allFiles = fs.readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql')).sort();
 
@@ -351,13 +354,84 @@ async function runGate() {
       VALUES ($1, $2, '2026-10', '2026-10-01', '2026-10-05', 150000, 'generated')
     `, [cleanBizId, cleanRecId]);
 
-    // Deleting clean business cascades to recurring tables
+    const cascadeClientTxId = '99999999-8888-7777-6666-555555555555';
+    await client.query(`
+      INSERT INTO biz_offline_sync_log (
+        business_id, user_id, client_tx_id, status, request_payload, offline_created_at
+      )
+      VALUES ($1, $2, $3, 'synced', '{"items": []}'::jsonb, now())
+    `, [cleanBizId, ownerId, cascadeClientTxId]);
+
+    // Deleting clean business cascades to recurring and offline sync tables
     await client.query(`DELETE FROM businesses WHERE id = $1`, [cleanBizId]);
 
     const remRec = await client.query(`SELECT count(*)::int AS count FROM biz_recurring_expenses WHERE business_id = $1`, [cleanBizId]);
     const remOcc = await client.query(`SELECT count(*)::int AS count FROM biz_recurring_expense_occurrences WHERE business_id = $1`, [cleanBizId]);
-    logCheck('Business deletion cascades cleanly to child recurring tables', remRec.rows[0].count === 0 && remOcc.rows[0].count === 0);
+    const remSync = await client.query(`SELECT count(*)::int AS count FROM biz_offline_sync_log WHERE business_id = $1`, [cleanBizId]);
+    logCheck('Business deletion cascades cleanly to child recurring and offline sync tables', remRec.rows[0].count === 0 && remOcc.rows[0].count === 0 && remSync.rows[0].count === 0);
 
+    // -------------------------------------------------------------------------
+    // Step 9: Offline POS Sync Subsystem (Migration 0028)
+    // -------------------------------------------------------------------------
+    console.log('\n--- Step 9: Verifying Offline POS Sync Subsystem (Migration 0028) ---');
+    const clientTxId1 = '22222222-3333-4444-5555-666666666666';
+    const syncLogRes = await client.query(`
+      INSERT INTO biz_offline_sync_log (
+        business_id, user_id, client_tx_id, status, request_payload, offline_created_at
+      )
+      VALUES ($1, $2, $3, 'synced', '{"items": []}'::jsonb, now())
+      RETURNING id;
+    `, [businessId, ownerId, clientTxId1]);
+    logCheck('biz_offline_sync_log record inserted successfully', Boolean(syncLogRes.rows[0].id));
+
+    let dupSyncLogBlocked = false;
+    try {
+      await client.query(`
+        INSERT INTO biz_offline_sync_log (
+          business_id, user_id, client_tx_id, status, request_payload, offline_created_at
+        )
+        VALUES ($1, $2, $3, 'synced', '{"items": []}'::jsonb, now())
+      `, [businessId, ownerId, clientTxId1]);
+    } catch (e) {
+      dupSyncLogBlocked = e.code === '23505';
+    }
+    logCheck('biz_offline_sync_log rejects duplicate client_tx_id for same business (23505)', dupSyncLogBlocked);
+
+    let demoSyncLogBlocked = false;
+    try {
+      await client.query(`
+        INSERT INTO biz_offline_sync_log (
+          business_id, user_id, client_tx_id, status, request_payload, offline_created_at
+        )
+        VALUES ($1, $2, gen_random_uuid(), 'synced', '{"items": []}'::jsonb, now())
+      `, [demoBusinessId, demoUserId]);
+    } catch (e) {
+      demoSyncLogBlocked = e.message.includes('Demo') || e.code === '42501' || e.code === 'P0001';
+    }
+    logCheck('Database trigger blocks writes to demo-owned biz_offline_sync_log (42501)', demoSyncLogBlocked);
+
+    // Test client_tx_id column and unique constraint on biz_sales
+    const saleRes = await client.query(`
+      INSERT INTO biz_sales (business_id, sale_number, date, total_amount_minor, payment_method, status, created_by, client_tx_id)
+      VALUES ($1, 'SALE-SYNC-01', CURRENT_DATE, 100000, 'cash', 'completed', $2, $3)
+      RETURNING id;
+    `, [businessId, ownerId, clientTxId1]);
+    logCheck('biz_sales accepts client_tx_id', Boolean(saleRes.rows[0].id));
+
+    let dupSaleClientTxBlocked = false;
+    try {
+      await client.query(`
+        INSERT INTO biz_sales (business_id, sale_number, date, total_amount_minor, payment_method, status, created_by, client_tx_id)
+        VALUES ($1, 'SALE-SYNC-02', CURRENT_DATE, 100000, 'cash', 'completed', $2, $3)
+      `, [businessId, ownerId, clientTxId1]);
+    } catch (e) {
+      dupSaleClientTxBlocked = e.code === '23505';
+    }
+    logCheck('biz_sales unique partial index rejects duplicate client_tx_id (23505)', dupSaleClientTxBlocked);
+
+  } catch (gateErr) {
+    console.error('\n[Staging Gate Caught Error]:', gateErr);
+    throw gateErr;
   } finally {
     console.log(`\n[Staging Gate] Dropping temporary schema: ${SCHEMA}`);
     try {

@@ -84,6 +84,10 @@ export const businessApi = {
   openShift: (id, payload) => client.post(`/business/${id}/shifts/open`, payload).then((r) => r.data.data),
   closeShift: (id, payload) => client.post(`/business/${id}/shifts/close`, payload).then((r) => r.data.data),
 
+  // Offline POS Synchronization (V3)
+  syncOfflineSale: (id, payload) => client.post(`/business/${id}/pos/sync`, payload).then((r) => r.data),
+  listOfflineSyncHistory: (id, params) => client.get(`/business/${id}/pos/sync-history`, { params }).then((r) => r.data.data),
+
   // Attendance & Itemized Payroll
   listAttendance: (id, params) => client.get(`/business/${id}/attendance`, { params }).then((r) => r.data.data),
   logAttendance: (id, payload) => client.post(`/business/${id}/attendance`, payload).then((r) => r.data.data),
