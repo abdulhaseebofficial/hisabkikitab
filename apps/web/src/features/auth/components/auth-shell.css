@@ -1,0 +1,30 @@
+@media (min-width: 1024px) {
+  html:has(.hkk-auth-shell),
+  body:has(.hkk-auth-shell),
+  #root:has(.hkk-auth-shell) {
+    overflow-y: hidden;
+  }
+
+  .hkk-auth-shell {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .hkk-auth-brand,
+  .hkk-auth-form-panel {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .hkk-auth-form-panel {
+    justify-content: flex-start;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+
+  .hkk-auth-form-panel > div {
+    margin-block: auto;
+  }
+}
