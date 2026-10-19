@@ -42,6 +42,7 @@ const BusinessReportsPage = lazy(() => import('../features/business/pages/Busine
 const PayrollPage = lazy(() => import('../features/business/pages/PayrollPage'));
 const BudgetsPage = lazy(() => import('../features/business/pages/BudgetsPage'));
 const BusinessSettingsPage = lazy(() => import('../features/business/pages/BusinessSettingsPage'));
+const ProcurementPage = lazy(() => import('../features/business/pages/ProcurementPage'));
 const NotFound = lazy(() => import('./routes/NotFoundPage'));
 
 let initialPublicRoute;
@@ -111,6 +112,7 @@ export default function App() {
                       <Route path="/business/khata" element={<KhataPage />} />
                       <Route path="/business/expenses" element={<BusinessExpensesPage />} />
                       <Route path="/business/recurring" element={<BusinessRecurringExpensesPage />} />
+                      <Route path="/business/procurement" element={<ProcurementPage />} />
                       <Route path="/business/accounts" element={<AccountsPage />} />
                       <Route path="/business/payroll" element={<PayrollPage />} />
                       <Route path="/business/budgets" element={<BudgetsPage />} />

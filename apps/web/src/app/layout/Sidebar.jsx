@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
 import { Link, matchPath, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, CreditCard, FileBarChart, HandCoins, History, LayoutDashboard, Package, PieChart, Receipt, Settings, Settings2, Sparkles, Store, Target, Users, Utensils, Wallet, X, ArrowLeftRight, CalendarClock } from 'lucide-react';
+import { BookOpen, CreditCard, FileBarChart, HandCoins, History, LayoutDashboard, Package, PieChart, Receipt, Settings, Settings2, Sparkles, Store, Target, Users, Utensils, Wallet, X, ArrowLeftRight, CalendarClock, ShoppingBag } from 'lucide-react';
 import { sharedSection, sharedSectionSearch } from '../../features/sharedLiving';
 import { useBusiness } from '../../features/business';
 import useT from '../../shared/i18n/I18nProvider';
@@ -26,6 +26,7 @@ export const BUSINESS_NAV_ITEMS = [
   { to: '/business/pos', key: 'pos', label: 'Point of Sale (POS)', icon: Store },
   { to: '/business/sales', key: 'sales', label: 'Sales & Invoices', icon: Receipt },
   { to: '/business/inventory', key: 'inventory', label: 'Inventory & Stock', icon: Package },
+  { to: '/business/procurement', key: 'procurement', label: 'Procurement (Kharidari)', icon: ShoppingBag },
   { to: '/business/khata', key: 'khata', label: 'Khata (Ledgers)', icon: Users },
   { to: '/business/expenses', key: 'businessExpenses', label: 'Business Expenses', icon: CreditCard },
   { to: '/business/recurring', key: 'recurringExpenses', label: 'Recurring Expenses', icon: CalendarClock },

@@ -3289,9 +3289,17 @@ const BusinessService = {
         customerId: payload.customerId,
         paymentMethod: payload.paymentMethod,
         discountMinor: payload.discountMinor,
-        forceConflictResolution: payload.forceConflictResolution,
+        acceptCatalogPrice: payload.acceptCatalogPrice,
+        creditOverride: payload.creditOverride,
+        resolutionAudit: payload.resolutionAudit,
       },
       perform: async (client) => {
+        // Revalidate cashier permissions dynamically against the database
+        const membership = await BusinessRepository.getMembership(businessId, userId, client);
+        if (!membership || !['owner', 'admin', 'cashier'].includes(membership.role)) {
+          throw ApiError.forbidden('Cashier authorization is invalid or has been revoked');
+        }
+
         const lockedExisting = await BusinessRepository.getSaleByClientTxId(client, businessId, clientTxId);
         if (lockedExisting) {
           return {
@@ -3336,8 +3344,8 @@ const BusinessService = {
           const currentStock = Number(product.current_stock);
           const requestedQty = Number(item.quantity);
 
-          // Strict negative stock check
-          if (currentStock < requestedQty && !payload.allowNegativeStock && !payload.forceConflictResolution) {
+          // Strict negative stock check - INVIOLABLE: never bypassed under any circumstance
+          if (currentStock < requestedQty) {
             conflicts.push({
               code: 'INSUFFICIENT_STOCK',
               productId: product.id,
@@ -3351,7 +3359,7 @@ const BusinessService = {
           // Price concurrency check
           const catalogPrice = BigInt(product.selling_price_minor || 0);
           const offlinePrice = BigInt(item.unitPriceMinor !== undefined ? item.unitPriceMinor : 0);
-          if (payload.enforceCatalogPrice && catalogPrice !== offlinePrice && !payload.forceConflictResolution) {
+          if (payload.enforceCatalogPrice && catalogPrice !== offlinePrice && !payload.acceptCatalogPrice) {
             conflicts.push({
               code: 'PRICE_CHANGED',
               productId: product.id,
@@ -3380,21 +3388,37 @@ const BusinessService = {
           } else {
             const customer = custRes.rows[0];
             const creditLimit = BigInt(customer.credit_limit_minor || 0);
-            if (creditLimit > 0n && !payload.forceConflictResolution) {
+            if (creditLimit > 0n) {
               const currentBal = BigInt(customer.current_balance_minor || 0);
               const invoiceDiscount = BigInt(payload.discountMinor || 0);
               const invoiceTax = BigInt(payload.taxMinor || 0);
               const saleTotal = grandSubtotal - invoiceDiscount + invoiceTax;
               if (currentBal + saleTotal > creditLimit) {
-                conflicts.push({
-                  code: 'CREDIT_LIMIT_EXCEEDED',
-                  customerId: customer.id,
-                  customerName: customer.name,
-                  creditLimitMinor: creditLimit.toString(),
-                  currentBalanceMinor: currentBal.toString(),
-                  projectedBalanceMinor: (currentBal + saleTotal).toString(),
-                  reason: `Customer credit limit exceeded. Current: ${currentBal}, Sale: ${saleTotal}, Limit: ${creditLimit}.`,
-                });
+                let creditAuthorized = false;
+                if (payload.creditOverride?.authorizedByManagerId) {
+                  const mgr = await BusinessRepository.getMembership(businessId, payload.creditOverride.authorizedByManagerId, client);
+                  if (mgr && ['owner', 'admin'].includes(mgr.role)) {
+                    creditAuthorized = true;
+                    await BusinessRepository.logAction(businessId, userId, 'credit_override_authorized', 'biz_customers', customer.id, {
+                      authorizedBy: payload.creditOverride.authorizedByManagerId,
+                      reason: payload.creditOverride.reason || 'Manager authorized credit limit override',
+                      saleTotal: saleTotal.toString(),
+                      currentBalance: currentBal.toString(),
+                      creditLimit: creditLimit.toString(),
+                    }, client);
+                  }
+                }
+                if (!creditAuthorized) {
+                  conflicts.push({
+                    code: 'CREDIT_LIMIT_EXCEEDED',
+                    customerId: customer.id,
+                    customerName: customer.name,
+                    creditLimitMinor: creditLimit.toString(),
+                    currentBalanceMinor: currentBal.toString(),
+                    projectedBalanceMinor: (currentBal + saleTotal).toString(),
+                    reason: `Customer credit limit exceeded. Current: ${currentBal}, Sale: ${saleTotal}, Limit: ${creditLimit}.`,
+                  });
+                }
               }
             }
           }

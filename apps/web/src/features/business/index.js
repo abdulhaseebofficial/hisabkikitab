@@ -11,6 +11,7 @@ export { default as PayrollPage } from './pages/PayrollPage';
 export { default as BudgetsPage } from './pages/BudgetsPage';
 export { default as BusinessReportsPage } from './pages/BusinessReportsPage';
 export { default as BusinessSettingsPage } from './pages/BusinessSettingsPage';
+export { default as ProcurementPage } from './pages/ProcurementPage';
 export { default as BusinessOnboardingModal } from './components/BusinessOnboardingModal';
 export { default as businessApi } from './api/businessApi';
 export * from './utils/businessDocuments';

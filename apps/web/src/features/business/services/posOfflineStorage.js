@@ -80,15 +80,41 @@ export async function getDb() {
 }
 
 /**
+ * Checks whether durable client storage (IndexedDB) is available and functional.
+ * Returns false if in private mode with blocked storage, SSR, or quota exceeded.
+ */
+export async function isDurableStorageAvailable() {
+  if (!hasIndexedDb()) return false;
+  try {
+    const db = await getDb();
+    return db !== null;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Caches authorized products and customers for the active business.
+ * Sanitizes customer records to protect sensitive data in local storage.
  */
 export async function cacheCatalog(businessId, products = [], customers = []) {
   if (!businessId) return;
+
+  // Protect locally cached customer information: keep only operational khata fields
+  const sanitizedCustomers = customers.map((c) => ({
+    id: c.id,
+    name: c.name,
+    phone: c.phone || '',
+    current_balance_minor: c.current_balance_minor || 0,
+    credit_limit_minor: c.credit_limit_minor || 0,
+    is_active: c.is_active !== false,
+  }));
+
   const db = await getDb();
 
   if (!db) {
     products.forEach((p) => memoryFallback.products.set(`${businessId}:${p.id}`, { ...p, business_id: businessId }));
-    customers.forEach((c) => memoryFallback.customers.set(`${businessId}:${c.id}`, { ...c, business_id: businessId }));
+    sanitizedCustomers.forEach((c) => memoryFallback.customers.set(`${businessId}:${c.id}`, { ...c, business_id: businessId }));
     return;
   }
 
@@ -98,7 +124,7 @@ export async function cacheCatalog(businessId, products = [], customers = []) {
     const custStore = tx.objectStore('customers');
 
     products.forEach((p) => prodStore.put({ ...p, business_id: businessId }));
-    customers.forEach((c) => custStore.put({ ...c, business_id: businessId }));
+    sanitizedCustomers.forEach((c) => custStore.put({ ...c, business_id: businessId }));
 
     tx.oncomplete = () => resolve(true);
     tx.onerror = (e) => reject(e.target.error);
@@ -207,15 +233,15 @@ export async function queueOfflineSale(saleData) {
 }
 
 /**
- * Retrieves all sales in the queue for a business.
+ * Retrieves all sales in the queue for a business, optionally partitioned by user.
  */
-export async function getAllQueuedSales(businessId) {
+export async function getAllQueuedSales(businessId, userId = null) {
   if (!businessId) return [];
   const db = await getDb();
 
   if (!db) {
     return Array.from(memoryFallback.sales.values())
-      .filter((s) => s.businessId === businessId)
+      .filter((s) => s.businessId === businessId && (!userId || !s.userId || s.userId === userId))
       .sort((a, b) => new Date(b.offlineCreatedAt) - new Date(a.offlineCreatedAt));
   }
 
@@ -225,7 +251,10 @@ export async function getAllQueuedSales(businessId) {
     const index = store.index('by_business');
     const req = index.getAll(businessId);
     req.onsuccess = () => {
-      const records = req.result || [];
+      let records = req.result || [];
+      if (userId) {
+        records = records.filter((s) => !s.userId || s.userId === userId);
+      }
       records.sort((a, b) => new Date(b.offlineCreatedAt) - new Date(a.offlineCreatedAt));
       resolve(records);
     };
@@ -236,8 +265,8 @@ export async function getAllQueuedSales(businessId) {
 /**
  * Retrieves only pending (unsynced or conflict) sales.
  */
-export async function getPendingSales(businessId) {
-  const all = await getAllQueuedSales(businessId);
+export async function getPendingSales(businessId, userId = null) {
+  const all = await getAllQueuedSales(businessId, userId);
   return all.filter((s) => s.syncStatus === 'pending_sync' || s.syncStatus === 'conflict' || s.syncStatus === 'failed');
 }
 
@@ -274,7 +303,7 @@ export async function updateSaleStatus(clientTxId, updates) {
 }
 
 /**
- * Removes an offline sale (e.g. discarded conflict).
+ * Removes an offline sale from local storage.
  */
 export async function removeOfflineSale(clientTxId) {
   const db = await getDb();
@@ -290,6 +319,41 @@ export async function removeOfflineSale(clientTxId) {
     req.onsuccess = () => resolve(true);
     req.onerror = (e) => reject(e.target.error);
   });
+}
+
+/**
+ * Audited discard of an offline transaction: records an audit entry before removal.
+ */
+export async function discardOfflineSale(clientTxId, reason = 'Operator discarded transaction', auditInfo = {}) {
+  const db = await getDb();
+  let saleRecord = null;
+  if (!db) {
+    saleRecord = memoryFallback.sales.get(clientTxId);
+  } else {
+    saleRecord = await new Promise((resolve) => {
+      const tx = db.transaction('offline_sales', 'readonly');
+      const req = tx.objectStore('offline_sales').get(clientTxId);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
+  }
+
+  if (saleRecord) {
+    await addSyncAuditEntry({
+      businessId: saleRecord.businessId,
+      clientTxId,
+      status: 'discarded',
+      message: reason,
+      details: {
+        ...auditInfo,
+        grandTotalMinor: saleRecord.grandTotalMinor,
+        itemsCount: saleRecord.items?.length,
+        offlineCreatedAt: saleRecord.offlineCreatedAt,
+      },
+    });
+  }
+
+  return removeOfflineSale(clientTxId);
 }
 
 /**
@@ -391,6 +455,7 @@ export async function getSyncHistory(businessId, limit = 50) {
 
 export default {
   getDb,
+  isDurableStorageAvailable,
   cacheCatalog,
   getCachedProducts,
   getCachedCustomers,
@@ -399,6 +464,7 @@ export default {
   getPendingSales,
   updateSaleStatus,
   removeOfflineSale,
+  discardOfflineSale,
   clearBusinessData,
   addSyncAuditEntry,
   getSyncHistory,

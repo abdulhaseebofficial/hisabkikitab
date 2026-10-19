@@ -22,18 +22,18 @@ export function usePosOfflineSync(businessId, user) {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const isSyncingRef = useRef(false);
 
-  // Load and refresh the transaction queue for the active business
+  // Load and refresh the transaction queue for the active business and user
   const refreshQueue = useCallback(async () => {
     if (!businessId) return [];
     try {
-      const sales = await storage.getAllQueuedSales(businessId);
+      const sales = await storage.getAllQueuedSales(businessId, user?.id);
       setQueuedSales(sales);
       return sales;
     } catch (err) {
       console.error('[Offline Sync] Failed to load queue:', err);
       return [];
     }
-  }, [businessId]);
+  }, [businessId, user?.id]);
 
   // Synchronize an individual offline sale to the authoritative server
   const syncSingleSale = useCallback(
@@ -57,13 +57,14 @@ export function usePosOfflineSync(businessId, user) {
         const payload = {
           clientTxId: sale.clientTxId,
           offlineCreatedAt: sale.offlineCreatedAt,
-          items: sale.items,
+          items: options.adjustedItems || sale.items,
           customerId: sale.customerId || null,
           paymentMethod: sale.paymentMethod || 'cash',
           discountMinor: sale.discountMinor || 0,
           notes: sale.notes || '',
-          forceConflictResolution: Boolean(options.forceResolution),
-          allowNegativeStock: Boolean(options.allowNegativeStock),
+          acceptCatalogPrice: Boolean(options.acceptCatalogPrice),
+          creditOverride: options.creditOverride || null,
+          resolutionAudit: options.resolutionAudit || null,
           deviceFingerprint: typeof navigator !== 'undefined' ? navigator.userAgent : 'POS-Browser',
         };
 
@@ -226,20 +227,50 @@ export function usePosOfflineSync(businessId, user) {
     [queuedSales, syncSingleSale]
   );
 
-  // Discard an offline sale from the queue
+  // Adjust conflict quantities or items and retry synchronization
+  const adjustAndRetrySale = useCallback(
+    async (clientTxId, adjustedItems, resolutionReason = '') => {
+      const sale = queuedSales.find((s) => s.clientTxId === clientTxId);
+      if (!sale) return { success: false, message: 'Sale not found in queue' };
+
+      // Recalculate grand total
+      const newTotal = adjustedItems.reduce(
+        (sum, it) => sum + (it.unitPriceMinor || 0) * (it.quantity || 1),
+        0
+      );
+
+      await storage.updateSaleStatus(clientTxId, {
+        items: adjustedItems,
+        grandTotalMinor: newTotal,
+        conflictCode: null,
+        conflictReason: null,
+      });
+
+      return syncSingleSale(
+        { ...sale, items: adjustedItems, grandTotalMinor: newTotal },
+        {
+          resolutionAudit: {
+            resolvedBy: user?.id,
+            reason: resolutionReason || 'Manager adjusted item quantities to available stock',
+            adjustedAt: new Date().toISOString(),
+          },
+        }
+      );
+    },
+    [queuedSales, user?.id, syncSingleSale]
+  );
+
+  // Discard an offline sale from the queue with mandatory audit tracking
   const discardSale = useCallback(
-    async (clientTxId) => {
-      await storage.removeOfflineSale(clientTxId);
-      await storage.addSyncAuditEntry({
-        businessId,
-        clientTxId,
-        status: 'discarded',
-        message: 'Offline transaction discarded by cashier',
+    async (clientTxId, reason = 'Operator discarded conflicted offline transaction') => {
+      await storage.discardOfflineSale(clientTxId, reason, {
+        operatorId: user?.id,
+        operatorName: user?.full_name || user?.name || 'Operator',
       });
       await refreshQueue();
-      toast.success('Offline transaction removed from queue');
+      toast.success('Offline transaction removed and auditable event logged');
     },
-    [businessId, refreshQueue]
+    [user, refreshQueue]
   );
 
   // Listen to network status changes
@@ -283,6 +314,7 @@ export function usePosOfflineSync(businessId, user) {
     lastSyncTime,
     queueSale,
     retrySale,
+    adjustAndRetrySale,
     discardSale,
     syncAllPending,
     refreshQueue,

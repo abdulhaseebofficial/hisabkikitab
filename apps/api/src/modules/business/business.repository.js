@@ -84,8 +84,9 @@ const BusinessRepository = {
     return rows[0] || null;
   },
 
-  async getMembership(businessId, userId) {
-    const { rows } = await getPool().query(
+  async getMembership(businessId, userId, optionalClient = null) {
+    const db = optionalClient || getPool();
+    const { rows } = await db.query(
       `SELECT * FROM business_members
        WHERE business_id = $1 AND user_id = $2 AND is_active = true`,
       [businessId, userId]

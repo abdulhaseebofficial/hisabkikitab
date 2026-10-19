@@ -49,10 +49,17 @@ export default function PosPage() {
     lastSyncTime,
     queueSale,
     retrySale,
+    adjustAndRetrySale,
     discardSale,
     syncAllPending,
     refreshQueue,
   } = usePosOfflineSync(activeBusinessId, user);
+
+  const [isStorageDurable, setIsStorageDurable] = useState(true);
+
+  useEffect(() => {
+    storage.isDurableStorageAvailable().then(setIsStorageDurable);
+  }, []);
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -387,6 +394,12 @@ export default function PosPage() {
 
     // If offline, save directly to offline queue
     if (!isOnline) {
+      if (!isStorageDurable) {
+        toast.error('Offline checkout is disabled: Local storage is unavailable in this environment.');
+        setSubmitting(false);
+        return;
+      }
+
       try {
         const queued = await queueSale(salePayload);
         setCompletedSale({
@@ -463,6 +476,14 @@ export default function PosPage() {
       {/* Left: Product Catalog & Search */}
       <div className="flex flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-canvas-darkCard">
         {/* Top Control Bar: Status, Shifts, Returns, Held Orders, Offline Queue */}
+        {!isOnline && !isStorageDurable && (
+          <div className="flex items-center gap-2 border-b border-rose-300 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
+            <span>
+              Durable local storage is unavailable in this environment. Offline sales are blocked to prevent data loss.
+            </span>
+          </div>
+        )}
         <div className="flex flex-wrap items-center justify-between border-b border-slate-200 bg-slate-50/70 px-4 py-2 text-xs dark:border-slate-800 dark:bg-slate-900/40">
           <div className="flex flex-wrap items-center gap-2">
             {/* Connectivity Status Indicator */}
@@ -800,11 +821,19 @@ export default function PosPage() {
           </div>
 
           <Button
-            disabled={!cart.length || submitting}
+            disabled={!cart.length || submitting || (!isOnline && !isStorageDurable)}
             onClick={handleCheckout}
-            className="mt-4 w-full bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700"
+            className={`mt-4 w-full py-2.5 text-sm font-bold text-white transition ${
+              !isOnline && !isStorageDurable
+                ? 'bg-slate-400 cursor-not-allowed opacity-60'
+                : 'bg-emerald-600 hover:bg-emerald-700'
+            }`}
           >
-            {submitting ? 'Processing...' : `Checkout ${formatRs(grandTotalMinor)}`}
+            {submitting
+              ? 'Processing...'
+              : !isOnline && !isStorageDurable
+              ? 'Offline Blocked (No Storage)'
+              : `Checkout ${formatRs(grandTotalMinor)}`}
           </Button>
         </div>
       </div>
@@ -1343,47 +1372,123 @@ export default function PosPage() {
             </div>
 
             <div className="rounded-xl border border-slate-200 p-3 space-y-1.5 dark:border-slate-800">
-              <p className="font-semibold text-slate-900 dark:text-slate-100">Transaction Summary:</p>
+              <p className="font-semibold text-slate-900 dark:text-slate-100">Transaction Details:</p>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Client Tx ID:</span>
+                <span className="font-mono text-[11px] text-slate-600 dark:text-slate-400">{selectedConflictSale.clientTxId}</span>
+              </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Total:</span>
-                <span className="font-bold">{formatRs(selectedConflictSale.grandTotalMinor || 0)}</span>
+                <span className="font-bold text-slate-900 dark:text-slate-100">{formatRs(selectedConflictSale.grandTotalMinor || 0)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Items:</span>
-                <span>{selectedConflictSale.items?.length || 0} product(s)</span>
+                <span className="text-slate-500">Payment Method:</span>
+                <span className="capitalize">{selectedConflictSale.paymentMethod || 'cash'}</span>
               </div>
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-2">
+                <p className="font-semibold text-slate-700 dark:text-slate-300 mb-1">Items:</p>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {selectedConflictSale.items?.map((it, idx) => (
+                    <div key={idx} className="flex justify-between text-slate-600 dark:text-slate-400">
+                      <span>{it.productName || it.productId} (x{it.quantity})</span>
+                      <span>{formatRs((it.unitPriceMinor || 0) * it.quantity)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
+              <p className="font-bold">Authoritative Accounting Rule:</p>
+              <p className="mt-0.5 text-[11px]">
+                Negative stock and unauthorized ledger violations cannot be bypassed. You may adjust items/quantities, accept current catalog prices, or discard this transaction with an auditable event.
+              </p>
             </div>
 
             <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
               <Button
                 variant="secondary"
                 onClick={() => {
-                  discardSale(selectedConflictSale.clientTxId);
+                  discardSale(selectedConflictSale.clientTxId, 'Cashier cancelled conflicted offline sale');
                   setConflictModalOpen(false);
                 }}
               >
                 Discard Transaction
               </Button>
-              <Button
-                variant="primary"
-                loading={resolvingConflict}
-                onClick={async () => {
-                  setResolvingConflict(true);
-                  try {
-                    const res = await retrySale(selectedConflictSale.clientTxId, { forceResolution: true });
-                    if (res?.success) {
-                      toast.success('Conflict overridden and sale posted successfully!');
-                      setConflictModalOpen(false);
+
+              {selectedConflictSale.conflictCode === 'PRICE_CHANGED' && (
+                <Button
+                  variant="primary"
+                  loading={resolvingConflict}
+                  onClick={async () => {
+                    setResolvingConflict(true);
+                    try {
+                      const res = await retrySale(selectedConflictSale.clientTxId, { acceptCatalogPrice: true });
+                      if (res?.success) {
+                        toast.success('Sale posted with updated catalog prices!');
+                        setConflictModalOpen(false);
+                      }
+                    } catch (err) {
+                      toast.error('Failed to sync sale: ' + err.message);
+                    } finally {
+                      setResolvingConflict(false);
                     }
-                  } catch (err) {
-                    toast.error('Failed to override conflict: ' + err.message);
-                  } finally {
-                    setResolvingConflict(false);
-                  }
-                }}
-              >
-                Force Override & Post Sale
-              </Button>
+                  }}
+                >
+                  Accept Catalog Price & Sync
+                </Button>
+              )}
+
+              {selectedConflictSale.conflictCode === 'INSUFFICIENT_STOCK' && (
+                <Button
+                  variant="primary"
+                  loading={resolvingConflict}
+                  onClick={async () => {
+                    setResolvingConflict(true);
+                    try {
+                      const adjusted = (selectedConflictSale.items || []).filter((it) => it.quantity > 0);
+                      const res = await adjustAndRetrySale(
+                        selectedConflictSale.clientTxId,
+                        adjusted,
+                        'Manager resolved conflict by adjusting quantities to available stock'
+                      );
+                      if (res?.success) {
+                        toast.success('Adjusted sale synchronized successfully!');
+                        setConflictModalOpen(false);
+                      }
+                    } catch (err) {
+                      toast.error('Adjustment sync failed: ' + err.message);
+                    } finally {
+                      setResolvingConflict(false);
+                    }
+                  }}
+                >
+                  Adjust Quantities & Retry
+                </Button>
+              )}
+
+              {!['PRICE_CHANGED', 'INSUFFICIENT_STOCK'].includes(selectedConflictSale.conflictCode) && (
+                <Button
+                  variant="primary"
+                  loading={resolvingConflict}
+                  onClick={async () => {
+                    setResolvingConflict(true);
+                    try {
+                      const res = await retrySale(selectedConflictSale.clientTxId);
+                      if (res?.success) {
+                        toast.success('Sale synchronized successfully!');
+                        setConflictModalOpen(false);
+                      }
+                    } catch (err) {
+                      toast.error('Retry failed: ' + err.message);
+                    } finally {
+                      setResolvingConflict(false);
+                    }
+                  }}
+                >
+                  Retry Synchronization
+                </Button>
+              )}
             </div>
           </div>
         )}

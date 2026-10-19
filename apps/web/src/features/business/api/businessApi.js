@@ -109,6 +109,36 @@ export const businessApi = {
   cancelRecurringExpense: (id, recurringId) => client.post(`/business/${id}/recurring-expenses/${recurringId}/cancel`).then((r) => r.data.data),
   listRecurringOccurrences: (id, recurringId) => client.get(`/business/${id}/recurring-expenses/${recurringId}/occurrences`).then((r) => r.data.data),
   generateRecurringExpenses: (id, payload) => client.post(`/business/${id}/recurring-expenses/generate`, payload).then((r) => r.data.data),
+
+  // Advanced Procurement (V3)
+  listPurchaseRequests: (id, params) => client.get(`/business/${id}/purchase-requests`, { params }).then((r) => r.data.data),
+  getPurchaseRequest: (id, reqId) => client.get(`/business/${id}/purchase-requests/${reqId}`).then((r) => r.data.data),
+  createPurchaseRequest: (id, payload) => client.post(`/business/${id}/purchase-requests`, payload).then((r) => r.data.data),
+  submitPurchaseRequest: (id, reqId) => client.post(`/business/${id}/purchase-requests/${reqId}/submit`).then((r) => r.data.data),
+  approvePurchaseRequest: (id, reqId) => client.post(`/business/${id}/purchase-requests/${reqId}/approve`).then((r) => r.data.data),
+  rejectPurchaseRequest: (id, reqId, payload) => client.post(`/business/${id}/purchase-requests/${reqId}/reject`, payload).then((r) => r.data.data),
+
+  listPurchaseOrders: (id, params) => client.get(`/business/${id}/purchase-orders`, { params }).then((r) => r.data.data),
+  getPurchaseOrder: (id, poId) => client.get(`/business/${id}/purchase-orders/${poId}`).then((r) => r.data.data),
+  createPurchaseOrder: (id, payload) => client.post(`/business/${id}/purchase-orders`, payload).then((r) => r.data.data),
+  submitPurchaseOrder: (id, poId) => client.post(`/business/${id}/purchase-orders/${poId}/submit`).then((r) => r.data.data),
+  approvePurchaseOrder: (id, poId) => client.post(`/business/${id}/purchase-orders/${poId}/approve`).then((r) => r.data.data),
+  rejectPurchaseOrder: (id, poId, payload) => client.post(`/business/${id}/purchase-orders/${poId}/reject`, payload).then((r) => r.data.data),
+  sendPurchaseOrder: (id, poId) => client.post(`/business/${id}/purchase-orders/${poId}/send`).then((r) => r.data.data),
+
+  listGrns: (id, params) => client.get(`/business/${id}/grns`, { params }).then((r) => r.data.data),
+  getGrn: (id, grnId) => client.get(`/business/${id}/grns/${grnId}`).then((r) => r.data.data),
+  createGrn: (id, payload) => client.post(`/business/${id}/grns`, payload).then((r) => r.data.data),
+
+  listSupplierBills: (id, params) => client.get(`/business/${id}/supplier-bills`, { params }).then((r) => r.data.data),
+  getSupplierBill: (id, billId) => client.get(`/business/${id}/supplier-bills/${billId}`).then((r) => r.data.data),
+  createSupplierBill: (id, payload) => client.post(`/business/${id}/supplier-bills`, payload).then((r) => r.data.data),
+
+  createSupplierPayment: (id, payload) => client.post(`/business/${id}/supplier-payments`, payload).then((r) => r.data.data),
+
+  listPurchaseReturns: (id, params) => client.get(`/business/${id}/purchase-returns`, { params }).then((r) => r.data.data),
+  getPurchaseReturn: (id, returnId) => client.get(`/business/${id}/purchase-returns/${returnId}`).then((r) => r.data.data),
+  createPurchaseReturn: (id, payload) => client.post(`/business/${id}/purchase-returns`, payload).then((r) => r.data.data),
 };
 
 export default businessApi;

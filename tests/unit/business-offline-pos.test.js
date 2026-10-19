@@ -46,6 +46,15 @@ function setupMockDatabase() {
           return { rows: [] };
         }
 
+        // 0. Membership check
+        if (sql.includes('FROM business_members')) {
+          const [businessId, memberUserId] = params;
+          if (db.revokedUsers && db.revokedUsers.has(memberUserId)) {
+            return { rows: [] };
+          }
+          return { rows: [{ business_id: businessId, user_id: memberUserId, role: 'cashier', is_active: true }] };
+        }
+
         // 1. biz_financial_requests
         if (sql.includes('INSERT INTO biz_financial_requests')) {
           const [businessId, userId, requestId, action, requestHash] = params;
@@ -300,7 +309,7 @@ test('syncOfflineSale: strictly catches insufficient stock and rejects with conf
   assert.equal(db.products.get('prod_flour').current_stock, 2, 'Stock must remain unchanged');
   assert.equal(db.syncLogs.get(`${businessId}:${clientTxId}`).status, 'conflict');
 
-  // Now test with forceConflictResolution = true (fresh transaction key for resolution)
+  // Verify that forceConflictResolution CANNOT bypass negative stock (inviolable accounting invariant)
   const overrideTxId = crypto.randomUUID();
   const forceResult = await BusinessService.syncOfflineSale(businessId, userId, {
     ...payload,
@@ -308,8 +317,22 @@ test('syncOfflineSale: strictly catches insufficient stock and rejects with conf
     forceConflictResolution: true,
   }, client);
 
-  assert.equal(forceResult.status, 'synced');
-  assert.equal(db.sales.length, 1, 'Sale posted after authorized override');
+  assert.equal(forceResult.status, 'conflict', 'Negative stock cannot be bypassed by force resolution');
+  assert.equal(db.sales.length, 0);
+
+  // Resolution workflow: adjust quantity to available stock (2) and re-sync
+  const retryTxId = crypto.randomUUID();
+  const retryResult = await BusinessService.syncOfflineSale(businessId, userId, {
+    ...payload,
+    clientTxId: retryTxId,
+    items: [
+      { productId: 'prod_flour', quantity: 2, unitPriceMinor: '60000' },
+    ],
+  }, client);
+
+  assert.equal(retryResult.status, 'synced');
+  assert.equal(db.sales.length, 1, 'Sale posted after adjusting quantity to available stock');
+  assert.equal(db.products.get('prod_flour').current_stock, 0, 'Stock reduced to 0');
 });
 
 // -----------------------------------------------------------------------------
@@ -393,3 +416,38 @@ test('syncOfflineSale: flags PRICE_CHANGED conflict when catalog price was modif
   assert.equal(result.conflictCode, 'PRICE_CHANGED');
   assert.equal(db.sales.length, 0);
 });
+
+// -----------------------------------------------------------------------------
+// Test 6: Revoked or Inactive Cashier Authorization Rejection
+// -----------------------------------------------------------------------------
+test('syncOfflineSale: strictly rejects synchronization when cashier membership is revoked', async () => {
+  const { db, createMockClient } = setupMockDatabase();
+  const businessId = 'biz_test_1';
+  const userId = 'usr_revoked_cashier';
+  const clientTxId = crypto.randomUUID();
+  const client = createMockClient();
+
+  db.revokedUsers = new Set(['usr_revoked_cashier']);
+
+  const payload = {
+    clientTxId,
+    offlineCreatedAt: new Date().toISOString(),
+    items: [
+      { productId: 'prod_milk', quantity: 1, unitPriceMinor: '25000' },
+    ],
+  };
+
+  await assert.rejects(
+    async () => {
+      await BusinessService.syncOfflineSale(businessId, userId, payload, client);
+    },
+    (err) => {
+      assert.equal(err.statusCode, 403);
+      assert.match(err.message, /Cashier authorization is invalid or has been revoked/);
+      return true;
+    }
+  );
+
+  assert.equal(db.sales.length, 0);
+});
+
