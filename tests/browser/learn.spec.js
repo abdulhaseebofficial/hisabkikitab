@@ -126,7 +126,9 @@ test('production route loading keeps tools and private entry free of article bod
   expect(tool.resources.scripts.some((name)=>name.startsWith('how-to-'))).toBe(false);
   const article = await metric(page, '/learn/saving/how-to-save-money-every-month');
   await expect(page.getByRole('heading', { name:'How to Save Money Every Month' })).toBeVisible();
-  expect(article.resources.assets.some((name)=>name.startsWith('how-to-save-money-every-month'))).toBe(true);
+  // Prerendered headings can appear before the lazy article chunk finishes loading.
+  await expect.poll(() => page.evaluate(() => performance.getEntriesByType('resource')
+    .some((entry) => new URL(entry.name).pathname.split('/').pop().startsWith('how-to-save-money-every-month')))).toBe(true);
   const privatePage = await context.newPage();
   const privateEntry = await metric(privatePage, '/dashboard');
   expect(privateEntry.resources.assets.some((name)=>name.startsWith('LearnPage') || name.startsWith('how-to-'))).toBe(false);
