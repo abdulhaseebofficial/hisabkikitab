@@ -3,6 +3,7 @@
  */
 
 const BusinessService = require('./business.service');
+const BusinessDocuments = require('./business.documents');
 
 const unwrap = (val) => (val && val.value !== undefined ? val.value : val);
 
@@ -832,6 +833,145 @@ const BusinessController = {
         ? await BusinessService.createPurchaseReturnIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
         : await BusinessService.createPurchaseReturn(req.businessId, req.user.id, req.body);
       res.status(201).json({ success: true, data: unwrap(result) });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  // ---------------------------------------------------------------------------
+  // Recurring Business Expenses (V3)
+  // ---------------------------------------------------------------------------
+  async listRecurringExpenses(req, res, next) {
+    try {
+      const expenses = await BusinessService.listRecurringExpenses(req.businessId, req.query);
+      res.json({ success: true, data: expenses });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async getRecurringExpense(req, res, next) {
+    try {
+      const expense = await BusinessService.getRecurringExpense(req.businessId, req.params.recurringId);
+      if (!expense) return res.status(404).json({ success: false, message: 'Recurring expense not found' });
+      res.json({ success: true, data: expense });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async createRecurringExpense(req, res, next) {
+    try {
+      const created = await BusinessService.createRecurringExpense(req.businessId, req.user.id, req.body);
+      res.status(201).json({ success: true, data: created });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async updateRecurringExpense(req, res, next) {
+    try {
+      const updated = await BusinessService.updateRecurringExpense(req.businessId, req.user.id, req.params.recurringId, req.body);
+      res.json({ success: true, data: updated });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async pauseRecurringExpense(req, res, next) {
+    try {
+      const paused = await BusinessService.pauseRecurringExpense(req.businessId, req.user.id, req.params.recurringId);
+      res.json({ success: true, data: paused });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async resumeRecurringExpense(req, res, next) {
+    try {
+      const resumed = await BusinessService.resumeRecurringExpense(req.businessId, req.user.id, req.params.recurringId);
+      res.json({ success: true, data: resumed });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async cancelRecurringExpense(req, res, next) {
+    try {
+      const cancelled = await BusinessService.cancelRecurringExpense(req.businessId, req.user.id, req.params.recurringId);
+      res.json({ success: true, data: cancelled });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async getUpcomingRecurringExpenses(req, res, next) {
+    try {
+      const days = Number(req.query.days) || 30;
+      const upcoming = await BusinessService.getUpcomingRecurringExpenses(req.businessId, days);
+      res.json({ success: true, data: upcoming });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async getOverdueRecurringExpenses(req, res, next) {
+    try {
+      const overdue = await BusinessService.getOverdueRecurringExpenses(req.businessId);
+      res.json({ success: true, data: overdue });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async listRecurringOccurrences(req, res, next) {
+    try {
+      const occurrences = await BusinessService.listRecurringOccurrences(req.businessId, req.params.recurringId, req.query);
+      res.json({ success: true, data: occurrences });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async generateRecurringOccurrences(req, res, next) {
+    try {
+      const result = req.financialRequestKey
+        ? await BusinessService.generateRecurringExpenseOccurrencesIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
+        : await BusinessService.generateRecurringExpenseOccurrences(req.businessId, req.user.id, req.body);
+      res.status(200).json({ success: true, data: unwrap(result) });
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  // ---------------------------------------------------------------------------
+  // Professional Document Generation (V3)
+  // ---------------------------------------------------------------------------
+  async generateDocumentPdf(req, res, next) {
+    try {
+      const { docType, docId } = req.params;
+      const lang = req.query.lang || 'en';
+
+      const restrictedDocTypes = ['profit-and-loss', 'pnl', 'balance-sheet', 'cash-flow', 'employee-payslip', 'payslip'];
+      if (restrictedDocTypes.includes(docType)) {
+        const role = req.businessMembership?.role;
+        if (role !== 'owner' && role !== 'admin' && role !== 'accountant') {
+          return res.status(403).json({ success: false, message: 'Insufficient business permissions to view this document' });
+        }
+      }
+
+      const result = await BusinessDocuments.generateDocumentPdf({
+        businessId: req.businessId,
+        docType,
+        docId: docId || req.query.id,
+        query: req.query,
+        lang,
+      });
+
+      res.setHeader('Content-Type', result.contentType || 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${result.filename}"`);
+      res.setHeader('Content-Length', result.buffer.length);
+      return res.end(result.buffer);
     } catch (e) {
       next(e);
     }

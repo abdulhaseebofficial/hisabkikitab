@@ -147,6 +147,23 @@ bizScope.post('/payroll/itemized-run', requireBusinessRole(['owner', 'admin', 'a
 bizScope.get('/budgets', requireBusinessRole(['owner', 'admin', 'accountant']), ctrl.listBudgets);
 bizScope.post('/budgets', requireBusinessRole(['owner', 'admin', 'accountant']), BusinessValidator.createBudget, validate, requireKey, ctrl.createBudget);
 
+// Recurring Business Expenses (V3)
+bizScope.get('/recurring-expenses', requireBusinessRole(['owner', 'admin', 'accountant']), ctrl.listRecurringExpenses);
+bizScope.get('/recurring-expenses/upcoming', requireBusinessRole(['owner', 'admin', 'accountant']), ctrl.getUpcomingRecurringExpenses);
+bizScope.get('/recurring-expenses/overdue', requireBusinessRole(['owner', 'admin', 'accountant']), ctrl.getOverdueRecurringExpenses);
+bizScope.get('/recurring-expenses/:recurringId', requireBusinessRole(['owner', 'admin', 'accountant']), ctrl.getRecurringExpense);
+bizScope.post('/recurring-expenses', requireBusinessRole(['owner', 'admin', 'accountant']), BusinessValidator.createRecurringExpense, validate, ctrl.createRecurringExpense);
+bizScope.put('/recurring-expenses/:recurringId', requireBusinessRole(['owner', 'admin', 'accountant']), BusinessValidator.updateRecurringExpense, validate, ctrl.updateRecurringExpense);
+bizScope.post('/recurring-expenses/:recurringId/pause', requireBusinessRole(['owner', 'admin', 'accountant']), ctrl.pauseRecurringExpense);
+bizScope.post('/recurring-expenses/:recurringId/resume', requireBusinessRole(['owner', 'admin', 'accountant']), ctrl.resumeRecurringExpense);
+bizScope.post('/recurring-expenses/:recurringId/cancel', requireBusinessRole(['owner', 'admin', 'accountant']), ctrl.cancelRecurringExpense);
+bizScope.get('/recurring-expenses/:recurringId/occurrences', requireBusinessRole(['owner', 'admin', 'accountant']), ctrl.listRecurringOccurrences);
+bizScope.post('/recurring-expenses/generate', requireBusinessRole(['owner', 'admin', 'accountant']), BusinessValidator.generateRecurringExpenses, validate, requireKey, ctrl.generateRecurringOccurrences);
+
+// Professional Document Generation (V3)
+bizScope.get('/documents/:docType/:docId/pdf', ctrl.generateDocumentPdf);
+bizScope.get('/documents/:docType/pdf', ctrl.generateDocumentPdf);
+
 // Notifications
 bizScope.get('/notifications', ctrl.listNotifications);
 bizScope.patch('/notifications/:notificationId/read', ctrl.markNotificationRead);

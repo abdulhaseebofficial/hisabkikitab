@@ -128,6 +128,24 @@ const BusinessValidator = {
     body('items.*.productId').notEmpty().withMessage('Product ID is required'),
     body('items.*.quantity').notEmpty().withMessage('Return quantity is required'),
   ],
+
+  createRecurringExpense: [
+    body('title').trim().notEmpty().withMessage('Recurring expense title is required'),
+    body('categoryAccountId').notEmpty().withMessage('Category account is required'),
+    body('amountMinor').notEmpty().withMessage('Amount is required'),
+    body('frequency').isIn(['daily', 'weekly', 'monthly', 'quarterly', 'yearly']).withMessage('Valid frequency is required (daily, weekly, monthly, quarterly, yearly)'),
+    body('startDate').notEmpty().withMessage('Start date is required'),
+  ],
+
+  updateRecurringExpense: [
+    body('title').optional().trim().notEmpty().withMessage('Title cannot be empty'),
+    body('amountMinor').optional().notEmpty().withMessage('Amount cannot be empty'),
+    body('frequency').optional().isIn(['daily', 'weekly', 'monthly', 'quarterly', 'yearly']).withMessage('Invalid frequency'),
+  ],
+
+  generateRecurringExpenses: [
+    body('asOfDate').optional().isISO8601().withMessage('asOfDate must be a valid date (YYYY-MM-DD)'),
+  ],
 };
 
 module.exports = BusinessValidator;

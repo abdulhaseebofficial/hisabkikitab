@@ -80,6 +80,26 @@ const EXPECTED_UNUSED_EXPORTS = {
     'the handler an external scheduler is meant to call',
   'apps/api/src/infrastructure/database/migrate.js :: tableNames':
     'printed by the migrate CLI',
+  'packages/contracts/business.js :: BUSINESS_ROLES':
+    'shared business contract enum definition',
+  'packages/contracts/business.js :: GRN_STATUSES':
+    'shared procurement contract enum definition',
+  'packages/contracts/business.js :: SUPPLIER_BILL_STATUSES':
+    'shared procurement contract enum definition',
+  'packages/contracts/business.js :: PURCHASE_RETURN_REFUND_METHODS':
+    'shared procurement contract enum definition',
+  'packages/contracts/business.js :: SALES_RETURN_CONDITIONS':
+    'shared inventory contract enum definition',
+  'packages/contracts/business.js :: SHIFT_STATUSES':
+    'shared pos contract enum definition',
+  'packages/contracts/business.js :: ATTENDANCE_STATUSES':
+    'shared payroll contract enum definition',
+  'packages/contracts/business.js :: RECURRING_EXPENSE_FREQUENCIES':
+    'shared recurring expense contract enum definition',
+  'packages/contracts/business.js :: RECURRING_EXPENSE_STATUSES':
+    'shared recurring expense contract enum definition',
+  'packages/contracts/business.js :: RECURRING_OCCURRENCE_STATUSES':
+    'shared recurring expense contract enum definition',
 };
 
 const IMPORT = /(?:from\s+|import\s*\(\s*|require\(\s*)(['"])([^'"]+)\1/g;

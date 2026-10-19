@@ -903,6 +903,10 @@ const BusinessService = {
     return BusinessRepository.listPayments(businessId, query);
   },
 
+  async getPayment(businessId, paymentId) {
+    return BusinessRepository.getPaymentById(businessId, paymentId);
+  },
+
   // ---------------------------------------------------------------------------
   // Staff & Payroll
   // ---------------------------------------------------------------------------
@@ -919,6 +923,14 @@ const BusinessService = {
 
   async listPayrollRuns(businessId) {
     return BusinessRepository.listPayrollRuns(businessId);
+  },
+
+  async getPayrollRun(businessId, runId) {
+    return BusinessRepository.getPayrollRunById(businessId, runId);
+  },
+
+  async getPayrollItem(businessId, itemId) {
+    return BusinessRepository.getPayrollItemById(businessId, itemId);
   },
 
   async runPayroll(businessId, userId, { month, paidFromAccountId, notes }, externalClient = null) {
@@ -2543,9 +2555,9 @@ const BusinessService = {
 
       // Double-Entry Accounting Posting
       // When matching GRN:
-      //   Dr GRNI / Accrued Purchases Clearing (2040)
-      //   (Optional: Dr Input Tax Receivable 1150)
-      //   Cr Accounts Payable / Supplier Khata (2010)
+      //   Dr GRNI / Accrued Purchases Clearing (2040) - clears the GRN amount
+      //   Dr/Cr PPV (5020) - for any price discrepancy between invoice and GRN
+      //   Cr Accounts Payable / Supplier Khata (2010) - exact trade payable
       // If direct bill without GRN:
       //   Dr Merchandise Inventory (1200) or Expense
       //   Cr Accounts Payable (2010)
@@ -2553,25 +2565,95 @@ const BusinessService = {
       let grniAcc = await BusinessRepository.getAccountByCode(client, businessId, '2040');
       const invAcc = await BusinessRepository.getAccountByCode(client, businessId, '1200');
 
-      const debitAcc = payload.grnId ? (grniAcc || invAcc) : invAcc;
+      if (grandTotal > 0n && apAcc) {
+        let journalLines = [];
 
-      if (grandTotal > 0n && debitAcc && apAcc) {
-        const journalLines = [
-          { accountId: debitAcc.id, debitMinor: grandTotal.toString(), creditMinor: 0, description: `Goods billed under invoice #${billNumber}` },
-          { accountId: apAcc.id, debitMinor: 0, creditMinor: grandTotal.toString(), description: `Accounts payable for supplier bill #${billNumber}` },
-        ];
+        if (payload.grnId && grniAcc) {
+          // Fetch GRN received valuation
+          let grnValue = grandTotal;
+          const grnRes = await client.query(
+            `SELECT total_received_value_minor FROM biz_grns WHERE id = $1 AND business_id = $2`,
+            [payload.grnId, businessId]
+          );
+          if (grnRes.rows.length) {
+            grnValue = BigInt(grnRes.rows[0].total_received_value_minor || 0);
+          }
 
-        await AccountingEngine.postJournalEntry(client, {
-          businessId,
-          entryNumber: billNumber,
-          date: bill.bill_date,
-          entryType: 'purchase',
-          referenceType: 'supplier_bill',
-          referenceId: bill.id,
-          narration: `Supplier Bill #${billNumber} from supplier invoice ${payload.supplierInvoiceNumber || ''}`,
-          lines: journalLines,
-          userId,
-        });
+          const variance = grandTotal - grnValue;
+
+          if (variance === 0n) {
+            journalLines = [
+              { accountId: grniAcc.id, debitMinor: grandTotal.toString(), creditMinor: 0, description: `Clearing accrued purchases for GRN on bill #${billNumber}` },
+              { accountId: apAcc.id, debitMinor: 0, creditMinor: grandTotal.toString(), description: `Accounts payable for supplier bill #${billNumber}` },
+            ];
+          } else {
+            // Price variance between GRN and Supplier Bill
+            let ppvAcc = await BusinessRepository.getAccountByCode(client, businessId, '5020');
+            if (!ppvAcc) {
+              const newAcc = await client.query(
+                `INSERT INTO biz_accounts (business_id, code, name, type, subtype, is_system)
+                 VALUES ($1, '5020', 'Purchase Price Variance', 'expense', 'cogs', true)
+                 ON CONFLICT (business_id, code) DO UPDATE SET is_system = true
+                 RETURNING *`,
+                [businessId]
+              );
+              ppvAcc = newAcc.rows[0];
+            }
+
+            journalLines.push({
+              accountId: grniAcc.id,
+              debitMinor: grnValue.toString(),
+              creditMinor: 0,
+              description: `Clearing accrued purchases for GRN on bill #${billNumber}`
+            });
+
+            if (variance > 0n) {
+              journalLines.push({
+                accountId: ppvAcc.id,
+                debitMinor: variance.toString(),
+                creditMinor: 0,
+                description: `Purchase price variance (unfavorable)`
+              });
+            } else {
+              journalLines.push({
+                accountId: ppvAcc.id,
+                debitMinor: 0,
+                creditMinor: (-variance).toString(),
+                description: `Purchase price variance / discount (favorable)`
+              });
+            }
+
+            journalLines.push({
+              accountId: apAcc.id,
+              debitMinor: 0,
+              creditMinor: grandTotal.toString(),
+              description: `Accounts payable for supplier bill #${billNumber}`
+            });
+          }
+        } else {
+          // Direct bill without GRN
+          const debitAcc = invAcc || grniAcc;
+          if (debitAcc) {
+            journalLines = [
+              { accountId: debitAcc.id, debitMinor: grandTotal.toString(), creditMinor: 0, description: `Goods billed under invoice #${billNumber}` },
+              { accountId: apAcc.id, debitMinor: 0, creditMinor: grandTotal.toString(), description: `Accounts payable for supplier bill #${billNumber}` },
+            ];
+          }
+        }
+
+        if (journalLines.length >= 2) {
+          await AccountingEngine.postJournalEntry(client, {
+            businessId,
+            entryNumber: billNumber,
+            date: bill.bill_date,
+            entryType: 'purchase',
+            referenceType: 'supplier_bill',
+            referenceId: bill.id,
+            narration: `Supplier Bill #${billNumber} from supplier invoice ${payload.supplierInvoiceNumber || ''}`,
+            lines: journalLines,
+            userId,
+          });
+        }
       }
 
       await BusinessRepository.logAction(businessId, userId, 'create_supplier_bill', 'biz_supplier_bills', bill.id, { billNumber, grandTotal: grandTotal.toString() });
@@ -2845,7 +2927,392 @@ const BusinessService = {
   async getPurchaseReturn(businessId, returnId) {
     return BusinessRepository.getPurchaseReturnById(businessId, returnId);
   },
+
+  // ---------------------------------------------------------------------------
+  // Recurring Business Expenses (V3)
+  // ---------------------------------------------------------------------------
+
+  async createRecurringExpense(businessId, userId, payload) {
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN');
+
+      const amountMinor = BigInt(payload.amountMinor || 0);
+      if (amountMinor <= 0n) throw new Error('Recurring expense amount must be greater than zero');
+
+      const catAcc = await BusinessRepository.getAccountById(client, businessId, payload.categoryAccountId);
+      if (!catAcc) throw new Error('Category expense account not found');
+
+      let payAcc = null;
+      if (payload.paymentAccountId) {
+        payAcc = await BusinessRepository.getAccountById(client, businessId, payload.paymentAccountId);
+        if (!payAcc) throw new Error('Payment account not found');
+      }
+
+      const startDate = payload.startDate || new Date().toISOString().split('T')[0];
+      const nextDueDate = payload.nextDueDate || startDate;
+
+      const recurringExpense = await BusinessRepository.createRecurringExpense(client, businessId, {
+        branchId: payload.branchId,
+        supplierId: payload.supplierId,
+        categoryAccountId: payload.categoryAccountId,
+        paymentAccountId: payload.paymentAccountId,
+        title: payload.title,
+        category: payload.category || catAcc.name,
+        vendor: payload.vendor,
+        amountMinor,
+        frequency: payload.frequency || 'monthly',
+        intervalCount: payload.intervalCount || 1,
+        startDate,
+        endDate: payload.endDate,
+        nextDueDate,
+        dueDaysAfter: payload.dueDaysAfter || 0,
+        autoPay: Boolean(payload.autoPay),
+        paymentMethod: payload.paymentMethod || (payload.autoPay ? 'bank' : 'unpaid'),
+        notes: payload.notes,
+        createdBy: userId,
+      });
+
+      await BusinessRepository.logAction(businessId, userId, 'create_recurring_expense', 'biz_recurring_expenses', recurringExpense.id, {
+        title: payload.title,
+        amount: amountMinor.toString(),
+        frequency: payload.frequency,
+      });
+
+      await client.query('COMMIT');
+      return recurringExpense;
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      client.release();
+    }
+  },
+
+  async listRecurringExpenses(businessId, query) {
+    return BusinessRepository.listRecurringExpenses(businessId, query);
+  },
+
+  async getRecurringExpense(businessId, expenseId) {
+    return BusinessRepository.getRecurringExpenseById(businessId, expenseId);
+  },
+
+  async updateRecurringExpense(businessId, userId, expenseId, payload) {
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN');
+      const existing = await BusinessRepository.getRecurringExpenseById(businessId, expenseId);
+      if (!existing) throw new Error('Recurring expense not found');
+
+      const allowedFields = ['title', 'category', 'vendor', 'amount_minor', 'frequency', 'interval_count', 'end_date', 'next_due_date', 'due_days_after', 'auto_pay', 'payment_method', 'notes', 'branch_id', 'supplier_id', 'category_account_id', 'payment_account_id'];
+      const updates = {};
+      for (const [k, v] of Object.entries(payload)) {
+        const snake = k.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`);
+        if (allowedFields.includes(snake)) {
+          updates[snake] = v;
+        }
+      }
+
+      const updated = await BusinessRepository.updateRecurringExpense(client, businessId, expenseId, updates);
+      await BusinessRepository.logAction(businessId, userId, 'update_recurring_expense', 'biz_recurring_expenses', expenseId, updates);
+      await client.query('COMMIT');
+      return updated;
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      client.release();
+    }
+  },
+
+  async pauseRecurringExpense(businessId, userId, expenseId) {
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN');
+      const updated = await BusinessRepository.updateRecurringExpenseStatus(client, businessId, expenseId, 'paused');
+      await BusinessRepository.logAction(businessId, userId, 'pause_recurring_expense', 'biz_recurring_expenses', expenseId, {});
+      await client.query('COMMIT');
+      return updated;
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      client.release();
+    }
+  },
+
+  async resumeRecurringExpense(businessId, userId, expenseId) {
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN');
+      const updated = await BusinessRepository.updateRecurringExpenseStatus(client, businessId, expenseId, 'active');
+      await BusinessRepository.logAction(businessId, userId, 'resume_recurring_expense', 'biz_recurring_expenses', expenseId, {});
+      await client.query('COMMIT');
+      return updated;
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      client.release();
+    }
+  },
+
+  async cancelRecurringExpense(businessId, userId, expenseId) {
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN');
+      const updated = await BusinessRepository.updateRecurringExpenseStatus(client, businessId, expenseId, 'cancelled');
+      await BusinessRepository.logAction(businessId, userId, 'cancel_recurring_expense', 'biz_recurring_expenses', expenseId, {});
+      await client.query('COMMIT');
+      return updated;
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      client.release();
+    }
+  },
+
+  async getUpcomingRecurringExpenses(businessId, daysAhead = 7) {
+    return BusinessRepository.getUpcomingRecurringExpenses(businessId, daysAhead);
+  },
+
+  async getOverdueRecurringExpenses(businessId) {
+    return BusinessRepository.getOverdueRecurringExpenses(businessId);
+  },
+
+  async listRecurringOccurrences(businessId, recurringExpenseId, query) {
+    return BusinessRepository.listRecurringOccurrences(businessId, recurringExpenseId, query);
+  },
+
+  // Scheduler Generation for Due Recurring Expenses
+  async generateRecurringExpenseOccurrences(businessId, userId, { asOfDate = new Date().toISOString().split('T')[0] } = {}, externalClient = null) {
+    const client = externalClient || (await getPool().connect());
+    const managesTransaction = !externalClient;
+
+    try {
+      if (managesTransaction) await client.query('BEGIN');
+
+      const dueExpenses = await BusinessRepository.getDueRecurringExpenses(client, businessId, asOfDate);
+      const results = [];
+
+      for (const re of dueExpenses) {
+        const periodKey = computeRecurringPeriodKey(re.next_due_date, re.frequency);
+
+        // Check if occurrence for this period already exists (duplicate prevention)
+        const existingOcc = await BusinessRepository.getRecurringOccurrence(client, businessId, re.id, periodKey);
+        if (existingOcc) {
+          // Already generated for this period, advance date and skip
+          const nextDate = computeNextRecurringDate(re.next_due_date, re.frequency, re.interval_count);
+          await BusinessRepository.updateRecurringExpense(client, businessId, re.id, {
+            next_due_date: nextDate,
+            status: (re.end_date && nextDate > re.end_date) ? 'completed' : re.status
+          });
+          continue;
+        }
+
+        // Calculate occurrence and due dates
+        const occurrenceDate = re.next_due_date;
+        const [y, m, d] = occurrenceDate.split('-').map(Number);
+        const dueDt = new Date(Date.UTC(y, m - 1, d));
+        dueDt.setUTCDate(dueDt.getUTCDate() + (re.due_days_after || 0));
+        const dueDate = dueDt.toISOString().split('T')[0];
+
+        const amountMinor = BigInt(re.amount_minor);
+        const isAutoPay = Boolean(re.auto_pay);
+
+        // 1. Create biz_expenses record
+        const expStatus = isAutoPay ? 'paid' : 'unpaid';
+        const paidMinor = isAutoPay ? amountMinor : 0n;
+        const payMethod = isAutoPay ? (re.payment_method === 'unpaid' ? 'bank' : re.payment_method) : 'unpaid';
+
+        const expRes = await client.query(
+          `INSERT INTO biz_expenses (
+            business_id, branch_id, category_account_id, title, category,
+            amount_minor, date, payment_method, payment_account_id,
+            paid_amount_minor, status, vendor, notes, created_by
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          RETURNING *`,
+          [
+            businessId, re.branch_id || null, re.category_account_id,
+            `${re.title} (${periodKey})`, re.category,
+            amountMinor.toString(), occurrenceDate, payMethod,
+            isAutoPay ? re.payment_account_id : null,
+            paidMinor.toString(), expStatus, re.vendor,
+            `Generated from recurring schedule #${re.id.slice(0, 8)}`, userId
+          ]
+        );
+        const createdExpense = expRes.rows[0];
+
+        // 2. Double-Entry General Ledger Posting
+        const expAccount = await BusinessRepository.getAccountById(client, businessId, re.category_account_id);
+        const apAccount = await BusinessRepository.getAccountByCode(client, businessId, '2010');
+        let paymentAccount = null;
+        if (isAutoPay) {
+          if (re.payment_account_id) {
+            paymentAccount = await BusinessRepository.getAccountById(client, businessId, re.payment_account_id);
+          }
+          if (!paymentAccount) {
+            const subtype = payMethod === 'bank' ? 'bank' : payMethod === 'wallet' ? 'wallet' : 'cash';
+            paymentAccount = await BusinessRepository.getAccountBySubtype(client, businessId, subtype);
+          }
+        }
+
+        if (expAccount) {
+          if (isAutoPay && paymentAccount) {
+            // Immediate Paid Expense:
+            // Dr Expense Account (50xx)
+            // Cr Cash / Bank Account (1010/1020)
+            await AccountingEngine.postJournalEntry(client, {
+              businessId,
+              branchId: re.branch_id || null,
+              entryNumber: `REC-${createdExpense.id.slice(0, 8)}`,
+              date: occurrenceDate,
+              entryType: 'expense',
+              referenceType: 'expense',
+              referenceId: createdExpense.id,
+              narration: `Recurring expense: ${re.title} (${periodKey}) paid via ${payMethod}`,
+              lines: [
+                { accountId: expAccount.id, debitMinor: amountMinor.toString(), creditMinor: 0, description: `Expense for ${re.title}` },
+                { accountId: paymentAccount.id, debitMinor: 0, creditMinor: amountMinor.toString(), description: `Disbursed from ${paymentAccount.name}` }
+              ],
+              userId
+            });
+          } else if (apAccount) {
+            // Unpaid Accrued Bill:
+            // Dr Expense Account (50xx)
+            // Cr Accounts Payable (2010)
+            await AccountingEngine.postJournalEntry(client, {
+              businessId,
+              branchId: re.branch_id || null,
+              entryNumber: `REC-${createdExpense.id.slice(0, 8)}`,
+              date: occurrenceDate,
+              entryType: 'expense',
+              referenceType: 'expense',
+              referenceId: createdExpense.id,
+              narration: `Recurring accrued bill: ${re.title} (${periodKey}) due on ${dueDate}`,
+              lines: [
+                { accountId: expAccount.id, debitMinor: amountMinor.toString(), creditMinor: 0, description: `Accrued expense for ${re.title}` },
+                { accountId: apAccount.id, debitMinor: 0, creditMinor: amountMinor.toString(), description: `Payable liability for ${re.vendor || re.title}` }
+              ],
+              userId
+            });
+
+            // If vendor/supplier is associated, increase accounts payable balance in supplier khata
+            if (re.supplier_id) {
+              await client.query(
+                `UPDATE biz_suppliers
+                 SET current_balance_minor = current_balance_minor + $1, updated_at = now()
+                 WHERE id = $2 AND business_id = $3`,
+                [amountMinor.toString(), re.supplier_id, businessId]
+              );
+            }
+          }
+        }
+
+        // 3. Record Occurrence in biz_recurring_expense_occurrences
+        const occ = await BusinessRepository.createRecurringOccurrence(client, {
+          businessId,
+          recurringExpenseId: re.id,
+          expenseId: createdExpense.id,
+          periodKey,
+          occurrenceDate,
+          dueDate,
+          amountMinor,
+          status: isAutoPay ? 'paid' : 'generated'
+        });
+
+        // 4. Advance next_due_date
+        const nextDate = computeNextRecurringDate(re.next_due_date, re.frequency, re.interval_count);
+        const isCompleted = Boolean(re.end_date && nextDate > re.end_date);
+
+        await BusinessRepository.updateRecurringExpense(client, businessId, re.id, {
+          next_due_date: nextDate,
+          status: isCompleted ? 'completed' : re.status
+        });
+
+        results.push(occ);
+      }
+
+      if (managesTransaction) await client.query('COMMIT');
+      return results;
+    } catch (e) {
+      if (managesTransaction) await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      if (managesTransaction) client.release();
+    }
+  },
+
+  async generateRecurringExpenseOccurrencesIdempotent(businessId, userId, idempotencyKey, payload) {
+    return runBusinessIdempotent({
+      businessId,
+      userId,
+      action: 'generate_recurring_expenses',
+      key: idempotencyKey,
+      payload,
+      perform: (client) => this.generateRecurringExpenseOccurrences(businessId, userId, payload, client),
+    });
+  },
 };
+
+function computeNextRecurringDate(dateStr, frequency, intervalCount = 1) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+
+  if (frequency === 'daily') {
+    dt.setUTCDate(dt.getUTCDate() + intervalCount);
+    return dt.toISOString().split('T')[0];
+  }
+  if (frequency === 'weekly') {
+    dt.setUTCDate(dt.getUTCDate() + (intervalCount * 7));
+    return dt.toISOString().split('T')[0];
+  }
+  if (frequency === 'monthly') {
+    const targetMonth = m - 1 + intervalCount;
+    const targetYear = y + Math.floor(targetMonth / 12);
+    const normalizedMonth = ((targetMonth % 12) + 12) % 12;
+    const daysInTargetMonth = new Date(Date.UTC(targetYear, normalizedMonth + 1, 0)).getUTCDate();
+    const clampedDay = Math.min(d, daysInTargetMonth);
+    return new Date(Date.UTC(targetYear, normalizedMonth, clampedDay)).toISOString().split('T')[0];
+  }
+  if (frequency === 'quarterly') {
+    const targetMonth = m - 1 + (intervalCount * 3);
+    const targetYear = y + Math.floor(targetMonth / 12);
+    const normalizedMonth = ((targetMonth % 12) + 12) % 12;
+    const daysInTargetMonth = new Date(Date.UTC(targetYear, normalizedMonth + 1, 0)).getUTCDate();
+    const clampedDay = Math.min(d, daysInTargetMonth);
+    return new Date(Date.UTC(targetYear, normalizedMonth, clampedDay)).toISOString().split('T')[0];
+  }
+  if (frequency === 'yearly') {
+    const targetYear = y + intervalCount;
+    const daysInTargetMonth = new Date(Date.UTC(targetYear, m, 0)).getUTCDate();
+    const clampedDay = Math.min(d, daysInTargetMonth);
+    return new Date(Date.UTC(targetYear, m - 1, clampedDay)).toISOString().split('T')[0];
+  }
+  return dateStr;
+}
+
+function computeRecurringPeriodKey(dateStr, frequency) {
+  const [y, m, d] = dateStr.split('-');
+  if (frequency === 'daily') return dateStr;
+  if (frequency === 'weekly') {
+    const dt = new Date(Date.UTC(Number(y), Number(m) - 1, Number(d)));
+    const startOfYear = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((dt - startOfYear) / 86400000) + startOfYear.getUTCDay() + 1) / 7);
+    return `${y}-W${String(weekNo).padStart(2, '0')}`;
+  }
+  if (frequency === 'monthly') return `${y}-${m}`;
+  if (frequency === 'quarterly') {
+    const q = Math.ceil(Number(m) / 3);
+    return `${y}-Q${q}`;
+  }
+  if (frequency === 'yearly') return `${y}`;
+  return dateStr;
+}
+
+BusinessService.computeNextRecurringDate = computeNextRecurringDate;
+BusinessService.computeRecurringPeriodKey = computeRecurringPeriodKey;
 
 module.exports = BusinessService;
 

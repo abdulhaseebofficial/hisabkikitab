@@ -161,6 +161,16 @@ const BusinessRepository = {
     return rows[0] || null;
   },
 
+  async getAccountById(clientOrPool, businessId, accountId) {
+    const executor = clientOrPool || getPool();
+    const { rows } = await executor.query(
+      `SELECT * FROM biz_accounts
+       WHERE business_id = $1 AND id = $2`,
+      [businessId, accountId]
+    );
+    return rows[0] || null;
+  },
+
   // ---------------------------------------------------------------------------
   // Customers & Khata
   // ---------------------------------------------------------------------------
@@ -185,6 +195,17 @@ const BusinessRepository = {
     const { rows } = await getPool().query(
       `SELECT * FROM biz_customers WHERE business_id = $1 AND id = $2`,
       [businessId, customerId]
+    );
+    return rows[0] || null;
+  },
+
+  async updateCustomerBalance(client, customerId, deltaMinor) {
+    const { rows } = await client.query(
+      `UPDATE biz_customers
+       SET current_balance_minor = current_balance_minor + $1, updated_at = now()
+       WHERE id = $2
+       RETURNING *`,
+      [BigInt(deltaMinor).toString(), customerId]
     );
     return rows[0] || null;
   },
@@ -325,6 +346,43 @@ const BusinessRepository = {
     return rows[0] || null;
   },
 
+  async getProduct(clientOrBusinessId, businessIdOrProductId, maybeProductId) {
+    if (maybeProductId !== undefined) {
+      return this.getProductById(clientOrBusinessId, businessIdOrProductId, maybeProductId);
+    }
+    return this.getProductById(getPool(), clientOrBusinessId, businessIdOrProductId);
+  },
+
+  async updateProductStock(client, productId, quantity, valuationChangeMinor = 0, operation = 'add') {
+    const isAdd = operation === 'add';
+    const { rows } = await client.query(
+      `UPDATE biz_products
+       SET current_stock = CASE WHEN $1 = true THEN current_stock + $2 ELSE GREATEST(0, current_stock - $2) END,
+           inventory_valuation_minor = CASE WHEN $1 = true THEN inventory_valuation_minor + $3 ELSE GREATEST(0, inventory_valuation_minor - $3) END,
+           updated_at = now()
+       WHERE id = $4
+       RETURNING *`,
+      [isAdd, quantity, BigInt(valuationChangeMinor || 0).toString(), productId]
+    );
+    return rows[0] || null;
+  },
+
+  async createStockMovement(client, { businessId, branchId, productId, movementType, quantity, unitCostMinor = 0, totalCostMinor = 0, referenceType = null, referenceId = null, reason = '' }) {
+    const { rows } = await client.query(
+      `INSERT INTO biz_stock_movements (
+        business_id, branch_id, product_id, movement_type, quantity,
+        unit_cost_minor, total_cost_minor, reference_type, reference_id, reason
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING *`,
+      [
+        businessId, branchId || null, productId, movementType, quantity,
+        (unitCostMinor || 0).toString(), (totalCostMinor || 0).toString(),
+        referenceType || null, referenceId || null, reason || ''
+      ]
+    );
+    return rows[0];
+  },
+
   async createProduct(businessId, { categoryId, name, sku, barcode, unit, purchasePriceMinor, sellingPriceMinor, wholesalePriceMinor, currentStock = 0, minStockAlert = 5 }) {
     const initialQty = Number(currentStock || 0);
     const purchasePrice = BigInt(purchasePriceMinor || 0);
@@ -406,8 +464,9 @@ const BusinessRepository = {
     return rows;
   },
 
-  async getSaleById(businessId, saleId) {
-    const { rows } = await getPool().query(
+  async getSaleById(businessId, saleId, optionalClient = null) {
+    const executor = optionalClient || getPool();
+    const { rows } = await executor.query(
       `SELECT s.*, c.name AS customer_name, c.phone AS customer_phone, c.address AS customer_address
        FROM biz_sales s
        LEFT JOIN biz_customers c ON c.id = s.customer_id
@@ -417,12 +476,19 @@ const BusinessRepository = {
     if (!rows.length) return null;
     const sale = rows[0];
 
-    const itemsRes = await getPool().query(
+    const itemsRes = await executor.query(
       `SELECT * FROM biz_sale_items WHERE sale_id = $1`,
       [sale.id]
     );
     sale.items = itemsRes.rows;
     return sale;
+  },
+
+  async getSale(clientOrBusinessId, businessIdOrSaleId, maybeSaleId) {
+    if (maybeSaleId !== undefined) {
+      return this.getSaleById(businessIdOrSaleId, maybeSaleId, clientOrBusinessId);
+    }
+    return this.getSaleById(clientOrBusinessId, businessIdOrSaleId);
   },
 
   // ---------------------------------------------------------------------------
@@ -516,6 +582,28 @@ const BusinessRepository = {
     return rows;
   },
 
+  async getPaymentById(businessId, paymentId) {
+    const { rows } = await getPool().query(
+      `SELECT p.*,
+              c.name AS customer_name,
+              c.phone AS customer_phone,
+              c.address AS customer_address,
+              s.name AS supplier_name,
+              s.phone AS supplier_phone,
+              s.company_name AS supplier_company,
+              fa.name AS from_account_name,
+              ta.name AS to_account_name
+       FROM biz_payments p
+       LEFT JOIN biz_customers c ON c.id = p.customer_id
+       LEFT JOIN biz_suppliers s ON s.id = p.supplier_id
+       LEFT JOIN biz_accounts fa ON fa.id = p.from_account_id
+       LEFT JOIN biz_accounts ta ON ta.id = p.to_account_id
+       WHERE p.business_id = $1 AND p.id = $2`,
+      [businessId, paymentId]
+    );
+    return rows[0] || null;
+  },
+
   // ---------------------------------------------------------------------------
   // Employees & Payroll
   // ---------------------------------------------------------------------------
@@ -550,6 +638,42 @@ const BusinessRepository = {
     return rows;
   },
 
+  async getPayrollRunById(businessId, runId) {
+    const { rows } = await getPool().query(
+      `SELECT pr.*, a.name AS paid_from_account_name
+       FROM biz_payroll_runs pr
+       LEFT JOIN biz_accounts a ON a.id = pr.paid_from_account_id
+       WHERE pr.business_id = $1 AND pr.id = $2`,
+      [businessId, runId]
+    );
+    if (!rows.length) return null;
+    const run = rows[0];
+    const itemsRes = await getPool().query(
+      `SELECT pi.*, e.name AS employee_name, e.designation, e.phone
+       FROM biz_payroll_items pi
+       JOIN biz_employees e ON e.id = pi.employee_id
+       WHERE pi.payroll_run_id = $1
+       ORDER BY e.name ASC`,
+      [runId]
+    );
+    run.items = itemsRes.rows;
+    return run;
+  },
+
+  async getPayrollItemById(businessId, itemId) {
+    const { rows } = await getPool().query(
+      `SELECT pi.*, e.name AS employee_name, e.designation, e.phone, e.salary_minor,
+              pr.month, pr.status AS run_status, pr.total_amount_minor, pr.payment_method,
+              pr.created_at AS run_created_at
+       FROM biz_payroll_items pi
+       JOIN biz_employees e ON e.id = pi.employee_id
+       JOIN biz_payroll_runs pr ON pr.id = pi.payroll_run_id
+       WHERE pr.business_id = $1 AND pi.id = $2`,
+      [businessId, itemId]
+    );
+    return rows[0] || null;
+  },
+
   // ---------------------------------------------------------------------------
   // Audit Logs
   // ---------------------------------------------------------------------------
@@ -560,6 +684,13 @@ const BusinessRepository = {
        VALUES ($1, $2, $3, $4, $5, $6)`,
       [businessId, userId, action, entity, entityId, JSON.stringify(details)]
     );
+  },
+
+  async recordAuditLog(clientOrBusinessId, businessIdOrUserId, userIdOrAction, actionOrEntity, entityOrEntityId, entityIdOrDetails = null, details = {}) {
+    if (typeof clientOrBusinessId === 'object' && clientOrBusinessId && clientOrBusinessId.query) {
+      return this.logAction(businessIdOrUserId, userIdOrAction, actionOrEntity, entityOrEntityId, entityIdOrDetails, details);
+    }
+    return this.logAction(clientOrBusinessId, businessIdOrUserId, userIdOrAction, actionOrEntity, entityOrEntityId, entityIdOrDetails);
   },
 
   // ---------------------------------------------------------------------------
@@ -966,6 +1097,21 @@ const BusinessRepository = {
       [businessId, month]
     );
     return rows;
+  },
+
+  async createPayrollRun(client, { businessId, month, totalSalaryMinor, paidFromAccountId, paymentDate, notes }) {
+    const { rows } = await client.query(
+      `INSERT INTO biz_payroll_runs (
+        business_id, month, total_salary_minor, status,
+        paid_from_account_id, payment_date, notes
+      ) VALUES ($1, $2, $3, 'draft', $4, $5, $6)
+      RETURNING *`,
+      [
+        businessId, month, (totalSalaryMinor || 0).toString(),
+        paidFromAccountId || null, paymentDate || null, notes || ''
+      ]
+    );
+    return rows[0];
   },
 
   async createPayrollItem(client, { payrollRunId, employeeId, baseSalaryMinor, allowancesMinor, deductionsMinor, advanceDeductedMinor, netPayableMinor, status = 'draft' }) {
@@ -1599,6 +1745,195 @@ const BusinessRepository = {
     );
     prn.items = itemsRes.rows;
     return prn;
+  },
+
+  // ---------------------------------------------------------------------------
+  // Recurring Business Expenses (V3)
+  // ---------------------------------------------------------------------------
+
+  async createRecurringExpense(client, businessId, { branchId, supplierId, categoryAccountId, paymentAccountId, title, category, vendor, amountMinor, frequency, intervalCount = 1, startDate, endDate = null, nextDueDate, dueDaysAfter = 0, autoPay = false, paymentMethod = 'unpaid', notes = '', createdBy }) {
+    const { rows } = await client.query(
+      `INSERT INTO biz_recurring_expenses (
+        business_id, branch_id, supplier_id, category_account_id, payment_account_id,
+        title, category, vendor, amount_minor, frequency, interval_count,
+        start_date, end_date, next_due_date, due_days_after, auto_pay,
+        payment_method, status, notes, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 'active', $18, $19)
+      RETURNING *`,
+      [
+        businessId, branchId || null, supplierId || null, categoryAccountId, paymentAccountId || null,
+        title, category, vendor || '', BigInt(amountMinor).toString(), frequency, Number(intervalCount) || 1,
+        startDate, endDate || null, nextDueDate, Number(dueDaysAfter) || 0, Boolean(autoPay),
+        paymentMethod || 'unpaid', notes || '', createdBy
+      ]
+    );
+    return rows[0];
+  },
+
+  async getRecurringExpenseById(businessId, expenseId) {
+    const { rows } = await getPool().query(
+      `SELECT re.*, b.name AS branch_name, s.name AS supplier_name,
+              ca.name AS category_account_name, pa.name AS payment_account_name,
+              u.name AS creator_name
+       FROM biz_recurring_expenses re
+       LEFT JOIN business_branches b ON b.id = re.branch_id
+       LEFT JOIN biz_suppliers s ON s.id = re.supplier_id
+       LEFT JOIN biz_accounts ca ON ca.id = re.category_account_id
+       LEFT JOIN biz_accounts pa ON pa.id = re.payment_account_id
+       LEFT JOIN users u ON u.id = re.created_by
+       WHERE re.business_id = $1 AND re.id = $2`,
+      [businessId, expenseId]
+    );
+    return rows[0] || null;
+  },
+
+  async listRecurringExpenses(businessId, { status = '', supplierId = '', frequency = '', limit = 50, offset = 0 } = {}) {
+    const params = [businessId];
+    let filter = '';
+    let idx = 2;
+
+    if (status) {
+      filter += ` AND re.status = $${idx++}`;
+      params.push(status);
+    }
+    if (supplierId) {
+      filter += ` AND re.supplier_id = $${idx++}`;
+      params.push(supplierId);
+    }
+    if (frequency) {
+      filter += ` AND re.frequency = $${idx++}`;
+      params.push(frequency);
+    }
+
+    params.push(Number(limit) || 50, Number(offset) || 0);
+
+    const { rows } = await getPool().query(
+      `SELECT re.*, b.name AS branch_name, s.name AS supplier_name,
+              ca.name AS category_account_name, pa.name AS payment_account_name,
+              COUNT(reo.id)::int AS occurrences_count,
+              MAX(reo.occurrence_date) AS last_occurrence_date
+       FROM biz_recurring_expenses re
+       LEFT JOIN business_branches b ON b.id = re.branch_id
+       LEFT JOIN biz_suppliers s ON s.id = re.supplier_id
+       LEFT JOIN biz_accounts ca ON ca.id = re.category_account_id
+       LEFT JOIN biz_accounts pa ON pa.id = re.payment_account_id
+       LEFT JOIN biz_recurring_expense_occurrences reo ON reo.recurring_expense_id = re.id
+       WHERE re.business_id = $1 ${filter}
+       GROUP BY re.id, b.name, s.name, ca.name, pa.name
+       ORDER BY re.next_due_date ASC, re.created_at DESC
+       LIMIT $${idx++} OFFSET $${idx++}`,
+      params
+    );
+    return rows;
+  },
+
+  async updateRecurringExpense(client, businessId, expenseId, updates) {
+    const fields = [];
+    const values = [businessId, expenseId];
+    let idx = 3;
+
+    for (const [key, val] of Object.entries(updates)) {
+      fields.push(`${key} = $${idx++}`);
+      values.push(val);
+    }
+    fields.push(`updated_at = now()`);
+
+    const { rows } = await client.query(
+      `UPDATE biz_recurring_expenses
+       SET ${fields.join(', ')}
+       WHERE business_id = $1 AND id = $2
+       RETURNING *`,
+      values
+    );
+    return rows[0] || null;
+  },
+
+  async updateRecurringExpenseStatus(client, businessId, expenseId, status) {
+    const { rows } = await client.query(
+      `UPDATE biz_recurring_expenses
+       SET status = $1, updated_at = now()
+       WHERE business_id = $2 AND id = $3
+       RETURNING *`,
+      [status, businessId, expenseId]
+    );
+    return rows[0] || null;
+  },
+
+  async getDueRecurringExpenses(clientOrPool, businessId, asOfDateStr) {
+    const executor = clientOrPool || getPool();
+    const { rows } = await executor.query(
+      `SELECT * FROM biz_recurring_expenses
+       WHERE business_id = $1 AND status = 'active' AND next_due_date <= $2
+       ORDER BY next_due_date ASC`,
+      [businessId, asOfDateStr]
+    );
+    return rows;
+  },
+
+  async createRecurringOccurrence(client, { businessId, recurringExpenseId, expenseId = null, periodKey, occurrenceDate, dueDate, amountMinor, status = 'generated', errorMessage = '' }) {
+    const { rows } = await client.query(
+      `INSERT INTO biz_recurring_expense_occurrences (
+        business_id, recurring_expense_id, expense_id, period_key,
+        occurrence_date, due_date, amount_minor, status, error_message
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *`,
+      [
+        businessId, recurringExpenseId, expenseId, periodKey,
+        occurrenceDate, dueDate, BigInt(amountMinor).toString(), status, errorMessage || ''
+      ]
+    );
+    return rows[0];
+  },
+
+  async getRecurringOccurrence(clientOrPool, businessId, recurringExpenseId, periodKey) {
+    const executor = clientOrPool || getPool();
+    const { rows } = await executor.query(
+      `SELECT * FROM biz_recurring_expense_occurrences
+       WHERE business_id = $1 AND recurring_expense_id = $2 AND period_key = $3`,
+      [businessId, recurringExpenseId, periodKey]
+    );
+    return rows[0] || null;
+  },
+
+  async listRecurringOccurrences(businessId, recurringExpenseId, { limit = 50, offset = 0 } = {}) {
+    const { rows } = await getPool().query(
+      `SELECT reo.*, e.title AS expense_title, e.payment_method, e.status AS expense_status
+       FROM biz_recurring_expense_occurrences reo
+       LEFT JOIN biz_expenses e ON e.id = reo.expense_id
+       WHERE reo.business_id = $1 AND reo.recurring_expense_id = $2
+       ORDER BY reo.occurrence_date DESC
+       LIMIT $3 OFFSET $4`,
+      [businessId, recurringExpenseId, Number(limit) || 50, Number(offset) || 0]
+    );
+    return rows;
+  },
+
+  async getUpcomingRecurringExpenses(businessId, daysAhead = 7) {
+    const { rows } = await getPool().query(
+      `SELECT re.*, s.name AS supplier_name, ca.name AS category_account_name
+       FROM biz_recurring_expenses re
+       LEFT JOIN biz_suppliers s ON s.id = re.supplier_id
+       LEFT JOIN biz_accounts ca ON ca.id = re.category_account_id
+       WHERE re.business_id = $1 AND re.status = 'active'
+         AND re.next_due_date BETWEEN CURRENT_DATE AND (CURRENT_DATE + ($2 || ' days')::interval)
+       ORDER BY re.next_due_date ASC`,
+      [businessId, daysAhead]
+    );
+    return rows;
+  },
+
+  async getOverdueRecurringExpenses(businessId) {
+    const { rows } = await getPool().query(
+      `SELECT re.*, s.name AS supplier_name, ca.name AS category_account_name
+       FROM biz_recurring_expenses re
+       LEFT JOIN biz_suppliers s ON s.id = re.supplier_id
+       LEFT JOIN biz_accounts ca ON ca.id = re.category_account_id
+       WHERE re.business_id = $1 AND re.status = 'active'
+         AND re.next_due_date < CURRENT_DATE
+       ORDER BY re.next_due_date ASC`,
+      [businessId]
+    );
+    return rows;
   },
 };
 

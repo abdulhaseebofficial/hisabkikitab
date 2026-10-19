@@ -98,6 +98,9 @@ const PURCHASE_RETURN_REFUND_METHODS = ['credit_note', 'cash', 'bank'];
 const SALES_RETURN_CONDITIONS = ['restockable', 'damaged'];
 const SHIFT_STATUSES = ['open', 'closed'];
 const ATTENDANCE_STATUSES = ['present', 'absent', 'late', 'leave', 'half_day'];
+const RECURRING_EXPENSE_FREQUENCIES = ['daily', 'weekly', 'monthly', 'quarterly', 'yearly'];
+const RECURRING_EXPENSE_STATUSES = ['active', 'paused', 'cancelled', 'completed'];
+const RECURRING_OCCURRENCE_STATUSES = ['generated', 'paid', 'skipped', 'failed'];
 
 module.exports = {
   BUSINESS_CATEGORIES,
@@ -113,5 +116,8 @@ module.exports = {
   SALES_RETURN_CONDITIONS,
   SHIFT_STATUSES,
   ATTENDANCE_STATUSES,
+  RECURRING_EXPENSE_FREQUENCIES,
+  RECURRING_EXPENSE_STATUSES,
+  RECURRING_OCCURRENCE_STATUSES,
 };
 
