@@ -26,7 +26,7 @@ async function main() {
       new PerformanceObserver(list => { for (const e of list.getEntries()) window.__audit.lcp = e.startTime; }).observe({ type: 'largest-contentful-paint', buffered: true });
       new PerformanceObserver(list => { for (const e of list.getEntries()) if (!e.hadRecentInput) window.__audit.cls += e.value; }).observe({ type: 'layout-shift', buffered: true });
     });
-    await page.goto(process.env.AUDIT_URL || 'https://hisabkikitab.com/', { waitUntil: 'networkidle' });
+    await page.goto(process.env.AUDIT_URL || 'https://www.hisabkikitab.com/', { waitUntil: 'networkidle' });
     await page.screenshot({ path: `test-results/audit-${viewport.width}.png`, fullPage: true });
     const metrics = await page.evaluate(() => {
       const nav = performance.getEntriesByType('navigation')[0];
