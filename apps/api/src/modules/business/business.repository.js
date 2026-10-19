@@ -664,7 +664,7 @@ const BusinessRepository = {
   async getPayrollItemById(businessId, itemId) {
     const { rows } = await getPool().query(
       `SELECT pi.*, e.name AS employee_name, e.designation, e.phone, e.salary_minor,
-              pr.month, pr.status AS run_status, pr.total_amount_minor, pr.payment_method,
+              pr.month, pr.status AS run_status, pr.total_salary_minor,
               pr.created_at AS run_created_at
        FROM biz_payroll_items pi
        JOIN biz_employees e ON e.id = pi.employee_id

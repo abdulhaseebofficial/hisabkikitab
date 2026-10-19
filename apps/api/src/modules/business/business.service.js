@@ -970,6 +970,18 @@ const BusinessService = {
       );
       const payrollRun = runRes.rows[0];
 
+      // Populate payroll items for active employees
+      for (const emp of emps.rows) {
+        await client.query(
+          `INSERT INTO biz_payroll_items (
+            payroll_run_id, employee_id, base_salary_minor, net_payable_minor, status
+          ) VALUES ($1, $2, $3, $4, 'paid')
+          ON CONFLICT (payroll_run_id, employee_id) DO UPDATE
+          SET base_salary_minor = EXCLUDED.base_salary_minor, net_payable_minor = EXCLUDED.net_payable_minor, status = 'paid'`,
+          [payrollRun.id, emp.id, emp.salary_minor, emp.salary_minor]
+        );
+      }
+
       // Accounting Journal Entry: Debit 6030 Salaries Expense, Credit 1010/1020 Cash/Bank
       const salaryAcc = await BusinessRepository.getAccountByCode(client, businessId, '6030');
       if (totalSalaryMinor > 0n && salaryAcc && payAccId) {
@@ -2701,23 +2713,34 @@ const BusinessService = {
       const supplier = await BusinessRepository.getSupplierById(businessId, payload.supplierId);
       if (!supplier) throw new Error('Supplier not found');
 
-      // 1. Record payment in biz_payments
+      // 1. Resolve paying account (from_account_id)
+      let payAcc = null;
+      if (payload.paymentAccountId) {
+        const accRes = await client.query('SELECT id FROM biz_accounts WHERE id = $1 AND business_id = $2', [payload.paymentAccountId, businessId]);
+        payAcc = accRes.rows[0];
+      }
+      if (!payAcc) {
+        const subtype = payload.paymentMethod === 'bank' ? 'bank' : payload.paymentMethod === 'wallet' ? 'wallet' : 'cash';
+        payAcc = await BusinessRepository.getAccountBySubtype(client, businessId, subtype);
+      }
+
+      // 2. Record payment in biz_payments
       const payRes = await client.query(
         `INSERT INTO biz_payments (
           business_id, payment_type, date, amount_minor, supplier_id,
-          payment_method, payment_account_id, reference, notes, created_by
-        ) VALUES ($1, 'supplier_payment', $2, $3, $4, $5, $6, $7, $8, $9)
+          from_account_id, reference, notes, created_by
+        ) VALUES ($1, 'supplier_payment', $2, $3, $4, $5, $6, $7, $8)
         RETURNING *`,
         [
           businessId, payload.date || new Date().toISOString().split('T')[0],
           amountMinor.toString(), payload.supplierId,
-          payload.paymentMethod || 'cash', payload.paymentAccountId || null,
+          payAcc ? payAcc.id : null,
           payload.reference || '', payload.notes || '', userId
         ]
       );
       const payment = payRes.rows[0];
 
-      // 2. If allocated against a specific bill
+      // 3. If allocated against a specific bill
       if (payload.billId) {
         const bill = await BusinessRepository.getSupplierBillById(businessId, payload.billId);
         if (!bill) throw new Error('Target supplier bill not found');
@@ -2725,7 +2748,7 @@ const BusinessService = {
         await BusinessRepository.updateSupplierBillPayment(client, businessId, bill.id, amountMinor);
       }
 
-      // 3. Reduce Supplier Khata balance
+      // 4. Reduce Supplier Khata balance
       await client.query(
         `UPDATE biz_suppliers
          SET current_balance_minor = current_balance_minor - $1, updated_at = now()
@@ -2733,19 +2756,10 @@ const BusinessService = {
         [amountMinor.toString(), payload.supplierId, businessId]
       );
 
-      // 4. Double-Entry Posting:
+      // 5. Double-Entry Posting:
       // Dr Accounts Payable (2010 - Supplier Khata)
       // Cr Cash/Bank (1010/1020)
       const apAcc = await BusinessRepository.getAccountByCode(client, businessId, '2010');
-      let payAcc = null;
-      if (payload.paymentAccountId) {
-        payAcc = await client.query('SELECT id FROM biz_accounts WHERE id = $1 AND business_id = $2', [payload.paymentAccountId, businessId]);
-        payAcc = payAcc.rows[0];
-      }
-      if (!payAcc) {
-        const subtype = payload.paymentMethod === 'bank' ? 'bank' : payload.paymentMethod === 'wallet' ? 'wallet' : 'cash';
-        payAcc = await BusinessRepository.getAccountBySubtype(client, businessId, subtype);
-      }
 
       if (apAcc && payAcc) {
         await AccountingEngine.postJournalEntry(client, {
@@ -3105,15 +3119,16 @@ const BusinessService = {
         if (existingOcc) {
           // Already generated for this period, advance date and skip
           const nextDate = computeNextRecurringDate(re.next_due_date, re.frequency, re.interval_count);
+          const endDateStr = normalizeDateStr(re.end_date);
           await BusinessRepository.updateRecurringExpense(client, businessId, re.id, {
             next_due_date: nextDate,
-            status: (re.end_date && nextDate > re.end_date) ? 'completed' : re.status
+            status: (endDateStr && nextDate > endDateStr) ? 'completed' : re.status
           });
           continue;
         }
 
         // Calculate occurrence and due dates
-        const occurrenceDate = re.next_due_date;
+        const occurrenceDate = normalizeDateStr(re.next_due_date);
         const [y, m, d] = occurrenceDate.split('-').map(Number);
         const dueDt = new Date(Date.UTC(y, m - 1, d));
         dueDt.setUTCDate(dueDt.getUTCDate() + (re.due_days_after || 0));
@@ -3225,7 +3240,7 @@ const BusinessService = {
 
         // 4. Advance next_due_date
         const nextDate = computeNextRecurringDate(re.next_due_date, re.frequency, re.interval_count);
-        const isCompleted = Boolean(re.end_date && nextDate > re.end_date);
+        const isCompleted = Boolean(re.end_date && nextDate > normalizeDateStr(re.end_date));
 
         await BusinessRepository.updateRecurringExpense(client, businessId, re.id, {
           next_due_date: nextDate,
@@ -3494,7 +3509,16 @@ const BusinessService = {
   },
 };
 
-function computeNextRecurringDate(dateStr, frequency, intervalCount = 1) {
+function normalizeDateStr(dateInput) {
+  if (!dateInput) return '';
+  if (dateInput instanceof Date) {
+    return dateInput.toISOString().split('T')[0];
+  }
+  return String(dateInput).split('T')[0];
+}
+
+function computeNextRecurringDate(dateInput, frequency, intervalCount = 1) {
+  const dateStr = normalizeDateStr(dateInput);
   const [y, m, d] = dateStr.split('-').map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d));
 
@@ -3531,7 +3555,8 @@ function computeNextRecurringDate(dateStr, frequency, intervalCount = 1) {
   return dateStr;
 }
 
-function computeRecurringPeriodKey(dateStr, frequency) {
+function computeRecurringPeriodKey(dateInput, frequency) {
+  const dateStr = normalizeDateStr(dateInput);
   const [y, m, d] = dateStr.split('-');
   if (frequency === 'daily') return dateStr;
   if (frequency === 'weekly') {
