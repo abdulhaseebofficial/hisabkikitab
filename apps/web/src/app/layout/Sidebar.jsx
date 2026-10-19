@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef } from 'react';
-import { Link, matchPath, useLocation } from 'react-router-dom';
-import { BookOpen, FileBarChart, HandCoins, History, LayoutDashboard, PieChart, Receipt, Settings, Settings2, Sparkles, Target, Users, Utensils, Wallet, X } from 'lucide-react';
+import { Link, matchPath, useLocation, useNavigate } from 'react-router-dom';
+import { BookOpen, CreditCard, FileBarChart, HandCoins, History, LayoutDashboard, Package, PieChart, Receipt, Settings, Settings2, Sparkles, Store, Target, Users, Utensils, Wallet, X, ArrowLeftRight } from 'lucide-react';
 import { sharedSection, sharedSectionSearch } from '../../features/sharedLiving';
+import { useBusiness } from '../../features/business';
 import useT from '../../shared/i18n/I18nProvider';
 import { cn } from '../../shared/utils/format';
 
@@ -18,6 +19,28 @@ export const NAV_ITEMS = [
   { to: '/reports', key: 'reports', icon: FileBarChart },
   { to: '/learn', key: 'learn', icon: BookOpen },
   { to: '/settings', key: 'settings', icon: Settings },
+];
+
+export const BUSINESS_NAV_ITEMS = [
+  { to: '/business', key: 'businessOverview', label: 'Business Overview', icon: LayoutDashboard },
+  { to: '/business/pos', key: 'pos', label: 'Point of Sale (POS)', icon: Store },
+  { to: '/business/sales', key: 'sales', label: 'Sales & Invoices', icon: Receipt },
+  { to: '/business/inventory', key: 'inventory', label: 'Inventory & Stock', icon: Package },
+  { to: '/business/khata', key: 'khata', label: 'Khata (Ledgers)', icon: Users },
+  { to: '/business/expenses', key: 'businessExpenses', label: 'Business Expenses', icon: CreditCard },
+  { to: '/business/accounts', key: 'businessAccounts', label: 'Cash & Bank Accounts', icon: Wallet },
+  { to: '/business/payroll', key: 'businessPayroll', label: 'Staff & Payroll', icon: Users },
+  { to: '/business/budgets', key: 'businessBudgets', label: 'Budgets & Targets', icon: Target },
+  { to: '/business/reports', key: 'businessReports', label: 'Financial Reports & P&L', icon: FileBarChart },
+  { to: '/business/settings', key: 'businessSettings', label: 'Business Settings', icon: Settings },
+];
+
+
+export const MOBILE_BUSINESS_NAV_ITEMS = [
+  { to: '/business', key: 'businessOverview', label: 'Overview', icon: LayoutDashboard },
+  { to: '/business/pos', key: 'pos', label: 'POS', icon: Store },
+  { to: '/business/khata', key: 'khata', label: 'Khata', icon: Users },
+  { to: '/business/inventory', key: 'inventory', label: 'Stock', icon: Package },
 ];
 
 /**
@@ -44,18 +67,31 @@ const SHARED_NAV_ITEMS = [
 ];
 
 function NavItems({ onNavigate, mode }) {
-  const shared = mode === 'shared_living';
-  const items = shared ? SHARED_NAV_ITEMS : NAV_ITEMS;
+  const { isBusinessMode, setMode: setAppMode } = useBusiness();
   const location = useLocation();
+  const navigate = useNavigate();
+  const inBusinessMode = isBusinessMode || location.pathname.startsWith('/business');
+  const shared = mode === 'shared_living' && !inBusinessMode;
+  const items = inBusinessMode ? BUSINESS_NAV_ITEMS : (shared ? SHARED_NAV_ITEMS : NAV_ITEMS);
   const { t } = useT();
 
+  const getLabel = (item) => {
+    if (inBusinessMode) {
+      const k = `nav.${item.key}`;
+      const res = t(k);
+      return res !== k ? res : (item.label || item.key);
+    }
+    return t(shared ? item.key : `nav.${item.key}`);
+  };
+
   return (
-    <nav aria-label={t('nav.mainNavigation')} className={shared ? 'flex flex-1 flex-col gap-1' : 'space-y-1'}>
-      {items.map(({ to, key, section, icon: Icon }) => {
+    <nav aria-label={t('nav.mainNavigation')} className={shared || inBusinessMode ? 'flex flex-1 flex-col gap-1' : 'space-y-1'}>
+      {items.map((item) => {
+        const { to, section, icon: Icon } = item;
         const destination = section ? `/dashboard${sharedSectionSearch(location.search, section)}` : to;
         const isActive = section
           ? location.pathname === '/dashboard' && sharedSection(location.search) === section
-          : !!matchPath({ path: to, end: false }, location.pathname);
+          : (to === '/business' ? location.pathname === '/business' : !!matchPath({ path: to, end: false }, location.pathname));
         const link = (
           <Link
             key={section || to}
@@ -65,13 +101,29 @@ function NavItems({ onNavigate, mode }) {
             className={cn('hw-nav-item', isActive && 'hw-nav-item-active')}
           >
             <Icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
-            {t(shared ? key : `nav.${key}`)}
+            {getLabel(item)}
             {isActive && <span className="sr-only">{t('nav.currentPage')}</span>}
           </Link>
         );
-        return shared && to === '/settings' ? (
+        return (shared && to === '/settings') || (inBusinessMode && to === '/business/settings') ? (
           <div key={to} className="mt-auto pt-4">
-            <div className="border-t border-slate-200 pt-3 dark:border-slate-800">{link}</div>
+            <div className="border-t border-slate-200 pt-3 dark:border-slate-800">
+              {link}
+              {inBusinessMode && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAppMode('personal');
+                    onNavigate?.();
+                    navigate('/dashboard');
+                  }}
+                  className="mt-2 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                >
+                  <ArrowLeftRight className="h-3.5 w-3.5" />
+                  {t('nav.switchToPersonal', 'Switch to Personal Mode')}
+                </button>
+              )}
+            </div>
           </div>
         ) : link;
       })}

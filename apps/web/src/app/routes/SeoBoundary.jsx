@@ -16,7 +16,7 @@ export default function SeoBoundary() {
     if (isPublicPage(pathname)) return undefined;
     const label = pathname.startsWith('/reset-password/') ? 'Reset password' : titles[routePath(pathname)] || 'Page not found';
     return replacePageHead({
-      title: `${label} | Hisab Ki Kitab`,
+      title: `${label} | HisabKi Kitab`,
       tags: [['name', 'robots', 'noindex,follow']],
       schema: [],
     }, 'data-private-seo');

@@ -97,7 +97,7 @@ export const trackPageView = (pathname, title = '') => {
   window.gtag('event', 'page_view', {
     page_path: pagePath,
     page_location: `${window.location.origin}${pagePath}`,
-    page_title: String(title || 'Hisabki Kitab').slice(0, 100),
+    page_title: String(title || 'HisabKi Kitab').slice(0, 100),
     page_referrer: '',
   });
   return true;

@@ -1,15 +1,11 @@
 const { query } = require('./pool');
-const { migrate } = require('./migrate');
 const { databaseUrl, DATABASE_URL_MISSING } = require('./databaseUrl');
 
 /**
- * Open the database and make sure the schema is there.
- *
- * The schema is applied on connect rather than as a separate deploy step
- * because there is no deploy step to hang it off: Vercel imports the app and
- * serves it. db/schema.sql is idempotent and takes an advisory lock, so this
- * costs one cheap round trip on a cold start and is safe when several
- * functions start at once.
+ * Open the database without changing its schema. Migrations are deliberately
+ * an explicit release operation (`npm run migrate`), never an application
+ * startup side effect. This prevents a cold production function from applying
+ * an unapproved migration merely because a new build was deployed.
  */
 const connectDB = async () => {
   if (!databaseUrl()) {
@@ -19,8 +15,6 @@ const connectDB = async () => {
   const [{ db, version }] = await query(
     `SELECT current_database() AS db, current_setting('server_version') AS version`
   );
-
-  await migrate();
 
   // The host comes from the URL rather than inet_server_addr(), which reports
   // the pooler's own loopback address and tells you nothing useful.

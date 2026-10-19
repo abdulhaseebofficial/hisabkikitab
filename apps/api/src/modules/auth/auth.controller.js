@@ -98,6 +98,17 @@ const login = asyncHandler(async (req, res) => {
   });
 });
 
+/** POST /api/auth/demo - no reusable demo credential reaches the browser. */
+const demo = asyncHandler(async (_req, res) => {
+  const session = await auth.loginDemo();
+  res.cookie(ACCESS_COOKIE, session.accessToken, accessCookieOptions());
+  res.json({
+    success: true,
+    message: 'Demo Mode — Read Only',
+    data: { user: session.user, accessToken: session.accessToken },
+  });
+});
+
 /**
  * POST /api/auth/refresh
  * Reads the httpOnly cookie and mints a fresh access token. The refresh token
@@ -180,6 +191,7 @@ module.exports = {
   googleSignIn,
   register,
   login,
+  demo,
   refresh,
   logout,
   me,

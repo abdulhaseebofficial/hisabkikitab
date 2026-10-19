@@ -9,7 +9,7 @@ import {
   YAxis,
 } from 'recharts';
 import { useTheme } from '../../../app/providers/ThemeProvider';
-import { CATEGORIES, CHART_INK, inCategoryOrder } from '../../utils/constants';
+import { CHART_INK, inCategoryOrder } from '../../utils/constants';
 import { formatMoney } from '../../utils/format';
 import ChartTooltip from './ChartTooltip';
 import useCategoryLabel from '../../i18n/useCategoryLabel';
@@ -38,11 +38,11 @@ export default function ComparisonChart({
   // literal is a default in English, whatever the reader chose.
   const currentName = currentLabel || t('charts.thisMonth');
   const previousName = previousLabel || t('charts.lastMonth');
-  const { isDark } = useTheme();
-  const ink = isDark ? CHART_INK.dark : CHART_INK.light;
+  const { theme } = useTheme();
+  const ink = CHART_INK[theme] || CHART_INK.light;
 
-  const currentColor = isDark ? CATEGORIES[0].dark : CATEGORIES[0].light;
-  const previousColor = isDark ? CATEGORIES[1].dark : CATEGORIES[1].light;
+  const currentColor = ink.primary;
+  const previousColor = ink.accent;
 
   // The axis shows the label, not the stored id.
   const data = inCategoryOrder(rows)
@@ -84,7 +84,7 @@ export default function ComparisonChart({
             tickFormatter={(value) => formatMoney(value, currency, { compact: true })}
           />
 
-          <Tooltip cursor={{ fill: isDark ? '#ffffff10' : '#0b0b0b08' }} content={<ChartTooltip currency={currency} />} />
+          <Tooltip cursor={{ fill: `${ink.text}10` }} content={<ChartTooltip currency={currency} />} />
           <Legend
             wrapperStyle={{ fontSize: 12, paddingTop: 4 }}
             iconType="square"

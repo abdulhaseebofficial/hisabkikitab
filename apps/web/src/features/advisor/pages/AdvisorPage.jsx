@@ -22,6 +22,7 @@ const TABS = [
 export default function AIAdvisor() {
   const { t } = useT();
   const { user, currency } = useAuth();
+  const readOnly = Boolean(user?.isDemo);
   const [tab, setTab] = useState('chat');
   const [status, setStatus] = useState(null);
 
@@ -48,9 +49,10 @@ export default function AIAdvisor() {
 
   // Fetch a tab's data the first time it is opened, not before.
   useEffect(() => {
+    if (readOnly) return;
     if (tab === 'advice' && !advice && !adviceLoading) loadAdvice();
     if (tab === 'weekly' && !weekly && !weeklyLoading) loadWeekly();
-  }, [tab, advice, weekly, adviceLoading, weeklyLoading, loadAdvice, loadWeekly]);
+  }, [tab, advice, weekly, adviceLoading, weeklyLoading, loadAdvice, loadWeekly, readOnly]);
 
   return (
     <div className="space-y-5">
@@ -70,6 +72,12 @@ export default function AIAdvisor() {
         }
       />
 
+      {readOnly ? (
+        <Card>
+          <p className="text-sm font-semibold text-slate-100">Demo Mode — Read Only</p>
+          <p className="mt-2 text-sm leading-6 text-slate-400">Advisor requests and chat changes are disabled in the demo. Explore the dashboard, reports, and existing financial records instead.</p>
+        </Card>
+      ) : <>
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         {TABS.map((option) => (
           <button
@@ -148,6 +156,7 @@ export default function AIAdvisor() {
           ) : null}
         </Card>
       )}
+      </>}
     </div>
   );
 }

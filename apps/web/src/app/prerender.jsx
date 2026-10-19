@@ -1,5 +1,5 @@
 import { renderToString } from 'react-dom/server';
-import { StaticRouter } from 'react-router-dom/server';
+import { StaticRouter } from 'react-router';
 import LearnContent from '../features/learn/LearnContent';
 import PublicFrame from './layout/PublicFrame';
 import { getArticle, publicPaths, indexablePaths, resolvePage } from '../features/learn/content';

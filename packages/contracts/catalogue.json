@@ -389,6 +389,13 @@
       "roman_ur": "Mushtarka Rehaish",
       "descriptionEn": "Manage shared spaces, residents, food, bills and contributions.",
       "descriptionRomanUr": "Mushtarka jagah, rehne walay, khana, bills aur jama raqam ka hisab."
+    },
+    {
+      "id": "business",
+      "en": "Business",
+      "roman_ur": "Karobar",
+      "descriptionEn": "Manage sales, POS, inventory, customer khata, suppliers and double-entry books.",
+      "descriptionRomanUr": "Sales, POS, inventory, customer khata, suppliers aur accounting manage karein."
     }
   ],
   "languages": [

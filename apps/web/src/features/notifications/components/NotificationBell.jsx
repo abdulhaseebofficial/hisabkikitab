@@ -31,7 +31,7 @@ const TYPE_LABEL_KEYS = {
 };
 
 /** Bell with the unread count and a dropdown tray. */
-export default function NotificationBell() {
+export default function NotificationBell({ readOnly = false }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
@@ -108,7 +108,7 @@ export default function NotificationBell() {
         <div className="absolute right-0 z-50 mt-2 w-80 origin-top-right animate-slide-up overflow-hidden rounded-2xl border border-slate-200 bg-canvas-card shadow-lift dark:border-slate-700 dark:bg-canvas-darkCard">
           <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800">
             <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t('notifications.title')}</span>
-            <div className="flex gap-1">
+            {!readOnly && <div className="flex gap-1">
               <button
                 type="button"
                 onClick={markAllRead}
@@ -125,7 +125,7 @@ export default function NotificationBell() {
               >
                 <Trash2 className="h-4 w-4" />
               </button>
-            </div>
+            </div>}
           </div>
 
           <div className="max-h-96 overflow-y-auto">

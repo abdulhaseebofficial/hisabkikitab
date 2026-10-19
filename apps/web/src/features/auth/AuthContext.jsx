@@ -2,12 +2,24 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import toast from 'react-hot-toast';
 import { useLocation } from 'react-router-dom';
 import authService from './api/authApi';
-import { setSessionExpiredHandler, getErrorMessage, bumpSessionEpoch } from '../../shared/api/client';
+import { setSessionExpiredHandler, getErrorMessage, bumpSessionEpoch, DEMO_MODE_KEY, readDemoMode } from '../../shared/api/client';
 import { trackEvent } from '../../shared/analytics/analytics';
 import { routePath } from '../../shared/seo/urls';
 
 const AuthContext = createContext(null);
 const protectedPaths = new Set(['/onboarding', '/dashboard', '/expenses', '/income', '/goals', '/debts', '/budget', '/advisor', '/reports', '/settings']);
+const DEMO_MODES = new Set(['student', 'householder', 'shared_living']);
+const updateDemoMode = (value) => {
+  try {
+    if (value) localStorage.setItem(DEMO_MODE_KEY, value);
+    else localStorage.removeItem(DEMO_MODE_KEY);
+  } catch { /* Storage is optional; the active session remains usable. */ }
+};
+const normalizeDemoUser = (value) => {
+  if (!value?.isDemo) return value;
+  const saved = readDemoMode();
+  return DEMO_MODES.has(saved) ? { ...value, financeMode: saved } : value;
+};
 
 /**
  * Owns the signed-in student, and restores the session when a protected page
@@ -61,7 +73,7 @@ export function AuthProvider({ children }) {
         // The access cookie is sent automatically; no token in memory is the
         // normal state on a fresh load, not a signed-out one.
         const me = await authService.me();
-        if (!cancelled && version === sessionVersion.current) setUser(me);
+        if (!cancelled && version === sessionVersion.current) setUser(normalizeDemoUser(me));
       } catch {
         // The API client has already attempted refresh for a 401. A second
         // refresh here would rotate or retry the cookie unnecessarily.
@@ -81,6 +93,7 @@ export function AuthProvider({ children }) {
     sessionVersion.current += 1;
     bumpSessionEpoch();
     const loggedIn = await authService.login(credentials);
+    updateDemoMode(null);
     setUser(loggedIn);
     setRestored(true);
     trackEvent('login_completed', { method: 'password' });
@@ -92,6 +105,7 @@ export function AuthProvider({ children }) {
     sessionVersion.current += 1;
     bumpSessionEpoch();
     const created = await authService.register(payload);
+    updateDemoMode(null);
     setUser(created);
     setRestored(true);
     trackEvent('sign_up_completed', { method: 'password' });
@@ -106,6 +120,7 @@ export function AuthProvider({ children }) {
    */
   const loginWithGoogle = useCallback(async (idToken) => {
     const result = await authService.google(idToken);
+    updateDemoMode(null);
     setUser(result.user);
     setRestored(true);
     trackEvent(result.created ? 'sign_up_completed' : 'login_completed', { method: 'google' });
@@ -117,9 +132,16 @@ export function AuthProvider({ children }) {
     sessionVersion.current += 1;
     bumpSessionEpoch();
     await authService.logout();
+    updateDemoMode(null);
     trackEvent('logout_completed');
     setUser(null);
     toast.success('Logged out');
+  }, []);
+
+  const setDemoFinanceMode = useCallback((financeMode) => {
+    if (!DEMO_MODES.has(financeMode)) return;
+    updateDemoMode(financeMode);
+    setUser((current) => current?.isDemo ? { ...current, financeMode } : current);
   }, []);
 
   /** Merge a partial update (profile edit, onboarding) into the cached user. */
@@ -130,9 +152,9 @@ export function AuthProvider({ children }) {
   const refreshUser = useCallback(async () => {
     try {
       const me = await authService.me();
-      setUser(me);
+      setUser(normalizeDemoUser(me));
       setRestored(true);
-      return me;
+      return normalizeDemoUser(me);
     } catch (error) {
       toast.error(getErrorMessage(error));
       return null;
@@ -152,8 +174,9 @@ export function AuthProvider({ children }) {
       logout,
       updateUser,
       refreshUser,
+      setDemoFinanceMode,
     }),
-    [user, loading, login, loginWithGoogle, register, logout, updateUser, refreshUser]
+    [user, loading, login, loginWithGoogle, register, logout, updateUser, refreshUser, setDemoFinanceMode]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

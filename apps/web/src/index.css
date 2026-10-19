@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
 @font-face {
   font-family: 'Inter Variable';
@@ -9,17 +8,65 @@
   font-display: swap;
   src: url('@fontsource-variable/inter/files/inter-latin-wght-normal.woff2') format('woff2-variations');
 }
-@font-face {
-  font-family: 'Source Serif 4 Variable';
-  font-style: normal;
-  font-weight: 200 900;
-  font-display: swap;
-  src: url('@fontsource-variable/source-serif-4/files/source-serif-4-latin-wght-normal.woff2') format('woff2-variations');
-}
 
 @layer base {
   :root {
     color-scheme: light;
+    --canvas-background: 244 248 255;
+    --canvas-surface: 255 255 255;
+    --canvas-raised: 236 244 255;
+    --slate-50: 248 251 255;
+    --slate-100: 239 245 255;
+    --slate-200: 220 232 255;
+    --slate-300: 191 207 232;
+    --slate-400: 137 155 184;
+    --slate-500: 100 116 139;
+    --slate-600: 71 85 105;
+    --slate-700: 51 65 85;
+    --slate-800: 30 49 84;
+    --slate-900: 11 23 66;
+    --slate-950: 8 27 75;
+    --brand-50: 236 245 255;
+    --brand-100: 220 232 255;
+    --brand-200: 190 217 255;
+    --brand-300: 143 193 255;
+    --brand-400: 99 173 255;
+    --brand-500: 48 132 255;
+    --brand-600: 20 104 255;
+    --brand-700: 15 78 205;
+    --brand-800: 11 62 166;
+    --brand-900: 8 43 112;
+    --shadow-ink: 8 27 75;
+    --theme-color: #f4f8ff;
+  }
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+    --canvas-background: 8 27 75;
+    --canvas-surface: 16 37 88;
+    --canvas-raised: 23 49 102;
+    --slate-50: 245 249 255;
+    --slate-100: 229 238 255;
+    --slate-200: 205 221 246;
+    --slate-300: 177 198 230;
+    --slate-400: 141 165 202;
+    --slate-500: 117 143 184;
+    --slate-600: 94 122 166;
+    --slate-700: 59 84 130;
+    --slate-800: 30 56 107;
+    --slate-900: 16 37 88;
+    --slate-950: 8 27 75;
+    --brand-50: 19 52 105;
+    --brand-100: 25 69 134;
+    --brand-200: 42 91 165;
+    --brand-300: 149 200 255;
+    --brand-400: 99 173 255;
+    --brand-500: 48 132 255;
+    --brand-600: 20 104 255;
+    --brand-700: 15 78 205;
+    --brand-800: 11 62 166;
+    --brand-900: 8 43 112;
+    --shadow-ink: 0 8 35;
+    --theme-color: #081b4b;
   }
   .dark {
     color-scheme: dark;
@@ -32,14 +79,14 @@
   }
 
   body {
-    /* Cream paper in light, warm charcoal in dark - never pure white or black. */
     @apply bg-canvas-light text-slate-900 antialiased;
     @apply dark:bg-canvas-dark dark:text-slate-100;
     font-family: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    transition: background-color 180ms ease, color 180ms ease;
   }
 
-  /* Page titles wear the serif. Doing it here means no component has to opt in. */
+  /* Keep headings in the same crisp sans-serif family as the product UI. */
   h1 {
     @apply font-display font-semibold tracking-[-0.01em];
     overflow-wrap: break-word;
@@ -82,7 +129,7 @@
   }
 
   ::selection {
-    @apply bg-brand-200 text-slate-900;
+    @apply bg-brand-600 text-white;
   }
 }
 
@@ -153,10 +200,10 @@
     @apply absolute inset-0 -translate-x-full;
     background-image: linear-gradient(
       90deg,
-      rgba(253, 252, 250, 0) 0,
-      rgba(253, 252, 250, 0.35) 45%,
-      rgba(253, 252, 250, 0.6) 60%,
-      rgba(253, 252, 250, 0)
+      rgb(var(--slate-50) / 0) 0,
+      rgb(var(--slate-50) / 0.04) 45%,
+      rgb(var(--slate-50) / 0.07) 60%,
+      rgb(var(--slate-50) / 0)
     );
     animation: shimmer 1.6s infinite;
   }

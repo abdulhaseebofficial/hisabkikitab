@@ -9,7 +9,7 @@ const profileValidators = {
     body('currency').optional().isIn(CURRENCY_CODES).withMessage('Unsupported currency'),
     body('university').optional().trim().isLength({ max: 100 }),
     body('hostelName').optional().trim().isLength({ max: 100 }),
-    body('theme').optional().isIn(['light', 'dark', 'system']),
+    body('theme').optional().isIn(['purple', 'orange']),
     // Strict allowlists, from the catalogue rather than a second copy here.
     // A locale or a mode is never taken on the client's word.
     body('financeMode').optional().isIn(MODES).withMessage('Unsupported finance mode'),

@@ -29,7 +29,8 @@ const DEFAULT_FILTERS = { search: '', page: 1 };
  * with itself.
  */
 export default function DebtsPage() {
-  const { currency } = useAuth();
+  const { user, currency } = useAuth();
+  const readOnly = Boolean(user?.isDemo);
   const { t } = useT();
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -153,9 +154,9 @@ export default function DebtsPage() {
   return (
     <div className="space-y-5">
       <PageHeader title={t('udhaar.title')} subtitle={t('udhaar.subtitle')}>
-        <Button icon={Plus} onClick={() => { setEditing(null); setFormOpen(true); }}>
+        {!readOnly && <Button icon={Plus} onClick={() => { setEditing(null); setFormOpen(true); }}>
           {t('udhaar.addRecord')}
-        </Button>
+        </Button>}
       </PageHeader>
 
       <div className="grid gap-2 sm:grid-cols-2">
@@ -190,7 +191,7 @@ export default function DebtsPage() {
           }
           actionLabel={filters.search ? undefined : t('udhaar.empty.action')}
           actionIcon={Plus}
-          onAction={filters.search ? undefined : () => { setEditing(null); setFormOpen(true); }}
+          onAction={readOnly || filters.search ? undefined : () => { setEditing(null); setFormOpen(true); }}
         />
       ) : (
         <div className="space-y-2">
@@ -248,6 +249,7 @@ export default function DebtsPage() {
       />}
 
       <DebtDetail
+        readOnly={readOnly}
         open={Boolean(openId) && !detailLoading}
         onClose={() => setOpenId(null)}
         debt={detail?.debt}

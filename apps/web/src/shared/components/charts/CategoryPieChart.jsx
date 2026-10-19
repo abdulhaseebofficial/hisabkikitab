@@ -21,8 +21,8 @@ import { sumMoney } from '../../utils/money';
 export default function CategoryPieChart({ data = [], currency = 'PKR', total, height = 220 }) {
   const { t } = useT();
   const label = useCategoryLabel();
-  const { isDark } = useTheme();
-  const ink = isDark ? CHART_INK.dark : CHART_INK.light;
+  const { theme } = useTheme();
+  const ink = CHART_INK[theme] || CHART_INK.light;
 
   // The stored id decides the colour; the label is what a person reads. In
   // householder mode the two are very different - "electricity_bill" against
@@ -64,7 +64,7 @@ export default function CategoryPieChart({ data = [], currency = 'PKR', total, h
               animationDuration={600}
             >
               {slices.map((row) => (
-                <Cell key={row.category} fill={categoryColor(row.category, isDark)} />
+                <Cell key={row.category} fill={categoryColor(row.category, true)} />
               ))}
             </Pie>
             <Tooltip content={<ChartTooltip currency={currency} />} />
@@ -87,7 +87,7 @@ export default function CategoryPieChart({ data = [], currency = 'PKR', total, h
           <li key={row.category} className="flex items-center gap-2.5 text-sm">
             <span
               className="h-3 w-3 shrink-0 rounded-sm"
-              style={{ backgroundColor: categoryColor(row.category, isDark) }}
+              style={{ backgroundColor: categoryColor(row.category, true) }}
               aria-hidden="true"
             />
             <span

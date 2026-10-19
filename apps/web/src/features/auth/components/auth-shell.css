@@ -1,0 +1,107 @@
+.hkk-auth-brand {
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.hkk-auth-ambient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hkk-auth-ambient span {
+  position: absolute;
+  display: block;
+  aspect-ratio: 1;
+  border: 1px solid rgb(var(--brand-50) / .15);
+  border-radius: 38%;
+  background: rgb(var(--brand-100) / .08);
+  animation: hkk-auth-drift 18s ease-in-out infinite alternate;
+}
+
+.hkk-auth-ambient span:nth-child(1) { top: -10%; right: 7%; width: 38%; }
+.hkk-auth-ambient span:nth-child(2) { top: 30%; left: -12%; width: 32%; border-radius: 50%; animation-delay: -7s; animation-duration: 22s; }
+.hkk-auth-ambient span:nth-child(3) { right: -8%; bottom: 6%; width: 28%; animation-delay: -11s; animation-duration: 20s; }
+.hkk-auth-ambient span:nth-child(4) { bottom: -12%; left: 28%; width: 22%; border-radius: 50%; animation-delay: -4s; animation-duration: 16s; }
+
+.hkk-auth-headline {
+  animation: hkk-auth-reveal .7s ease-out both;
+}
+
+.hkk-auth-highlight {
+  border-radius: .9rem;
+  animation: hkk-auth-reveal .55s ease-out backwards;
+  transition: transform .22s ease, background-color .22s ease, box-shadow .22s ease;
+}
+
+.hkk-auth-highlight:nth-child(1) { animation-delay: .18s; }
+.hkk-auth-highlight:nth-child(2) { animation-delay: .33s; }
+.hkk-auth-highlight:nth-child(3) { animation-delay: .48s; }
+
+.hkk-auth-highlight-icon {
+  transition: background-color .22s ease, box-shadow .22s ease;
+}
+
+.hkk-auth-highlight:hover {
+  transform: translateY(-2px);
+  background: rgb(var(--brand-50) / .06);
+  box-shadow: 0 12px 28px -23px rgb(var(--shadow-ink) / .5);
+}
+
+.hkk-auth-highlight:hover .hkk-auth-highlight-icon {
+  background: rgb(var(--brand-50) / .23);
+  box-shadow: 0 8px 20px -14px rgb(var(--shadow-ink) / .45);
+}
+
+@keyframes hkk-auth-drift {
+  50% { transform: translate3d(10px, -13px, 0) rotate(5deg); }
+  100% { transform: translate3d(-8px, 9px, 0) rotate(-4deg); }
+}
+
+@keyframes hkk-auth-reveal {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (min-width: 1024px) {
+  .hkk-auth-shell {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .hkk-auth-brand,
+  .hkk-auth-form-panel {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .hkk-auth-form-panel {
+    justify-content: flex-start;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+
+  .hkk-auth-form-card { margin-block: auto; }
+}
+
+@media (min-width: 1024px) and (max-height: 700px) {
+  .hkk-auth-brand { justify-content: flex-start; overflow-y: auto; padding-top: 1.5rem; padding-bottom: 1.5rem; }
+  .hkk-auth-brand-content { margin-block: auto; }
+  .hkk-auth-brand-content > a { margin-bottom: 1.5rem; }
+  .hkk-auth-highlights { margin-top: 1.5rem; }
+  .hkk-auth-highlights > li + li { margin-top: .75rem; }
+  .hkk-auth-footnote { position: static; margin-top: 1.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hkk-auth-ambient span,
+  .hkk-auth-headline,
+  .hkk-auth-highlight { animation: none; }
+  .hkk-auth-highlight,
+  .hkk-auth-highlight-icon { transition: none; }
+  .hkk-auth-highlight:hover { transform: none; }
+}

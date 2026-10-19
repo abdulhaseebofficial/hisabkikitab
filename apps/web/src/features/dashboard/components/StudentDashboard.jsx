@@ -23,7 +23,7 @@ import { STUDENT_GROUPS, totalsByGroup } from '../dashboardGroups';
  * because a student pays them once and then lives on what is left. That is the
  * opposite of the householder view, where the fixed costs are the story.
  */
-export default function StudentDashboard({ data, currency, onNavigate, onQuickAdd }) {
+export default function StudentDashboard({ data, currency, onNavigate, onQuickAdd, readOnly = false }) {
   const { t } = useT();
   const { totals, categoryBreakdown, trend, comparison, budgets, goals, recentExpenses, monthLabel, debts, upcomingBills } = data;
 
@@ -126,7 +126,7 @@ export default function StudentDashboard({ data, currency, onNavigate, onQuickAd
 
           {/* A hostel fee behaves like a bill, so this is useful here too - it
               just does not lead the way it does for a household. */}
-          <UpcomingBills bills={upcomingBills} currency={currency} />
+          <UpcomingBills bills={upcomingBills} currency={currency} readOnly={readOnly} />
 
           <BudgetHealth budgets={budgets} currency={currency} onCreate={() => onNavigate('/budget')} />
         </div>

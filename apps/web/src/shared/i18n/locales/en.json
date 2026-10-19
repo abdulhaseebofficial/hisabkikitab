@@ -1,8 +1,8 @@
 {
   "app": {
-    "name": "Hisabki Kitab",
+    "name": "HisabKi Kitab",
     "tagline": "Smart money manager",
-    "footerTagline": "Hisabki Kitab - money that lasts the whole month, for a hostel room or a household.",
+    "footerTagline": "HisabKi Kitab - money that lasts the whole month, for a hostel room or a household.",
     "pageNotFound": "This page does not exist",
     "gettingReady": "Getting your wallet ready"
   },
@@ -68,6 +68,19 @@
     "advisor": "AI Advisor",
     "reports": "Reports",
     "settings": "Settings",
+    "personalMode": "Personal",
+    "businessMode": "Business",
+    "switchToPersonal": "Switch to Personal Mode",
+    "switchToBusiness": "Switch to Business Mode",
+    "businessOverview": "Business Overview",
+    "pos": "Point of Sale (POS)",
+    "sales": "Sales & Invoices",
+    "inventory": "Inventory & Stock",
+    "khata": "Khata (Ledgers)",
+    "businessExpenses": "Business Expenses",
+    "businessAccounts": "Cash & Bank Accounts",
+    "businessReports": "P&L / Trial Balance",
+    "businessSettings": "Business Settings",
     "menu": "Menu",
     "closeMenu": "Close menu",
     "currentPage": "(current page)",
@@ -75,6 +88,14 @@
     "mainNavigation": "Main navigation",
     "addAnExpense": "Add an expense",
     "loggedAgainstToday": "Logged against today unless you change the date"
+  },
+  "business": {
+    "title": "Business Mode",
+    "selectBusiness": "Select Business",
+    "yourBusinesses": "Your Businesses",
+    "noBusinessesYet": "No businesses yet",
+    "addNewBusiness": "+ Add New Business",
+    "addBusiness": "Register New Business"
   },
   "mode": {
     "label": "Finance mode",
@@ -89,7 +110,9 @@
     "switched": "Now showing your {mode} records",
     "currentlyIn": "You are in {mode} mode",
     "shared_living": "Shared Living",
-    "shared_livingDescription": "Manage shared spaces, food, bills and member contributions."
+    "shared_livingDescription": "Manage shared spaces, food, bills and member contributions.",
+    "business": "Business",
+    "businessDescription": "Manage sales, POS, inventory, customer khata, suppliers and double-entry books."
   },
   "language": {
     "label": "Language",
@@ -249,12 +272,18 @@
     "switchToSharedLiving": "Switch to Shared Living and manage spaces",
     "deleteAccountTitle": "Delete your account?",
     "typePasswordToConfirm": "Type your password to confirm",
-    "appearanceSubtitle": "Dark mode is easier on the eyes in a hostel room at 2am",
+    "appearanceSubtitle": "Choose a comfortable light or dark appearance",
     "themeLight": "Light",
     "themeDark": "Dark",
-    "themeSystem": "System",
     "subtitle": "Your profile, your categories, your data.",
-    "incomeHint": "You can change this any time in Settings"
+    "incomeHint": "You can change this any time in Settings",
+    "appTitle": "App & Installation",
+    "appSubtitle": "Install HisabKi Kitab as a fast mobile or desktop app.",
+    "appCardName": "HisabKi Kitab App",
+    "appInstalledDesc": "Running in standalone app mode with instant launch.",
+    "appReadyDesc": "Install on Android, iOS, Windows, or Mac with 0 MB storage overhead.",
+    "appGuideBtn": "Device Guide",
+    "appInstallBtn": "Install App"
   },
   "onboarding": {
     "welcome": "Let us set things up",
@@ -630,7 +659,7 @@
     "budgetHealth": "Budget health",
     "closestToLimit": "Categories closest to their limit",
     "noBudgets": "No budgets set",
-    "noBudgetsMessage": "Set a limit per category and Hisabki Kitab will warn you before you blow it.",
+    "noBudgetsMessage": "Set a limit per category and HisabKi Kitab will warn you before you blow it.",
     "setBudgets": "Set budgets",
     "groupFood": "Food and mess",
     "groupTransport": "Transport",
@@ -935,7 +964,7 @@
     "requestConflict": "This submission was already used. Reopen the form to record a new entry.",
     "legacyBillReview": "This month contains bills created before copy tracking. Review their history before copying recurring bills into it.",
     "staleWrite": "This record changed while you were editing. Reload the month and try again.",
-    "setupComplete": "All set. Welcome to Hisabki Kitab!",
+    "setupComplete": "All set. Welcome to HisabKi Kitab!",
     "setupStep": "Step {step} of {count}"
   },
   "consent": {
@@ -945,5 +974,38 @@
     "reject": "Reject analytics",
     "accept": "Accept analytics",
     "choices": "Privacy choices"
+  },
+  "pwa": {
+    "modalTitle": "Download & Install App",
+    "modalSubtitle": "Get instant one-tap access on your phone or PC with zero storage overhead.",
+    "installNow": "Install Now",
+    "install": "Install",
+    "statusInstalled": "Already installed on this device",
+    "statusReady": "Official Web App • Fast & Offline Ready",
+    "installedBadge": "Installed",
+    "benefitFast": "Full-screen app experience",
+    "benefitNoStorage": "0 MB download size",
+    "androidStep1Title": "Tap Install Now",
+    "androidStep1Desc": "Click the \"Install Now\" button above to launch the native install prompt.",
+    "androidStep2Title": "Alternative",
+    "androidStep2Desc": "Tap Chrome menu (⋮ in top-right) and choose \"Install app\" or \"Add to Home screen\".",
+    "androidStep3Title": "Done",
+    "androidStep3Desc": "The app icon appears on your home screen and drawer, opening in full-screen.",
+    "iosStep1Title": "Open in Safari",
+    "iosStep1Desc": "Open this website in Safari and tap the Share button (square with arrow up).",
+    "iosStep2Title": "Add to Home Screen",
+    "iosStep2Desc": "Scroll down and tap \"Add to Home Screen\".",
+    "iosStep3Title": "Confirm Add",
+    "iosStep3Desc": "Tap \"Add\" at the top right. The app will install to your iPhone home screen.",
+    "pcStep1Title": "Use Chrome or Edge",
+    "pcStep1Desc": "Look for the Install icon in the browser address bar (top right).",
+    "pcStep2Title": "Click Install",
+    "pcStep2Desc": "Click \"Install\" to create a standalone desktop app shortcut.",
+    "pcStep3Title": "Launch anytime",
+    "pcStep3Desc": "Launches from your Windows Start menu, Taskbar, or macOS Dock as a dedicated app.",
+    "appReadyInfoTitle": "App Ready & Play Store Compatible",
+    "appReadyInfoDesc": "HisabKi Kitab is packaged as a certified Progressive Web App and can also be compiled to a native signed Android APK / TWA package via Google Bubblewrap or PWABuilder.",
+    "appInstalledBtn": "App Guide & Status",
+    "installAppBtn": "Install / Download App"
   }
 }

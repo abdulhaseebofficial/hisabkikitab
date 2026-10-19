@@ -22,6 +22,7 @@ router.get('/config', ctrl.publicConfig);
 // Every unauthenticated auth route is rate limited against brute forcing.
 router.post('/register', authLimiter, authValidators.register, validate, ctrl.register);
 router.post('/login', authLimiter, authValidators.login, validate, ctrl.login);
+router.post('/demo', authLimiter, ctrl.demo);
 
 // Rate limited like every other way into an account. An ID token is verified
 // against Google on each call, so an unlimited endpoint would also be a way to

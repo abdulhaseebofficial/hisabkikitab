@@ -25,7 +25,8 @@ const now = new Date();
 
 export default function Budget() {
   const { t } = useT();
-  const { currency } = useAuth();
+  const { user, currency } = useAuth();
+  const readOnly = Boolean(user?.isDemo);
   const { categories } = useCategories();
 
   const [period] = useState({ month: now.getMonth() + 1, year: now.getFullYear() });
@@ -94,9 +95,9 @@ export default function Budget() {
         title={t('budget.title')}
         subtitle={t('budget.subtitle', { month: monthLabel(period.month, period.year) })}
       >
-        <Button icon={Sparkles} variant="secondary" loading={suggesting} onClick={askAi}>
+        {!readOnly && <Button icon={Sparkles} variant="secondary" loading={suggesting} onClick={askAi}>
           {t('budget.suggest')}
-        </Button>
+        </Button>}
       </PageHeader>
 
       {totals && (
@@ -139,9 +140,9 @@ export default function Budget() {
             icon={PieIcon}
             title={t('budget.empty')}
             message={t('budget.emptyMessage')}
-            actionLabel={t('budget.suggestForMe')}
-            actionIcon={Sparkles}
-            onAction={askAi}
+            actionLabel={readOnly ? undefined : t('budget.suggestForMe')}
+            actionIcon={readOnly ? undefined : Sparkles}
+            onAction={readOnly ? undefined : askAi}
           />
         ) : (
           <ul className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -150,7 +151,7 @@ export default function Budget() {
                 key={row._id}
                 row={row}
                 currency={currency}
-                onEdit={(item) => {
+                onEdit={readOnly ? undefined : (item) => {
                   setEditing(item);
                   setLimitValue(String(item.limit));
                 }}
@@ -160,7 +161,7 @@ export default function Budget() {
         )}
       </Card>
 
-      {unbudgeted.length > 0 && (
+      {!readOnly && unbudgeted.length > 0 && (
         <Card>
           <CardHeader title={t('budget.addLimit')} subtitle={t('budget.addLimitSubtitle')} />
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">

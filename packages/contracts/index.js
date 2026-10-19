@@ -33,8 +33,9 @@
  */
 
 const vocabulary = require('./vocabulary.json');
+const business = require('./business');
 
 /** Just the codes, which is what a validator or a <select> actually wants. */
 const CURRENCY_CODES = vocabulary.CURRENCIES.map((c) => c.code);
 
-module.exports = Object.assign({}, vocabulary, { CURRENCY_CODES });
+module.exports = Object.assign({}, vocabulary, { CURRENCY_CODES }, business);

@@ -13,11 +13,12 @@ import useMutation from '../../../shared/hooks/useMutation';
 import { notifyDataChanged } from '../../../shared/hooks/useAsync';
 import settingsApi from '../api/settingsApi';
 import ProfileCard from '../components/ProfileCard';
-import AppearanceCard from '../components/AppearanceCard';
 import LanguageCard from '../components/LanguageCard';
+import AppearanceCard from '../components/AppearanceCard';
 import FinanceModeCard from '../components/FinanceModeCard';
 import CategoriesCard from '../components/CategoriesCard';
 import SecurityCard from '../components/SecurityCard';
+import InstallAppCard from '../components/InstallAppCard';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 import {
   nameSchema,
@@ -188,21 +189,23 @@ export default function Settings() {
     <div className="max-w-3xl space-y-5">
       <PageHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
 
-      <ProfileCard user={user} form={profileForm} onSave={saveProfile} />
+      {!user?.isDemo && <ProfileCard user={user} form={profileForm} onSave={saveProfile} />}
 
-      <FinanceModeCard
+      {!user?.isDemo && <FinanceModeCard
         mode={user ? user.financeMode : 'student'}
         onSelect={setPendingMode}
-      />
+      />}
 
-      <LanguageCard
+      {!user?.isDemo && <LanguageCard
         language={user ? user.language : 'en'}
         onChange={changeLanguage}
-      />
+      />}
 
       <AppearanceCard theme={theme} onChange={setTheme} />
 
-      {user?.financeMode !== 'shared_living' && <CategoriesCard
+      <InstallAppCard />
+
+      {!user?.isDemo && user?.financeMode !== 'shared_living' && <CategoriesCard
         categories={categories}
         custom={custom}
         newCategory={newCategory}
@@ -211,7 +214,7 @@ export default function Settings() {
         onRemove={removeCategory}
       />}
 
-      <SecurityCard
+      {!user?.isDemo && <SecurityCard
         user={user}
         onChangePassword={() => setPasswordOpen(true)}
         // A Google-only account has no current password to type, so it goes
@@ -219,9 +222,9 @@ export default function Settings() {
         onSetPassword={() => navigate('/forgot-password')}
         onExport={exportData}
         onDelete={() => { setDeleteError(''); setDeleteOpen(true); }}
-      />
+      />}
 
-      <ConfirmDialog
+      {!user?.isDemo && <ConfirmDialog
         open={Boolean(pendingMode)}
         onClose={() => setPendingMode(null)}
         onConfirm={confirmModeSwitch}
@@ -234,16 +237,16 @@ export default function Settings() {
         }
         confirmLabel={t('mode.switchConfirm')}
         cancelLabel={t('common.cancel')}
-      />
+      />}
 
-      <ChangePasswordModal
+      {!user?.isDemo && <ChangePasswordModal
         open={passwordOpen}
         onClose={() => setPasswordOpen(false)}
         form={passwordForm}
         onSubmit={changePassword}
-      />
+      />}
 
-      <DeleteAccountModal
+      {!user?.isDemo && <DeleteAccountModal
         open={deleteOpen}
         onClose={() => { setDeleteOpen(false); setDeleteError(''); }}
         password={deletePassword}
@@ -253,7 +256,7 @@ export default function Settings() {
         error={deleteError}
         onManageSpaces={manageSharedSpaces}
         manageLabel={user?.financeMode === 'shared_living' ? t('settings.manageSharedSpaces') : t('settings.switchToSharedLiving')}
-      />
+      />}
     </div>
   );
 }

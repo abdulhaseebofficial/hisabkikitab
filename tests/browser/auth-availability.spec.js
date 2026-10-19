@@ -9,10 +9,10 @@ test('password reset gives an honest unavailable state when mail is not configur
   });
   await page.goto('/forgot-password');
   await expect(page.getByText('Password reset is unavailable')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Contact us' })).toHaveAttribute('href', '/contact');
+  await expect(page.getByRole('link', { name: 'Contact us' })).toHaveAttribute('href', '/contact/');
   await expect(page.getByRole('button', { name: 'Send reset link' })).toHaveCount(0);
   await page.goto('/login');
-  await expect(page.getByRole('link', { name: 'Hisabki Kitab' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'HisabKi Kitab' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue with Google' })).toHaveCount(0);
 });
 

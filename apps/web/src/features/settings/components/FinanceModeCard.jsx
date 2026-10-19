@@ -1,4 +1,4 @@
-import { GraduationCap, Home } from 'lucide-react';
+import { GraduationCap, Home, Users, Briefcase } from 'lucide-react';
 import Card, { CardHeader } from '../../../shared/components/ui/Card';
 import useT from '../../../shared/i18n/I18nProvider';
 import { cn } from '../../../shared/utils/format';
@@ -6,7 +6,8 @@ import { cn } from '../../../shared/utils/format';
 const OPTIONS = [
   { key: 'student', icon: GraduationCap },
   { key: 'householder', icon: Home },
-  { key: 'shared_living', icon: Home },
+  { key: 'shared_living', icon: Users },
+  { key: 'business', icon: Briefcase },
 ];
 
 /**

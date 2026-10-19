@@ -209,7 +209,7 @@ export default function ExpenseForm({ expense, categories = [], currency = 'PKR'
               This repeats every month
             </span>
             <span className="block text-xs text-slate-500 dark:text-slate-400">
-              Perfect for the mess bill or hostel fee. Hisabki Kitab will add it for you automatically.
+              Perfect for the mess bill or hostel fee. HisabKi Kitab will add it for you automatically.
             </span>
           </span>
         </label>

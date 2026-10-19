@@ -19,10 +19,11 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..').split(path.sep).join('/');
-// Generated output only: shared by entry discovery, reachability and empty-dir checks.
+// Generated output and saved release snapshots, not application entry points.
+// Shared by entry discovery, reachability and empty-dir checks.
 const SKIP = new Set([
   'node_modules', '.git', 'dist', 'dist-ssr', 'build', '.vercel', 'coverage', '.nyc_output',
-  'test-results', 'playwright-report', 'blob-report',
+  'test-results', 'playwright-report', 'blob-report', 'release-artifacts',
   '.cache', '.vite', '.vite-temp', '.vitest', '.turbo',
 ]);
 const CODE = ['.js', '.jsx', '.mjs', '.cjs'];
@@ -66,6 +67,9 @@ const EXPECTED_UNREACHABLE = {
     "imported as '@hisabkikitab/contracts/catalogue' by both apps, not by path",
   'packages/contracts/notifications.js':
     "imported as '@hisabkikitab/contracts/notifications' by the API, not by path",
+  'packages/contracts/business.js':
+    "imported as '@hisabkikitab/contracts/business' by both apps, not by path",
+  'apps/web/public/sw.js': 'Service worker registered by browser at runtime',
 };
 
 /** Exported on purpose, even though nothing calls them yet. */

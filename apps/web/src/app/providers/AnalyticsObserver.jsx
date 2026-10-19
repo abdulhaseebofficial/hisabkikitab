@@ -45,18 +45,18 @@ export default function AnalyticsObserver() {
       if (normalized === '/' || normalized.startsWith('/learn')) {
         const { resolvePage } = await import('../../features/learn/content');
         const page = resolvePage(normalized);
-        title = `${page.title}${page.type === 'home' ? '' : ' | Hisab Ki Kitab'}`;
+        title = `${page.title}${page.type === 'home' ? '' : ' | HisabKi Kitab'}`;
       } else if (normalized === '/tools' || normalized.startsWith('/tools/')) {
         const { tools } = await import('../../features/tools/content/calculations');
         const tool = tools.find(item => `/tools/${item.slug}` === normalized);
-        title = tool ? `${tool.title} | Hisab Ki Kitab` : normalized === '/tools' ? 'Financial Calculators & Tools | Hisab Ki Kitab' : 'Calculator not found | Hisab Ki Kitab';
+        title = tool ? `${tool.title} | HisabKi Kitab` : normalized === '/tools' ? 'Financial Calculators & Tools | HisabKi Kitab' : 'Calculator not found | HisabKi Kitab';
       } else if (/^\/(about|contact|privacy|terms|disclaimer)$/.test(normalized)) {
         const { trustPageFromPath } = await import('../../features/trust/content/pages');
-        title = `${trustPageFromPath(normalized).title} | Hisab Ki Kitab`;
+        title = `${trustPageFromPath(normalized).title} | HisabKi Kitab`;
       }
       if (!cancelled) trackPageView(location.pathname, title);
     };
-    record().catch(() => { if (!cancelled) trackPageView(location.pathname, TITLES[routePath(location.pathname)] || 'Hisab Ki Kitab'); });
+    record().catch(() => { if (!cancelled) trackPageView(location.pathname, TITLES[routePath(location.pathname)] || 'HisabKi Kitab'); });
     return () => { cancelled = true; };
   }, [location.pathname, user?.financeMode, consent]);
   useEffect(() => {

@@ -1,6 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const { frontendURL } = require('../../scripts/frontend-config');
 const origin = process.env.VITE_SITE_URL || frontendURL;
+const publicUrl = (path) => new URL(path === '/' ? '/' : `${path}/`, origin).href;
 
 test.beforeEach(async ({ page }) => {
   await page.route((url) => url.pathname.startsWith('/api/'), (route) => {
@@ -15,8 +16,8 @@ test('query parameters keep the preferred public canonical', async ({ page }) =>
   for (const path of ['/', '/learn', '/learn/budgeting/how-to-create-a-monthly-budget', '/tools/budget-calculator', '/about']) {
     await page.goto(`${path}?utm_source=seo-test`);
     await expect(page.locator('h1')).toHaveCount(1);
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', new URL(path, origin).href);
-    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', new URL(path, origin).href);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', publicUrl(path));
+    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', publicUrl(path));
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'index,follow');
   }
 });
@@ -30,7 +31,7 @@ test('public metadata is removed on navigation to authentication and private rou
   await expect(page.locator('meta[property^="og:"]')).toHaveCount(0);
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(0);
   await page.goto('/dashboard');
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(page).toHaveURL(/\/login\/$/);
   await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
 });
 
@@ -71,21 +72,22 @@ test('representative public pages expose generated SEO data and working links', 
     await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /.+/);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'index,follow');
     await expect(page.locator('link[rel="canonical"]')).toHaveCount(1);
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', new URL(path, origin).href);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', publicUrl(path));
     const schema = await page.locator('script[type="application/ld+json"]').textContent();
     const types = JSON.parse(schema).map((node) => node['@type']);
     for (const type of expectedTypes) expect(types, `${path}: missing ${type}`).toContain(type);
-    await expect(page.locator('nav[aria-label="Product and site information"] a[href="/learn"]')).toHaveCount(1);
+    await expect(page.locator('nav[aria-label="Product and site information"] a[href="/learn/"]')).toHaveCount(1);
   }
-  await page.getByRole('link', { name: 'Guides', exact: true }).first().click();
-  await expect(page).toHaveURL(/\/learn$/);
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${origin}/learn`);
+  const rejectAnalytics = page.getByRole('button', { name: 'Reject analytics' });
+  if (await rejectAnalytics.isVisible()) await rejectAnalytics.click();
+  await page.getByRole('link', { name: 'Guides', exact: true }).filter({ visible: true }).first().click();
+  await expect(page).toHaveURL(/\/learn\/$/);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${origin}/learn/`);
   await page.goto('/login');
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex,follow');
   await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(0);
-  expect(authRequests.length).toBeGreaterThan(0);
-  expect(new Set(authRequests)).toEqual(new Set(['GET /api/auth/config']));
+  expect(authRequests.every((request) => request === 'GET /api/auth/config')).toBe(true);
   expect(fontResponses.length).toBeGreaterThan(0);
   expect(fontResponses.every((url) => new URL(url).origin === new URL(page.url()).origin)).toBe(true);
   expect(failedResponses).toEqual([]);

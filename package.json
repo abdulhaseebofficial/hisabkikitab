@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
-    "concurrently": "^9.0.1"
+    "concurrently": "^10.0.6"
   },
   "engines": {
     "node": "24.x"
@@ -53,6 +53,6 @@
   ],
   "license": "MIT",
   "allowScripts": {
-    "esbuild@0.21.5": true
+    "esbuild@0.25.12": true
   }
 }

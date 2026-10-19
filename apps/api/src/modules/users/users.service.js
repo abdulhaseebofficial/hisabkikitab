@@ -311,6 +311,7 @@ const findByResetToken = (hashedToken) => usersRepo.findByResetToken(hashedToken
 const revokeAllSessions = (userId) => usersRepo.revokeAllSessions(userId);
 
 const findById = (userId, options) => usersRepo.findById(userId, options);
+const findDemo = () => usersRepo.findDemo();
 
 /* ------------------------------- google ----------------------------- */
 // Thin pass-throughs, like findByEmail above: auth owns the sign-in decision,
@@ -338,6 +339,7 @@ module.exports = {
   findByResetToken,
   revokeAllSessions,
   findById,
+  findDemo,
   findByGoogleId,
   linkGoogleId,
   createFromGoogle,

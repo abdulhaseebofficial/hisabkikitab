@@ -30,7 +30,11 @@ import HouseholderDashboard from '../components/HouseholderDashboard';
  */
 export default function Dashboard() {
   const { user } = useAuth();
-  return user?.financeMode === 'shared_living' ? <SharedLivingPage key={user._id} userId={user._id} /> : <PersonalDashboard />;
+  return user?.financeMode === 'shared_living' ? (
+    <SharedLivingPage key={user._id} userId={user._id} readOnly={Boolean(user?.isDemo)} />
+  ) : (
+    <PersonalDashboard />
+  );
 }
 
 function PersonalDashboard() {
@@ -95,7 +99,13 @@ function PersonalDashboard() {
         )}
       </PageHeader>
 
-      <Body data={data} currency={currency} onNavigate={navigate} onQuickAdd={openQuickAdd} />
+      <Body
+        data={data}
+        currency={currency}
+        onNavigate={navigate}
+        onQuickAdd={openQuickAdd}
+        readOnly={Boolean(user?.isDemo)}
+      />
     </div>
   );
 }

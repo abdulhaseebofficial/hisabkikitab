@@ -44,24 +44,24 @@ export default function ExpenseItem({ expense, currency = 'INR', onEdit, onDelet
         {formatMoney(expense.amount, currency)}
       </span>
 
-      <div className="flex shrink-0 gap-0.5">
-        <button
+      {(onEdit || onDelete) && <div className="flex shrink-0 gap-0.5">
+        {onEdit && <button
           type="button"
           onClick={() => onEdit(expense)}
           aria-label={`Edit ${expense.description || expense.category}`}
           className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-brand-600 dark:hover:bg-slate-800 dark:hover:text-brand-400"
         >
           <Pencil className="h-4 w-4" />
-        </button>
-        <button
+        </button>}
+        {onDelete && <button
           type="button"
           onClick={() => onDelete(expense)}
           aria-label={`Delete ${expense.description || expense.category}`}
           className="rounded-lg p-2 text-slate-400 transition hover:bg-danger/10 hover:text-danger dark:hover:bg-danger/15"
         >
           <Trash2 className="h-4 w-4" />
-        </button>
-      </div>
+        </button>}
+      </div>}
     </li>
   );
 }

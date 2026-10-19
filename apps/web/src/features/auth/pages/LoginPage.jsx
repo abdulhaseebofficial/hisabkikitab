@@ -46,7 +46,6 @@ export default function Login() {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm({ resolver: zodResolver(schema), defaultValues: { email: '', password: '' } });
 
@@ -58,13 +57,6 @@ export default function Login() {
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
-  };
-
-  /** One-tap login for the seeded demo account. */
-  const fillDemo = () => {
-    setValue('email', 'demo@hisabkikitab.app');
-    setValue('password', 'demo1234');
-    toast('Demo details filled in. Hit Log in.', { icon: '\uD83D\uDC4B' });
   };
 
   return (
@@ -118,13 +110,12 @@ export default function Login() {
           {t('auth.login')}
         </Button>
 
-        <button
-          type="button"
-          onClick={fillDemo}
-          className="w-full rounded-xl border border-dashed border-slate-300 py-2.5 text-xs font-medium text-slate-500 transition hover:border-brand-400 hover:text-brand-600 dark:border-slate-700 dark:text-slate-400"
+        <Link
+          to="/?demo=preview#finance-preview"
+          className="flex min-h-11 w-full items-center justify-center rounded-xl border border-dashed border-slate-300 px-3 py-2.5 text-xs font-medium text-slate-600 transition hover:border-brand-400 hover:text-brand-600 dark:border-slate-700 dark:text-slate-300"
         >
-          {t('auth.tryDemo')}
-        </button>
+          Explore Demo Preview
+        </Link>
       </form>
     </AuthShell>
   );

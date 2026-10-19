@@ -1,6 +1,10 @@
 import axios from 'axios';
 
 const BASE_URL = import.meta.env.VITE_API_URL || '/api';
+export const DEMO_MODE_KEY = 'hkk-demo-finance-mode';
+export const readDemoMode = () => {
+  try { return localStorage.getItem(DEMO_MODE_KEY); } catch { return null; }
+};
 
 /* --------------------------- token storage -------------------------- */
 
@@ -70,6 +74,10 @@ api.interceptors.request.use((config) => {
   // No header on a fresh page load, and that is correct: the httpOnly cookie
   // carries the session until the first response hands a token back.
   if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
+  const demoMode = readDemoMode();
+  if (['student', 'householder', 'shared_living'].includes(demoMode)) {
+    config.headers['X-Demo-Finance-Mode'] = demoMode;
+  }
   return config;
 });
 

@@ -26,6 +26,7 @@ export default function DebtDetail({
   payments = [],
   currency = 'PKR',
   busy = false,
+  readOnly = false,
   onAddPayment,
   onSettle,
   onEdit,
@@ -141,7 +142,7 @@ export default function DebtDetail({
 
         {/* Recording a payment */}
         {/* A cancelled record takes no more payments: it stopped counting. */}
-        {!settled && !cancelled && (
+        {!readOnly && !settled && !cancelled && (
           <div className="hw-card space-y-3 p-4">
             <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
               {debt.kind === 'BORROWED' ? 'Record a repayment' : 'Record money received'}
@@ -202,21 +203,21 @@ export default function DebtDetail({
                       {payment.note ? ` - ${payment.note}` : ''}
                     </p>
                   </div>
-                  <button
+                  {!readOnly && <button
                     type="button"
                     onClick={() => onRemovePayment(payment)}
                     aria-label={`Undo the payment of ${formatMoney(payment.amount, currency)}`}
                     className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-danger dark:hover:bg-slate-800"
                   >
                     <Undo2 className="h-4 w-4" aria-hidden="true" />
-                  </button>
+                  </button>}
                 </li>
               ))}
             </ul>
           )}
         </div>
 
-        <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-4 dark:border-slate-800">
+        {!readOnly && <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-4 dark:border-slate-800">
           <Button variant="ghost" icon={Pencil} onClick={onEdit}>
             Edit
           </Button>
@@ -232,7 +233,7 @@ export default function DebtDetail({
           <Button variant="danger" icon={Trash2} onClick={onDelete}>
             Delete
           </Button>
-        </div>
+        </div>}
       </div>
     </Modal>
   );

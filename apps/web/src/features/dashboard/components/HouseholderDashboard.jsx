@@ -26,7 +26,7 @@ import { sumMoney } from '../../../shared/utils/money';
  * months, because a household that has not recorded a bill yet needs to see
  * that plainly rather than read a confident estimate of it.
  */
-export default function HouseholderDashboard({ data, currency, onNavigate, onQuickAdd }) {
+export default function HouseholderDashboard({ data, currency, onNavigate, onQuickAdd, readOnly = false }) {
   const { t } = useT();
   const { totals, categoryBreakdown, trend, comparison, budgets, goals, recentExpenses, monthLabel, debts, upcomingBills } = data;
 
@@ -120,7 +120,7 @@ export default function HouseholderDashboard({ data, currency, onNavigate, onQui
         <div className="space-y-5">
           {/* First in the column, unlike the student view: this is the part of
               the month a household cannot choose. */}
-          <UpcomingBills bills={upcomingBills} currency={currency} />
+          <UpcomingBills bills={upcomingBills} currency={currency} readOnly={readOnly} />
 
           <CategoryGroups
             title={t('dashboard.whereItGoesHouseholder')}

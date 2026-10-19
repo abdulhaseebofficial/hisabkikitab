@@ -23,6 +23,7 @@ const requests = require('../../shared/finance/idempotency');
 
 const DEFAULT_PAYMENT_METHOD = 'Cash';
 const DEFAULT_FREQUENCY = 'monthly';
+const shouldMaterializeOnRead = ({ readOnly = false } = {}) => !readOnly;
 
 const assertOwnCategory = (user, category) => {
   if (isOtherModeCategory(user, category)) {
@@ -47,9 +48,10 @@ const announce = (user, expense, action) => {
 };
 
 /** Filtered, sorted, paginated, with the sum of the filtered set. */
-const list = async (userId, financeMode, filters) => {
+const list = async (userId, financeMode, filters, options) => {
   // Catch recurring bills up first so the list is never stale.
-  await materializeForUser(userId);
+  // Demo identities must remain read-only even when the HTTP method is GET.
+  if (shouldMaterializeOnRead(options)) await materializeForUser(userId);
   return expensesRepo.list(userId, financeMode, filters);
 };
 
@@ -206,6 +208,7 @@ const markBillPaid = async (id, user, { amount, paidOn } = {}, requestKey) => {
 };
 
 module.exports = {
+  shouldMaterializeOnRead,
   markBillPaid,
   listRecent,
   listForRange,

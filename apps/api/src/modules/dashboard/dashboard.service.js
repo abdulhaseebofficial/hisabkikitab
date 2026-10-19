@@ -22,6 +22,7 @@ const { currentPeriod, changePercent } = require('../../shared/utils/calculation
 const { modeOf } = require('../../shared/categories');
 
 const RECENT_EXPENSE_COUNT = 8;
+const shouldRunDashboardMaintenance = (user) => !user?.isDemo;
 
 /**
  * How far ahead "due soon" looks on the dashboard.
@@ -45,7 +46,10 @@ const periodFrom = (query = {}) => {
 const summary = async (user, query) => {
   const period = periodFrom(query);
 
-  await materializeForUser(user._id);
+  // A dashboard GET normally performs idempotent maintenance. Demo identities
+  // are strictly read-only at both the API and database layers, so even these
+  // background writes must be skipped rather than relying on a trigger error.
+  if (shouldRunDashboardMaintenance(user)) await materializeForUser(user._id);
 
   // A household's month is mostly committed before it starts, so what is
   // already owed matters as much as what has been spent. These are the real
@@ -63,7 +67,9 @@ const summary = async (user, query) => {
   ]);
 
   // Fire and forget: the student should not wait on the alert rules.
-  runChecksForUser(user).catch((err) => console.error('[notifications]', err.message));
+  if (shouldRunDashboardMaintenance(user)) {
+    runChecksForUser(user).catch((err) => console.error('[notifications]', err.message));
+  }
 
   return {
     period,
@@ -112,4 +118,4 @@ const summary = async (user, query) => {
   };
 };
 
-module.exports = { summary };
+module.exports = { summary, shouldRunDashboardMaintenance };

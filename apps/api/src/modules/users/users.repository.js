@@ -23,7 +23,7 @@ const PRIVATE = ['password', 'reset_password_token', 'reset_password_expires', '
 // Everything except the password, which is only fetched where it is compared.
 const PUBLIC_COLUMNS = `
   id, name, email, monthly_income, monthly_income_minor, currency, university, hostel_name,
-  custom_categories, theme, finance_mode, language, onboarding_completed, token_version,
+  custom_categories, theme, finance_mode, language, onboarding_completed, is_demo, token_version,
   last_expense_reminder_at, created_at, updated_at,
   -- Not the password: whether there is one. An account created through Google
   -- has none, and the Settings screen has to offer "set a password" rather
@@ -66,6 +66,11 @@ const findById = async (id, { withPassword = false } = {}) => {
   return toApi(row);
 };
 
+const findDemo = async () => {
+  const row = await queryOne(`SELECT ${PUBLIC_COLUMNS} FROM users WHERE is_demo = true`);
+  return toApi(row);
+};
+
 /** Every user, for the nightly alert sweep. */
 const findAllForAlerts = async () => {
   const rows = await query(
@@ -87,8 +92,8 @@ const create = async ({
 }) => {
   const hash = await bcrypt.hash(password, SALT_ROUNDS);
   const row = await queryOne(
-    `INSERT INTO users (name, email, password, monthly_income, monthly_income_minor, currency, university, hostel_name)
-     VALUES ($1, $2, $3, 0, $4, $5, $6, $7)
+    `INSERT INTO users (name, email, password, monthly_income, monthly_income_minor, currency, university, hostel_name, theme)
+     VALUES ($1, $2, $3, 0, $4, $5, $6, $7, 'purple')
      RETURNING ${PUBLIC_COLUMNS}`,
     [
       String(name).trim(),
@@ -148,8 +153,8 @@ const linkGoogleId = async (userId, googleId) => {
  */
 const createFromGoogle = async ({ name, email, googleId, currency = 'PKR' }) => {
   const row = await queryOne(
-    `INSERT INTO users (name, email, google_id, currency, onboarding_completed)
-     VALUES ($1, $2, $3, $4, false)
+    `INSERT INTO users (name, email, google_id, currency, onboarding_completed, theme)
+     VALUES ($1, $2, $3, $4, false, 'purple')
      RETURNING ${PUBLIC_COLUMNS}`,
     [
       String(name).trim(),
@@ -298,6 +303,7 @@ module.exports = {
   toPublicUser,
   findByEmail,
   findById,
+  findDemo,
   findAllForAlerts,
   create,
   comparePassword,

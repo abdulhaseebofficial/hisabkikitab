@@ -17,19 +17,19 @@ import LanguageCard from './LanguageCard';
 import CategoriesCard from './CategoriesCard';
 import SecurityCard from './SecurityCard';
 import DeleteAccountModal from './DeleteAccountModal';
+import InstallAppCard from './InstallAppCard';
 
 describe('AppearanceCard', () => {
-  it('offers all three theme choices', () => {
-    render(<AppearanceCard theme="system" onChange={() => {}} />);
+  it('offers both premium theme choices', () => {
+    render(<AppearanceCard theme="light" onChange={() => {}} />);
 
     expect(screen.getByRole('button', { name: /light/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /dark/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /system/i })).toBeInTheDocument();
   });
 
   it('reports which theme was picked', async () => {
     const onChange = vi.fn();
-    render(<AppearanceCard theme="system" onChange={onChange} />);
+    render(<AppearanceCard theme="light" onChange={onChange} />);
 
     await userEvent.click(screen.getByRole('button', { name: /dark/i }));
 
@@ -237,5 +237,14 @@ describe('LanguageCard', () => {
     await userEvent.click(screen.getByRole('button', { name: /english/i }));
 
     expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+describe('InstallAppCard', () => {
+  it('renders InstallAppCard on Settings screen', () => {
+    render(<InstallAppCard />);
+    expect(screen.getByText('App & Installation')).toBeInTheDocument();
+    expect(screen.getByText('HisabKi Kitab App')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /install app/i })).toBeInTheDocument();
   });
 });

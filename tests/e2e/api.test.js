@@ -10,12 +10,17 @@ const { ok, section, heading, call, report, requireApi, bailIfRateLimited, curre
   await requireApi();
 
   section('AUTH');
-  let r = await call('POST', '/auth/login', { email: 'demo@hisabkikitab.app', password: 'demo1234' });
+  let r = await call('POST', '/auth/demo', {});
   bailIfRateLimited(r);
-  ok('login with the demo account', r.status === 200 && !!r.data?.data?.accessToken, `-> ${r.status}`);
+  ok('open the read-only demo', r.status === 200 && !!r.data?.data?.accessToken, `-> ${r.status}`);
   let token = r.data?.data?.accessToken;
   const me = r.data?.data?.user;
-  ok('login returns the user', !!me?.email, me?.email);
+  ok('demo session is explicitly marked', me?.isDemo === true, me?.email);
+
+  r = await call('GET', '/expenses?limit=1', undefined, token);
+  ok('demo records remain readable', r.status === 200 && Array.isArray(r.data?.data?.items), `-> ${r.status}`);
+  r = await call('POST', '/expenses', { amount: 1, category: 'Mess/Food' }, token);
+  ok('demo mutation is rejected by the live API', r.status === 403, `-> ${r.status}`);
 
   r = await call('POST', '/auth/login', { email: 'demo@hisabkikitab.app', password: 'wrong-password' });
   ok('wrong password is rejected', r.status === 401, `-> ${r.status}`);
@@ -26,11 +31,20 @@ const { ok, section, heading, call, report, requireApi, bailIfRateLimited, curre
   r = await call('GET', '/auth/me', undefined, token);
   ok('GET /auth/me with a token', r.status === 200, `-> ${r.status}`);
 
-  r = await call('GET', '/auth/me');
+  r = await call('GET', '/auth/me', undefined, undefined, { cookie: '' });
   ok('GET /auth/me without a token is 401', r.status === 401, `-> ${r.status}`);
 
   r = await call('GET', '/auth/me', undefined, token + 'tampered');
   ok('a tampered token is rejected', r.status === 401, `-> ${r.status}`);
+
+  const mainEmail = `qa-main-${Date.now()}@example.com`;
+  const mainPassword = 'TestPass123!';
+  r = await call('POST', '/auth/register', {
+    acceptTerms: true, name: 'QA Main', email: mainEmail,
+    password: mainPassword, confirmPassword: mainPassword,
+  });
+  ok('a normal authenticated user is created for mutation regressions', r.status === 201, `-> ${r.status}`);
+  token = r.data?.data?.accessToken;
 
   section('SESSION ROTATION');
   // The refresh cookie is rotated on every use. The jar holds the newest one,
@@ -66,7 +80,7 @@ const { ok, section, heading, call, report, requireApi, bailIfRateLimited, curre
   ok('the replay revoked the live session too', r.status === 401, `-> ${r.status}`);
 
   // Sign back in so the rest of the suite has a working session.
-  r = await call('POST', '/auth/login', { email: 'demo@hisabkikitab.app', password: 'demo1234' });
+  r = await call('POST', '/auth/login', { email: mainEmail, password: mainPassword });
   ok('signing back in works', r.status === 200, `-> ${r.status}`);
   token = r.data?.data?.accessToken;
 
@@ -131,7 +145,7 @@ const { ok, section, heading, call, report, requireApi, bailIfRateLimited, curre
   const pg2 = await call('GET', '/expenses?page=2&limit=5&sortBy=date&order=desc', undefined, token);
   const idsA = (pg1.data?.data?.items || []).map((e) => e._id);
   const idsB = (pg2.data?.data?.items || []).map((e) => e._id);
-  ok('page 2 does not repeat page 1', idsB.length > 0 && !idsB.some((id) => idsA.includes(id)),
+  ok('page 2 does not repeat page 1', idsA.length > 0 && !idsB.some((id) => idsA.includes(id)),
     `${idsA.length} + ${idsB.length} rows, ${idsB.filter((id) => idsA.includes(id)).length} overlap`);
 
   section('INCOME');
@@ -745,6 +759,11 @@ const { ok, section, heading, call, report, requireApi, bailIfRateLimited, curre
     b = await call('DELETE', '/profile', { password: 'TestPass123!' }, billToken);
     ok('the bill test account is removed', b.status === 200, `-> ${b.status}`);
   }
+
+  r = await call('DELETE', '/profile', { password: 'TestPass123!' }, token2);
+  ok('the second authorization account is removed', r.status === 200, `-> ${r.status}`);
+  r = await call('DELETE', '/profile', { password: mainPassword }, token);
+  ok('the primary mutation account is removed', r.status === 200, `-> ${r.status}`);
 
   report();
 })().catch((e) => {
