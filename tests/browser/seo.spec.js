@@ -1,6 +1,8 @@
 const { test, expect } = require('@playwright/test');
-const { frontendURL } = require('../../scripts/frontend-config');
-const origin = process.env.VITE_SITE_URL || frontendURL;
+const canonicalUrl = (path, baseURL) => new URL(
+  path === '/' ? '/' : `${path.replace(/\/+$/, '')}/`,
+  process.env.VITE_SITE_URL || baseURL
+).href;
 
 test.beforeEach(async ({ page }) => {
   await page.route((url) => url.pathname.startsWith('/api/'), (route) => {
@@ -11,17 +13,17 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('query parameters keep the preferred public canonical', async ({ page }) => {
+test('query parameters keep the preferred public canonical', async ({ page, baseURL }) => {
   for (const path of ['/', '/learn', '/learn/budgeting/how-to-create-a-monthly-budget', '/tools/budget-calculator', '/about']) {
     await page.goto(`${path}?utm_source=seo-test`);
     await expect(page.locator('h1')).toHaveCount(1);
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', new URL(path, origin).href);
-    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', new URL(path, origin).href);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonicalUrl(path, baseURL));
+    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', canonicalUrl(path, baseURL));
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'index,follow');
   }
 });
 
-test('public metadata is removed on navigation to authentication and private routes', async ({ page }) => {
+test('public metadata is removed on navigation to authentication and private routes', async ({ page, baseURL }) => {
   await page.goto('/learn/budgeting/how-to-create-a-monthly-budget');
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
   await page.goto('/login');
@@ -30,7 +32,7 @@ test('public metadata is removed on navigation to authentication and private rou
   await expect(page.locator('meta[property^="og:"]')).toHaveCount(0);
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(0);
   await page.goto('/dashboard');
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(page).toHaveURL(new URL('/login/', baseURL).href);
   await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
 });
 
@@ -42,7 +44,7 @@ test('unknown Learn and calculator pages are noindex without invented canonicals
   }
 });
 
-test('representative public pages expose generated SEO data and working links', async ({ page }) => {
+test('representative public pages expose generated SEO data and working links', async ({ page, baseURL }) => {
   const errors = [];
   const failedResponses = [];
   const failedRequests = [];
@@ -71,16 +73,23 @@ test('representative public pages expose generated SEO data and working links', 
     await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /.+/);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'index,follow');
     await expect(page.locator('link[rel="canonical"]')).toHaveCount(1);
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', new URL(path, origin).href);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonicalUrl(path, baseURL));
     const schema = await page.locator('script[type="application/ld+json"]').textContent();
     const types = JSON.parse(schema).map((node) => node['@type']);
     for (const type of expectedTypes) expect(types, `${path}: missing ${type}`).toContain(type);
-    await expect(page.locator('nav[aria-label="Product and site information"] a[href="/learn"]')).toHaveCount(1);
+    await expect(page.locator('nav[aria-label="Product and site information"] a[href="/learn/"]')).toHaveCount(1);
   }
-  await page.getByRole('link', { name: 'Guides', exact: true }).first().click();
-  await expect(page).toHaveURL(/\/learn$/);
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${origin}/learn`);
+  const menuButton = page.getByRole('button', { name: 'Open navigation' });
+  const isMobileNavigation = await menuButton.isVisible();
+  if (isMobileNavigation) await menuButton.click();
+  const navigation = page.getByRole('navigation', { name: isMobileNavigation ? 'Mobile public navigation' : 'Public navigation' });
+  await navigation.getByRole('link', { name: 'Guides', exact: true }).click();
+  await expect(page).toHaveURL(new URL('/learn/', baseURL).href);
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonicalUrl('/learn', baseURL));
+  const configResponse = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/auth/config');
   await page.goto('/login');
+  await expect(page.getByRole('heading', { name: /Welcome back|Khush aamdeed/ })).toBeVisible();
+  expect((await configResponse).status()).toBe(200);
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex,follow');
   await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(0);

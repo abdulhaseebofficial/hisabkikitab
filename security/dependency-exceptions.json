@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "exceptions": [
+    {
+      "package": "node-cron",
+      "scope": "production",
+      "severity": "moderate",
+      "via": ["package:uuid"],
+      "decision": "pending",
+      "approvedBy": null,
+      "approvedOn": null,
+      "expiresOn": "2026-11-16",
+      "reason": "Observed cron 3 path calls uuid.v4 without a caller buffer; owner decision required."
+    },
+    {
+      "package": "uuid",
+      "scope": "production",
+      "severity": "moderate",
+      "via": ["advisory:https://github.com/advisories/GHSA-w5hq-g745-h8pq"],
+      "decision": "pending",
+      "approvedBy": null,
+      "approvedOn": null,
+      "expiresOn": "2026-11-16",
+      "reason": "Affected v3/v5/v6 supplied-buffer call path was not observed in node-cron 3; owner decision required."
+    }
+  ]
+}

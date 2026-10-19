@@ -1,15 +1,10 @@
 const { query } = require('./pool');
-const { migrate } = require('./migrate');
+const { status, migrationFiles } = require('./migrate');
 const { databaseUrl, DATABASE_URL_MISSING } = require('./databaseUrl');
 
 /**
- * Open the database and make sure the schema is there.
- *
- * The schema is applied on connect rather than as a separate deploy step
- * because there is no deploy step to hang it off: Vercel imports the app and
- * serves it. db/schema.sql is idempotent and takes an advisory lock, so this
- * costs one cheap round trip on a cold start and is safe when several
- * functions start at once.
+ * Open the database only when its migration ledger exactly matches this build.
+ * Normal requests must never run DDL; migrations require the explicit CLI.
  */
 const connectDB = async () => {
   if (!databaseUrl()) {
@@ -20,7 +15,15 @@ const connectDB = async () => {
     `SELECT current_database() AS db, current_setting('server_version') AS version`
   );
 
-  await migrate();
+  const { applied, pending } = await status();
+  const expected = new Set(migrationFiles());
+  const unexpected = applied.map(({ name }) => name).filter((name) => !expected.has(name));
+  if (pending.length || unexpected.length) {
+    throw new Error(
+      `Database migrations do not match this build (pending: ${pending.join(', ') || 'none'}; ` +
+      `unexpected: ${unexpected.join(', ') || 'none'}). Run migrations only through the approved CLI workflow.`
+    );
+  }
 
   // The host comes from the URL rather than inet_server_addr(), which reports
   // the pooler's own loopback address and tells you nothing useful.

@@ -1,4 +1,4 @@
-name: Dependency audit
+name: Frontend release gates
 
 on:
   push:
@@ -9,16 +9,52 @@ permissions:
   contents: read
 
 jobs:
-  audit:
-    name: Dependency security audit
+  frontend:
+    name: Build, tests, SEO, and browser routes
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
+    env:
+      CI: 'true'
+      VITE_SITE_URL: https://hisabkikitab.com
+      VITE_API_URL: /api
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - name: Dependency audit
-        run: npm audit --package-lock-only --audit-level=high
-        continue-on-error: true
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Production build and prerender
+        run: npm run build
+      - name: Unit tests
+        run: npm run test:unit
+      - name: Web tests
+        run: npm run test:web
+      - name: SEO tests
+        run: npm run test:seo
+      - name: Install Chromium for browser regression
+        run: npx playwright install --with-deps chromium
+      - name: Public, auth-entry, SEO, and finance-mode browser regression
+        run: npm run test:browser -- tests/browser/seo.spec.js tests/browser/learn.spec.js tests/browser/auth-availability.spec.js tests/browser/homepage-blue-ui.spec.js tests/browser/finance-mode-viewport.spec.js tests/browser/shared-living-viewport.spec.js tests/browser/debt-ledger-viewport.spec.js
+
+  dependency-security:
+    name: Production and build dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Verify clean locked installation
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify patched build-tool dependency resolution
+        run: node scripts/check-build-tool-dependencies.mjs
+      - name: Enforce production and full-tree advisory policy
+        run: node scripts/check-dependency-security.mjs

@@ -1,6 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @font-face {
   font-family: 'Inter Variable';
@@ -20,9 +20,59 @@
 @layer base {
   :root {
     color-scheme: light;
+    --canvas-background: 244 248 255;
+    --canvas-surface: 255 255 255;
+    --canvas-raised: 236 244 255;
+    --slate-50: 248 251 255;
+    --slate-100: 239 245 255;
+    --slate-200: 220 232 255;
+    --slate-300: 191 207 232;
+    --slate-400: 137 155 184;
+    --slate-500: 100 116 139;
+    --slate-600: 71 85 105;
+    --slate-700: 51 65 85;
+    --slate-800: 30 49 84;
+    --slate-900: 11 23 66;
+    --slate-950: 8 27 75;
+    --brand-50: 236 245 255;
+    --brand-100: 220 232 255;
+    --brand-200: 190 217 255;
+    --brand-300: 143 193 255;
+    --brand-400: 99 173 255;
+    --brand-500: 48 132 255;
+    --brand-600: 20 104 255;
+    --brand-700: 15 78 205;
+    --brand-800: 11 62 166;
+    --brand-900: 8 43 112;
+    --shadow-ink: 8 27 75;
   }
   .dark {
     color-scheme: dark;
+    --canvas-background: 8 27 75;
+    --canvas-surface: 16 37 88;
+    --canvas-raised: 23 49 102;
+    --slate-50: 245 249 255;
+    --slate-100: 229 238 255;
+    --slate-200: 205 221 246;
+    --slate-300: 177 198 230;
+    --slate-400: 141 165 202;
+    --slate-500: 117 143 184;
+    --slate-600: 94 122 166;
+    --slate-700: 59 84 130;
+    --slate-800: 30 56 107;
+    --slate-900: 16 37 88;
+    --slate-950: 8 27 75;
+    --brand-50: 19 52 105;
+    --brand-100: 25 69 134;
+    --brand-200: 42 91 165;
+    --brand-300: 149 200 255;
+    --brand-400: 99 173 255;
+    --brand-500: 48 132 255;
+    --brand-600: 20 104 255;
+    --brand-700: 15 78 205;
+    --brand-800: 11 62 166;
+    --brand-900: 8 43 112;
+    --shadow-ink: 0 8 35;
   }
 
   html,
@@ -110,7 +160,7 @@
    */
   .hw-card-hero {
     @apply rounded-2xl border border-brand-200 shadow-lift;
-    @apply bg-gradient-to-br from-brand-50 via-canvas-card to-canvas-card;
+    @apply bg-linear-to-br/srgb from-brand-50 via-canvas-card to-canvas-card;
     @apply dark:border-brand-500/25 dark:from-brand-500/10 dark:via-canvas-darkCard dark:to-canvas-darkCard;
   }
 
@@ -120,6 +170,9 @@
     @apply focus:border-brand-400 focus:ring-1 focus:ring-brand-400;
     @apply dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-100 dark:placeholder:text-slate-500;
     @apply dark:focus:border-brand-500 dark:focus:ring-brand-500;
+  }
+  input[type='month'].hw-input {
+    min-height: 44px;
   }
 
   .hw-label {
