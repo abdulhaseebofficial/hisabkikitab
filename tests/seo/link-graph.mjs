@@ -7,7 +7,7 @@ const origin = 'https://hisabkikitab.com';
 const dist = resolve('apps/web/dist');
 const generated = new Set([...publicPaths, ...toolPaths, ...trustPaths]);
 const indexable = new Set(sitemapPaths);
-const appRoutes = new Set(['/login', '/register', '/forgot-password', '/onboarding', '/dashboard', '/expenses', '/income', '/goals', '/debts', '/budget', '/advisor', '/reports', '/settings']);
+const appRoutes = new Set(['/login', '/register', '/forgot-password', '/onboarding', '/dashboard', '/expenses', '/income', '/goals', '/debts', '/budget', '/advisor', '/reports', '/settings', '/business']);
 const normalize = (path) => path.replace(/\/+$/, '') || '/';
 const exists = async (path) => access(resolve(dist, path.replace(/^\//, ''))).then(() => true, () => false);
 
@@ -26,7 +26,7 @@ export async function scanGeneratedLinks() {
       if (target.origin !== origin) continue;
       const destination = normalize(target.pathname);
       if (indexable.has(destination) && destination !== path) outbound.add(destination);
-      const known = generated.has(destination) || appRoutes.has(destination) || destination.startsWith('/reset-password/');
+      const known = generated.has(destination) || appRoutes.has(destination) || destination.startsWith('/reset-password/') || destination.startsWith('/business');
       if (!known && !(await exists(destination))) {
         broken.push({ from: path, href, reason: 'missing route or asset' });
       } else if (target.hash && generated.has(destination)) {

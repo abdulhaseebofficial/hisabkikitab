@@ -64,7 +64,11 @@
           "destination": "/app.html"
         },
         {
-          "source": "/(login|register|forgot-password|onboarding|dashboard|expenses|income|goals|debts|budget|advisor|reports|settings)",
+          "source": "/(login|register|forgot-password|onboarding|dashboard|expenses|income|goals|debts|budget|advisor|reports|settings|business)",
+          "destination": "/app.html"
+        },
+        {
+          "source": "/business/(.*)",
           "destination": "/app.html"
         }
       ]
