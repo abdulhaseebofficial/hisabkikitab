@@ -1,17 +1,27 @@
 import { useState, useEffect, useCallback } from 'react';
 
-let globalPrompt = null;
+export function detectPlatform() {
+  if (typeof window === 'undefined') return 'desktop';
+  const ua = (window.navigator?.userAgent || '').toLowerCase();
+  if (/iphone|ipad|ipod/.test(ua)) return 'ios';
+  if (/android/.test(ua)) return 'android';
+  return 'desktop';
+}
+
+let globalPrompt = (typeof window !== 'undefined' && window.__deferredPwaPrompt) || null;
 const listeners = new Set();
 
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     globalPrompt = event;
+    window.__deferredPwaPrompt = event;
     listeners.forEach((listener) => listener(globalPrompt));
   });
 
   window.addEventListener('appinstalled', () => {
     globalPrompt = null;
+    window.__deferredPwaPrompt = null;
     listeners.forEach((listener) => listener(null));
   });
 }
@@ -79,10 +89,11 @@ export default function usePwaInstall() {
   }, [prompt]);
 
   return {
-    canInstall: Boolean(prompt) || (isIos && !isInstalled),
+    canInstall: !isInstalled,
     isPromptAvailable: Boolean(prompt),
     isInstalled,
     isIos,
+    platform: detectPlatform(),
     modalOpen,
     openModal: () => setModalOpen(true),
     closeModal: () => setModalOpen(false),

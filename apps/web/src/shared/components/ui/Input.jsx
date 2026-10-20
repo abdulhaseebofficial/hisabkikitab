@@ -1,5 +1,6 @@
 import { forwardRef, useId } from 'react';
 import { cn } from '../../utils/format';
+import { allowOnlyNumbers } from '../../utils/inputs';
 
 /**
  * Text/number/date input with a label, an optional prefix (currency symbol),
@@ -10,7 +11,7 @@ import { cn } from '../../utils/format';
  * centred on the field whatever the label, hint or error underneath is doing.
  */
 const Input = forwardRef(function Input(
-  { label, error, hint, prefix, suffix, className = '', id, ...props },
+  { label, error, hint, prefix, suffix, className = '', id, onKeyDown, ...props },
   ref
 ) {
   // A label is only a label if it points at something. `id` and `name` are
@@ -19,6 +20,15 @@ const Input = forwardRef(function Input(
   // field unlabelled for anyone using a screen reader.
   const generatedId = useId();
   const inputId = id || props.name || generatedId;
+
+  const handleKeyDown = (e) => {
+    if (props.type === 'number') {
+      const isNegativeAllowed = props.min !== undefined && Number(props.min) < 0;
+      const isDecimalAllowed = props.step !== '1';
+      allowOnlyNumbers(e, { allowDecimal: isDecimalAllowed, allowNegative: isNegativeAllowed });
+    }
+    if (onKeyDown) onKeyDown(e);
+  };
 
   return (
     <div className={className}>
@@ -45,6 +55,7 @@ const Input = forwardRef(function Input(
           )}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${inputId}-error` : undefined}
+          onKeyDown={handleKeyDown}
           {...props}
         />
         {suffix && <span className="absolute right-2.5 top-1/2 -translate-y-1/2">{suffix}</span>}

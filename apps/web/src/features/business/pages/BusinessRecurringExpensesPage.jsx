@@ -26,6 +26,7 @@ import { useAuth } from '../../auth';
 import businessApi from '../api/businessApi';
 import useT from '../../../shared/i18n/I18nProvider';
 import { formatRs } from '../../../shared/utils/money';
+import { allowOnlyNumbers, sanitizeNumericString } from '../../../shared/utils/inputs';
 import toast from 'react-hot-toast';
 
 const CATEGORIES = [
@@ -732,13 +733,13 @@ export default function BusinessRecurringExpensesPage() {
             <div>
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Amount (Rs) *</label>
               <input
-                type="number"
-                step="any"
+                type="text"
+                inputMode="decimal"
                 required
-                min="1"
                 placeholder="e.g. 35000"
                 value={amountRs}
-                onChange={(e) => setAmountRs(e.target.value)}
+                onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                onChange={(e) => setAmountRs(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                 className="hw-input mt-1 w-full text-xs font-bold"
               />
             </div>

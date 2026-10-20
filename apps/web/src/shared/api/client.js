@@ -52,13 +52,15 @@ const api = axios.create({
 // cannot create another financial effect. A completed submit releases the key.
 const pendingFinancial = new Map();
 const financialRoute = (method, url) => {
-  const path = String(url || '').split('?')[0];
+  let path = String(url || '').split('?')[0];
+  if (path.startsWith('/api')) path = path.slice(4);
   return (method === 'post' && [
     /^\/(expenses|income|debts|goals)\/?$/,
     /^\/profile\/onboarding$/,
     /^\/profile\/onboarding$/,
     /^\/expenses\/[^/]+\/mark-paid$/,
     /^\/debts\/[^/]+\/(payments|settle)$/,
+    /^\/business(\/.*)?$/,
   ].some(pattern => pattern.test(path))) ||
     (method === 'patch' && /^\/goals\/[^/]+\/add$/.test(path));
 };
@@ -67,8 +69,19 @@ api.interceptors.request.use((config) => {
   if (config._sessionEpoch === undefined) config._sessionEpoch = sessionEpoch;
   if (financialRoute(String(config.method || '').toLowerCase(), config.url)) {
     const fingerprint = `${config.method}:${config.url}:${typeof config.data === 'string' ? config.data : JSON.stringify(config.data || {})}`;
-    if (!pendingFinancial.has(fingerprint)) pendingFinancial.set(fingerprint, crypto.randomUUID());
-    config.headers['Idempotency-Key'] = pendingFinancial.get(fingerprint);
+    if (!pendingFinancial.has(fingerprint)) {
+      const key = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = (Math.random() * 16) | 0;
+            const v = c === 'x' ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+          });
+      pendingFinancial.set(fingerprint, key);
+    }
+    if (!config.headers['Idempotency-Key']) {
+      config.headers['Idempotency-Key'] = pendingFinancial.get(fingerprint);
+    }
     config._financialFingerprint = fingerprint;
   }
   // No header on a fresh page load, and that is correct: the httpOnly cookie

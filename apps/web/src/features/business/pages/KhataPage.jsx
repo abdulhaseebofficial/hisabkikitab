@@ -22,6 +22,7 @@ import Modal from '../../../shared/components/ui/Modal';
 import businessApi from '../api/businessApi';
 import { useBusiness } from '../BusinessContext';
 import { formatRs } from '../../../shared/utils/money';
+import { allowOnlyNumbers, sanitizeNumericString, sanitizeDigitsOnly } from '../../../shared/utils/inputs';
 import { downloadDocumentPdf, previewDocumentPdf, DOCUMENT_TYPES } from '../utils/businessDocuments';
 
 export default function KhataPage() {
@@ -565,10 +566,12 @@ export default function KhataPage() {
             <div>
               <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">Phone Number</label>
               <input
-                type="text"
+                type="tel"
+                inputMode="numeric"
                 value={partyPhone}
-                onChange={(e) => setPartyPhone(e.target.value)}
-                placeholder="0300-1234567"
+                onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: false, allowNegative: false })}
+                onChange={(e) => setPartyPhone(sanitizeDigitsOnly(e.target.value))}
+                placeholder="03001234567"
                 className="hw-input mt-1 w-full"
               />
             </div>
@@ -590,10 +593,11 @@ export default function KhataPage() {
                 Opening Balance (Rs)
               </label>
               <input
-                type="number"
-                min="0"
+                type="text"
+                inputMode="decimal"
                 value={partyOpening}
-                onChange={(e) => setPartyOpening(e.target.value)}
+                onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                onChange={(e) => setPartyOpening(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                 placeholder="0"
                 className="hw-input mt-1 w-full"
               />
@@ -604,10 +608,11 @@ export default function KhataPage() {
                   Credit Limit (PKR)
                 </label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={partyCreditLimit}
-                  onChange={(e) => setPartyCreditLimit(e.target.value)}
+                  onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                  onChange={(e) => setPartyCreditLimit(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                   placeholder="e.g. 100000"
                   className="hw-input mt-1 w-full"
                 />
@@ -650,11 +655,12 @@ export default function KhataPage() {
               Amount (Rs) <span className="text-rose-500">*</span>
             </label>
             <input
-              type="number"
-              min="1"
+              type="text"
+              inputMode="decimal"
               required
               value={paymentAmountRs}
-              onChange={(e) => setPaymentAmountRs(e.target.value)}
+              onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+              onChange={(e) => setPaymentAmountRs(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
               placeholder="Enter amount"
               className="hw-input mt-1 w-full text-base font-bold"
               autoFocus

@@ -36,6 +36,7 @@ import { useAuth } from '../../auth';
 import businessApi from '../api/businessApi';
 import useT from '../../../shared/i18n/I18nProvider';
 import { formatRs, toMinor, fromMinor } from '../../../shared/utils/money';
+import { allowOnlyNumbers, sanitizeNumericString } from '../../../shared/utils/inputs';
 import { DOCUMENT_TYPES, downloadDocumentPdf, previewDocumentPdf } from '../utils/businessDocuments';
 
 const STATUS_TONES = {
@@ -1487,28 +1488,28 @@ export default function ProcurementPage() {
                     required
                   />
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
+                    type="text"
+                    inputMode="decimal"
                     placeholder="Qty"
                     value={item.quantity}
+                    onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
                     onChange={(e) => {
                       const updated = [...prItems];
-                      updated[idx].quantity = e.target.value;
+                      updated[idx].quantity = sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false });
                       setPrItems(updated);
                     }}
                     className="w-20 rounded-md border border-slate-300 p-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                     required
                   />
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="text"
+                    inputMode="decimal"
                     placeholder="Est. Rate Rs"
                     value={item.estimatedUnitCost}
+                    onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
                     onChange={(e) => {
                       const updated = [...prItems];
-                      updated[idx].estimatedUnitCost = e.target.value;
+                      updated[idx].estimatedUnitCost = sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false });
                       setPrItems(updated);
                     }}
                     className="w-28 rounded-md border border-slate-300 p-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white"
@@ -1649,28 +1650,28 @@ export default function ProcurementPage() {
                     ))}
                   </select>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
+                    type="text"
+                    inputMode="decimal"
                     placeholder="Qty"
                     value={item.quantity}
+                    onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
                     onChange={(e) => {
                       const updated = [...poItems];
-                      updated[idx].quantity = e.target.value;
+                      updated[idx].quantity = sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false });
                       setPoItems(updated);
                     }}
                     className="w-20 rounded-md border border-slate-300 p-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                     required
                   />
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="text"
+                    inputMode="decimal"
                     placeholder="Unit Price Rs"
                     value={item.unitPrice}
+                    onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
                     onChange={(e) => {
                       const updated = [...poItems];
-                      updated[idx].unitPrice = e.target.value;
+                      updated[idx].unitPrice = sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false });
                       setPoItems(updated);
                     }}
                     className="w-28 rounded-md border border-slate-300 p-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white"
@@ -1810,14 +1811,15 @@ export default function ProcurementPage() {
                         Receive Qty:
                       </label>
                       <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max={item.quantityOrdered - item.alreadyReceived}
+                        type="text"
+                        inputMode="decimal"
                         value={item.quantityReceived}
+                        onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
                         onChange={(e) => {
                           const updated = [...grnItems];
-                          updated[idx].quantityReceived = e.target.value;
+                          const cleaned = sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false });
+                          const max = item.quantityOrdered - item.alreadyReceived;
+                          updated[idx].quantityReceived = cleaned !== '' && Number(cleaned) > max ? max : cleaned;
                           setGrnItems(updated);
                         }}
                         className="w-24 rounded-md border border-slate-300 p-1.5 text-xs text-right font-bold dark:border-slate-700 dark:bg-slate-800 dark:text-white"
@@ -1948,28 +1950,28 @@ export default function ProcurementPage() {
                     required
                   />
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
+                    type="text"
+                    inputMode="decimal"
                     placeholder="Qty"
                     value={item.quantity}
+                    onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
                     onChange={(e) => {
                       const updated = [...billItems];
-                      updated[idx].quantity = e.target.value;
+                      updated[idx].quantity = sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false });
                       setBillItems(updated);
                     }}
                     className="w-20 rounded-md border border-slate-300 p-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                     required
                   />
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="text"
+                    inputMode="decimal"
                     placeholder="Rate Rs"
                     value={item.unitPrice}
+                    onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
                     onChange={(e) => {
                       const updated = [...billItems];
-                      updated[idx].unitPrice = e.target.value;
+                      updated[idx].unitPrice = sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false });
                       setBillItems(updated);
                     }}
                     className="w-28 rounded-md border border-slate-300 p-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white"
@@ -1995,11 +1997,11 @@ export default function ProcurementPage() {
                 Discount Received (Rs)
               </label>
               <input
-                type="number"
-                step="0.01"
-                min="0"
+                type="text"
+                inputMode="decimal"
                 value={billDiscount}
-                onChange={(e) => setBillDiscount(e.target.value)}
+                onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                onChange={(e) => setBillDiscount(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                 className="w-full rounded-lg border border-slate-300 p-2 text-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
               />
             </div>
@@ -2067,12 +2069,12 @@ export default function ProcurementPage() {
                 Payment Amount (Rs) *
               </label>
               <input
-                type="number"
-                step="0.01"
-                min="0.01"
+                type="text"
+                inputMode="decimal"
                 placeholder="0.00"
                 value={payAmount}
-                onChange={(e) => setPayAmount(e.target.value)}
+                onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                onChange={(e) => setPayAmount(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                 className="w-full rounded-lg border border-slate-300 p-2 text-sm font-bold dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 required
               />
@@ -2291,28 +2293,28 @@ export default function ProcurementPage() {
                     ))}
                   </select>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
+                    type="text"
+                    inputMode="decimal"
                     placeholder="Qty"
                     value={item.quantity}
+                    onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
                     onChange={(e) => {
                       const updated = [...retItems];
-                      updated[idx].quantity = e.target.value;
+                      updated[idx].quantity = sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false });
                       setRetItems(updated);
                     }}
                     className="w-20 rounded-md border border-slate-300 p-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                     required
                   />
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="text"
+                    inputMode="decimal"
                     placeholder="Cost Rate Rs"
                     value={item.unitCost}
+                    onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
                     onChange={(e) => {
                       const updated = [...retItems];
-                      updated[idx].unitCost = e.target.value;
+                      updated[idx].unitCost = sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false });
                       setRetItems(updated);
                     }}
                     className="w-28 rounded-md border border-slate-300 p-1.5 text-xs dark:border-slate-700 dark:bg-slate-800 dark:text-white"

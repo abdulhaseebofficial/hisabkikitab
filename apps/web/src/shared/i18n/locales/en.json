@@ -91,14 +91,17 @@
     "skipToContent": "Skip to main content",
     "mainNavigation": "Main navigation",
     "addAnExpense": "Add an expense",
-    "loggedAgainstToday": "Logged against today unless you change the date"
+    "loggedAgainstToday": "Logged against today unless you change the date",
+    "profileSettings": "Profile and settings",
+    "sendFeedback": "Send feedback",
+    "logout": "Log out"
   },
   "business": {
     "title": "Business Mode",
     "selectBusiness": "Select Business",
     "yourBusinesses": "Your Businesses",
     "noBusinessesYet": "No businesses yet",
-    "addNewBusiness": "+ Add New Business",
+    "addNewBusiness": "Add New Business",
     "addBusiness": "Register New Business"
   },
   "mode": {
@@ -991,6 +994,7 @@
     "benefitNoStorage": "0 MB download size",
     "androidStep1Title": "Tap Install Now",
     "androidStep1Desc": "Click the \"Install Now\" button above to launch the native install prompt.",
+    "androidStep1Alt": "Click the \"Install Now\" button above, or open Chrome menu (⋮ in top-right) and tap \"Install app\".",
     "androidStep2Title": "Alternative",
     "androidStep2Desc": "Tap Chrome menu (⋮ in top-right) and choose \"Install app\" or \"Add to Home screen\".",
     "androidStep3Title": "Done",
@@ -1007,6 +1011,10 @@
     "pcStep2Desc": "Click \"Install\" to create a standalone desktop app shortcut.",
     "pcStep3Title": "Launch anytime",
     "pcStep3Desc": "Launches from your Windows Start menu, Taskbar, or macOS Dock as a dedicated app.",
+    "desktopAddressBarTitle": "Browser URL Bar Shortcut",
+    "iosGuideNotice": "In Safari, tap the Share icon (square with arrow) and select \"Add to Home Screen\".",
+    "desktopGuideNotice": "Click the Install icon (⊕) in your browser address bar or choose \"Install HisabKi Kitab\" from the menu.",
+    "androidGuideNotice": "Tap Chrome menu (⋮ in top-right) and choose \"Install app\" or \"Add to Home screen\".",
     "appReadyInfoTitle": "App Ready & Play Store Compatible",
     "appReadyInfoDesc": "HisabKi Kitab is packaged as a certified Progressive Web App and can also be compiled to a native signed Android APK / TWA package via Google Bubblewrap or PWABuilder.",
     "appInstalledBtn": "App Guide & Status",

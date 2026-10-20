@@ -20,6 +20,7 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
     isInstalled,
     isPromptAvailable,
     isIos,
+    platform,
     modalOpen,
     openModal,
     closeModal,
@@ -153,7 +154,7 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
                       className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-brand-700 hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-950/40"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      {t('business.addNewBusiness', '+ Add New Business')}
+                      {t('business.addNewBusiness', 'Add New Business')}
                     </button>
                   </div>
                 </div>
@@ -227,21 +228,27 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} aria-hidden="true" />
-                <div className="absolute right-0 z-20 mt-2 w-56 animate-slide-up overflow-hidden rounded-2xl border border-slate-200 bg-canvas-card shadow-lift dark:border-slate-700 dark:bg-canvas-darkCard">
-                  <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+                <div className="absolute right-0 z-20 mt-2 w-64 sm:w-72 max-w-[calc(100vw-2rem)] animate-slide-up rounded-2xl border border-slate-200/90 bg-white/95 p-1.5 shadow-xl backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95">
+                  <div className="px-3 py-2.5">
                     <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
                       {user ? user.name : ''}
                     </p>
                     <p className="truncate text-xs text-slate-500 dark:text-slate-400">{user ? user.email : ''}</p>
                   </div>
+
+                  <div className="my-1 border-t border-slate-100 dark:border-slate-800/80" />
+
                   <Link
                     to="/settings"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
-                    <User className="h-4 w-4" />
-                    Profile and settings
+                    <User className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
+                    <span className="truncate">{t('nav.profileSettings', 'Profile and settings')}</span>
                   </Link>
+
+                  <div className="my-1 border-t border-slate-100 dark:border-slate-800/80" />
+
                   <button
                     type="button"
                     onClick={() => {
@@ -255,22 +262,34 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
                         navigate('/business');
                       }
                     }}
-                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
-                    {isBusinessMode ? <User className="h-4 w-4" /> : <Briefcase className="h-4 w-4" />}
-                    {isBusinessMode ? t('nav.switchToPersonal', 'Switch to Personal Mode') : t('nav.switchToBusiness', 'Switch to Business Mode')}
+                    {isBusinessMode ? (
+                      <User className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                    ) : (
+                      <Briefcase className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                    )}
+                    <span className="truncate">
+                      {isBusinessMode ? t('nav.switchToPersonal', 'Switch to Personal Mode') : t('nav.switchToBusiness', 'Switch to Business Mode')}
+                    </span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      openOnboarding();
-                    }}
-                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    <Plus className="h-4 w-4" />
-                    {t('business.addNewBusiness', '+ Add New Business')}
-                  </button>
+
+                  {(isBusinessMode || businesses.length > 0) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        openOnboarding();
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      <Plus className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                      <span className="truncate">{t('business.addNewBusiness', 'Add New Business')}</span>
+                    </button>
+                  )}
+
+                  <div className="my-1 border-t border-slate-100 dark:border-slate-800/80" />
+
                   <button
                     type="button"
                     onClick={() => {
@@ -278,29 +297,37 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
                       if (isInstalled) openModal();
                       else triggerInstall();
                     }}
-                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
-                    <Download className="h-4 w-4" />
-                    {isInstalled ? t('pwa.appInstalledBtn', 'App Ready') : t('pwa.installAppBtn', 'Install App')}
+                    <Download className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
+                    <span className="truncate">
+                      {isInstalled ? t('pwa.appInstalledBtn', 'App Ready') : t('pwa.installAppBtn', 'Install App')}
+                    </span>
                   </button>
-                  {!user?.isDemo && <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onOpenFeedback();
-                    }}
-                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    <MessageSquarePlus className="h-4 w-4" />
-                    Send feedback
-                  </button>}
+
+                  {!user?.isDemo && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onOpenFeedback();
+                      }}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      <MessageSquarePlus className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
+                      <span className="truncate">{t('nav.sendFeedback', 'Send feedback')}</span>
+                    </button>
+                  )}
+
+                  <div className="my-1 border-t border-slate-100 dark:border-slate-800/80" />
+
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-danger hover:bg-danger/10 dark:hover:bg-danger/15"
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-danger transition hover:bg-danger/10 dark:hover:bg-danger/15"
                   >
-                    <LogOut className="h-4 w-4" />
-                    Log out
+                    <LogOut className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{t('nav.logout', 'Log out')}</span>
                   </button>
                 </div>
               </>
@@ -314,6 +341,7 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
         isInstalled={isInstalled}
         isPromptAvailable={isPromptAvailable}
         isIos={isIos}
+        platform={platform}
         onTriggerInstall={triggerInstall}
       />
     </header>

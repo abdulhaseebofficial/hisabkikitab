@@ -7,6 +7,7 @@ import Modal from '../../../shared/components/ui/Modal';
 import businessApi from '../api/businessApi';
 import { useBusiness } from '../BusinessContext';
 import { formatRs } from '../../../shared/utils/money';
+import { allowOnlyNumbers, sanitizeNumericString } from '../../../shared/utils/inputs';
 
 export default function AccountsPage() {
   const { activeBusinessId } = useBusiness();
@@ -268,11 +269,12 @@ export default function AccountsPage() {
               Amount to Transfer (Rs) <span className="text-rose-500">*</span>
             </label>
             <input
-              type="number"
-              min="1"
+              type="text"
+              inputMode="decimal"
               required
               value={transferAmountRs}
-              onChange={(e) => setTransferAmountRs(e.target.value)}
+              onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+              onChange={(e) => setTransferAmountRs(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
               placeholder="0"
               className="hw-input mt-1 w-full font-bold"
             />
@@ -333,11 +335,12 @@ export default function AccountsPage() {
               Amount (Rs) <span className="text-rose-500">*</span>
             </label>
             <input
-              type="number"
-              min="1"
+              type="text"
+              inputMode="decimal"
               required
               value={equityAmountRs}
-              onChange={(e) => setEquityAmountRs(e.target.value)}
+              onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+              onChange={(e) => setEquityAmountRs(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
               placeholder="0"
               className="hw-input mt-1 w-full font-bold"
             />

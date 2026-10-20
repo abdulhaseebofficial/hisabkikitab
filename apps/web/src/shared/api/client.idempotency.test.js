@@ -21,4 +21,34 @@ describe('financial request keys', () => {
     expect(keys[1]).toBe(keys[0]);
     expect(keys[2]).not.toBe(keys[0]);
   });
+
+  it('attaches a valid UUID Idempotency-Key for business creation and business financial routes', async () => {
+    let capturedBusinessKey = null;
+    let capturedSalesKey = null;
+
+    await api.post(
+      '/business',
+      { name: 'Ranghaat Store' },
+      {
+        adapter: async (config) => {
+          capturedBusinessKey = config.headers['Idempotency-Key'];
+          return { config, status: 201, statusText: 'Created', headers: {}, data: { success: true } };
+        },
+      }
+    );
+
+    await api.post(
+      '/business/b1-uuid/sales',
+      { total_amount_minor: 50000 },
+      {
+        adapter: async (config) => {
+          capturedSalesKey = config.headers['Idempotency-Key'];
+          return { config, status: 201, statusText: 'Created', headers: {}, data: { success: true } };
+        },
+      }
+    );
+
+    expect(capturedBusinessKey).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    expect(capturedSalesKey).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+  });
 });

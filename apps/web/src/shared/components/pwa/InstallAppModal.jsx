@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   Download,
   Smartphone,
@@ -13,6 +14,7 @@ import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import OfficialLogo from '../layout/OfficialLogo';
 import useT from '../../i18n/I18nProvider';
+import { detectPlatform } from '../../hooks/usePwaInstall';
 
 export default function InstallAppModal({
   open,
@@ -23,14 +25,42 @@ export default function InstallAppModal({
   onTriggerInstall
 }) {
   const { t } = useT();
-  const [activeTab, setActiveTab] = useState(isIos ? 'ios' : 'android');
+  const [activeTab, setActiveTab] = useState(() => (isIos ? 'ios' : detectPlatform()));
   const [installing, setInstalling] = useState(false);
 
   const handleInstallClick = async () => {
     setInstalling(true);
     try {
-      if (onTriggerInstall) {
+      if (isPromptAvailable && onTriggerInstall) {
         await onTriggerInstall();
+      } else {
+        const plat = detectPlatform();
+        setActiveTab(plat);
+        if (plat === 'ios') {
+          toast(
+            t(
+              'pwa.iosGuideNotice',
+              'Safari ke Share icon (square with arrow) par tap karein aur "Add to Home Screen" chunein.'
+            ),
+            { icon: '📲', duration: 6000 }
+          );
+        } else if (plat === 'desktop') {
+          toast(
+            t(
+              'pwa.desktopGuideNotice',
+              'Browser URL bar ke daayein janib Install icon (⊕) par click karein ya menu (⋮) se "Install App" chunein.'
+            ),
+            { icon: '💻', duration: 6000 }
+          );
+        } else {
+          toast(
+            t(
+              'pwa.androidGuideNotice',
+              'Chrome menu (⋮) par tap karein aur "Install app" ya "Add to Home screen" select karein.'
+            ),
+            { icon: '📱', duration: 6000 }
+          );
+        }
       }
     } finally {
       setInstalling(false);
@@ -49,7 +79,7 @@ export default function InstallAppModal({
           <Button variant="ghost" onClick={onClose}>
             {t('common.close', 'Close')}
           </Button>
-          {!isInstalled && isPromptAvailable && (
+          {!isInstalled && (
             <Button
               variant="primary"
               onClick={handleInstallClick}
@@ -81,7 +111,7 @@ export default function InstallAppModal({
               <CheckCircle2 className="h-3.5 w-3.5" />
               {t('pwa.installedBadge', 'Installed')}
             </span>
-          ) : isPromptAvailable ? (
+          ) : (
             <Button
               variant="primary"
               size="sm"
@@ -89,9 +119,9 @@ export default function InstallAppModal({
               loading={installing}
               icon={Download}
             >
-              {t('pwa.install', 'Install')}
+              {isPromptAvailable ? t('pwa.install', 'Install') : t('pwa.installNow', 'Install Now')}
             </Button>
-          ) : null}
+          )}
         </div>
 
         {/* Benefits bullets */}
@@ -157,7 +187,9 @@ export default function InstallAppModal({
                   </span>
                   <div>
                     <strong>{t('pwa.androidStep1Title', 'Tap Install Now')}</strong>:{' '}
-                    {t('pwa.androidStep1Desc', 'Click the "Install Now" button above to launch the native install prompt.')}
+                    {isPromptAvailable
+                      ? t('pwa.androidStep1Desc', 'Click the "Install Now" button above to launch the native install prompt.')
+                      : t('pwa.androidStep1Alt', 'Click "Install Now" above, or open Chrome menu (⋮ in top-right) and tap "Install app".')}
                   </div>
                 </li>
                 <li className="flex items-start gap-2">
@@ -217,35 +249,46 @@ export default function InstallAppModal({
             )}
 
             {activeTab === 'desktop' && (
-              <ol className="space-y-2.5 text-slate-700 dark:text-slate-200">
-                <li className="flex items-start gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-700 dark:bg-brand-900/50 dark:text-brand-300">
-                    1
-                  </span>
-                  <div>
-                    <strong>{t('pwa.pcStep1Title', 'Use Chrome or Edge')}:</strong>{' '}
-                    {t('pwa.pcStep1Desc', 'Look for the Install icon in the browser address bar (top right).')}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2 rounded-xl border border-brand-200 bg-brand-50/80 p-2.5 text-xs text-brand-900 dark:border-brand-900/40 dark:bg-brand-950/30 dark:text-brand-200">
+                  <div className="flex items-center gap-2 truncate">
+                    <Laptop className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" />
+                    <span className="truncate font-medium">{t('pwa.desktopAddressBarTitle', 'Browser URL Bar Shortcut')}</span>
                   </div>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-700 dark:bg-brand-900/50 dark:text-brand-300">
-                    2
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-brand-600 px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
+                    <Download className="h-3 w-3" /> Install
                   </span>
-                  <div>
-                    <strong>{t('pwa.pcStep2Title', 'Click Install')}:</strong>{' '}
-                    {t('pwa.pcStep2Desc', 'Click "Install" to create a standalone desktop app shortcut.')}
-                  </div>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-700 dark:bg-brand-900/50 dark:text-brand-300">
-                    3
-                  </span>
-                  <div>
-                    <strong>{t('pwa.pcStep3Title', 'Launch anytime')}:</strong>{' '}
-                    {t('pwa.pcStep3Desc', 'Launches from your Windows Start menu, Taskbar, or macOS Dock as a dedicated app.')}
-                  </div>
-                </li>
-              </ol>
+                </div>
+                <ol className="space-y-2.5 text-slate-700 dark:text-slate-200">
+                  <li className="flex items-start gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-700 dark:bg-brand-900/50 dark:text-brand-300">
+                      1
+                    </span>
+                    <div>
+                      <strong>{t('pwa.pcStep1Title', 'Use Chrome or Edge')}:</strong>{' '}
+                      {t('pwa.pcStep1Desc', 'Look for the Install icon in the browser address bar (top right).')}
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-700 dark:bg-brand-900/50 dark:text-brand-300">
+                      2
+                    </span>
+                    <div>
+                      <strong>{t('pwa.pcStep2Title', 'Click Install')}:</strong>{' '}
+                      {t('pwa.pcStep2Desc', 'Click "Install" to create a standalone desktop app shortcut.')}
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-700 dark:bg-brand-900/50 dark:text-brand-300">
+                      3
+                    </span>
+                    <div>
+                      <strong>{t('pwa.pcStep3Title', 'Launch anytime')}:</strong>{' '}
+                      {t('pwa.pcStep3Desc', 'Launches from your Windows Start menu, Taskbar, or macOS Dock as a dedicated app.')}
+                    </div>
+                  </li>
+                </ol>
+              </div>
             )}
           </div>
         </div>

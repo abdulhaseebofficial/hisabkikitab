@@ -58,4 +58,26 @@ describe('PWA Install Components', () => {
     fireEvent.click(installButtons[0]);
     expect(handleInstall).toHaveBeenCalled();
   });
+
+  it('renders Install Now button even when isPromptAvailable is false and guides the user', () => {
+    const handleClose = vi.fn();
+    const handleInstall = vi.fn();
+
+    render(
+      <InstallAppModal
+        open={true}
+        onClose={handleClose}
+        isInstalled={false}
+        isPromptAvailable={false}
+        isIos={false}
+        onTriggerInstall={handleInstall}
+      />
+    );
+
+    const installButtons = screen.getAllByRole('button', { name: /install/i });
+    expect(installButtons.length).toBeGreaterThan(0);
+    fireEvent.click(installButtons[0]);
+    // When native prompt is not available, user is given guided feedback
+    expect(handleInstall).not.toHaveBeenCalled();
+  });
 });

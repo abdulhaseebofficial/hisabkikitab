@@ -91,14 +91,17 @@
     "skipToContent": "Seedha content par jayein",
     "mainNavigation": "Asal menu",
     "addAnExpense": "Kharcha add karein",
-    "loggedAgainstToday": "Tareekh badle baghair aaj ka darj hoga"
+    "loggedAgainstToday": "Tareekh badle baghair aaj ka darj hoga",
+    "profileSettings": "Profile aur settings",
+    "sendFeedback": "Feedback bhejein",
+    "logout": "Log out"
   },
   "business": {
     "title": "Karobari Mode",
     "selectBusiness": "Karobar muntakhib karein",
     "yourBusinesses": "Aap ke Karobar",
     "noBusinessesYet": "Abhi koi karobar darj nahi",
-    "addNewBusiness": "+ Naya Karobar Shamil Karein",
+    "addNewBusiness": "Naya Karobar Shamil Karein",
     "addBusiness": "Naya Karobar Register Karein"
   },
   "mode": {
@@ -991,6 +994,7 @@
     "benefitNoStorage": "0 MB download size",
     "androidStep1Title": "Install Now Dabayein",
     "androidStep1Desc": "Ooper diye gaye \"Abhi Install Karein\" button par tap karein taake direct install ho jaye.",
+    "androidStep1Alt": "Ooper diye gaye \"Abhi Install Karein\" button dabayein ya Chrome menu (⋮) se \"Install app\" chunein.",
     "androidStep2Title": "Doosra Tareeqa",
     "androidStep2Desc": "Chrome ke 3 dots (⋮) par tap karein aur \"Install app\" ya \"Add to Home screen\" chunein.",
     "androidStep3Title": "Tayyar",
@@ -1007,6 +1011,10 @@
     "pcStep2Desc": "\"Install\" par click karein taake desktop par alag app ban jaye.",
     "pcStep3Title": "Kahin Bhi Kholein",
     "pcStep3Desc": "Windows Start menu, Taskbar ya Mac Dock se seedha HisabKi Kitab khol sakte hain.",
+    "desktopAddressBarTitle": "Browser Address Bar Shortcut",
+    "iosGuideNotice": "Safari ke Share icon (teer wala square) par tap karein aur \"Add to Home Screen\" chunein.",
+    "desktopGuideNotice": "Browser address bar mein Install icon (⊕) par click karein ya menu (⋮) se \"Install HisabKi Kitab\" chunein.",
+    "androidGuideNotice": "Chrome menu (⋮) par tap karein aur \"Install app\" ya \"Add to Home screen\" select karein.",
     "appReadyInfoTitle": "App Tayyar & Play Store Compatible",
     "appReadyInfoDesc": "HisabKi Kitab certified Progressive Web App hai aur Google Bubblewrap ya PWABuilder ke zariye asani se standalone Android APK file mein bhi convert ki ja sakti hai.",
     "appInstalledBtn": "App Guide & Status",

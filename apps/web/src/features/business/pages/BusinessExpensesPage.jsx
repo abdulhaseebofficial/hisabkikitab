@@ -7,6 +7,7 @@ import Modal from '../../../shared/components/ui/Modal';
 import businessApi from '../api/businessApi';
 import { useBusiness } from '../BusinessContext';
 import { formatRs } from '../../../shared/utils/money';
+import { allowOnlyNumbers, sanitizeNumericString } from '../../../shared/utils/inputs';
 
 const EXPENSE_CATEGORIES = [
   'Rent',
@@ -219,11 +220,12 @@ export default function BusinessExpensesPage() {
                 Amount (Rs) <span className="text-rose-500">*</span>
               </label>
               <input
-                type="number"
-                min="1"
+                type="text"
+                inputMode="decimal"
                 required
                 value={amountRs}
-                onChange={(e) => setAmountRs(e.target.value)}
+                onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                onChange={(e) => setAmountRs(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                 placeholder="0"
                 className="hw-input mt-1 w-full font-bold"
               />

@@ -7,6 +7,7 @@ import Modal from '../../../shared/components/ui/Modal';
 import businessApi from '../api/businessApi';
 import { useBusiness } from '../BusinessContext';
 import { formatRs } from '../../../shared/utils/money';
+import { allowOnlyNumbers, sanitizeNumericString } from '../../../shared/utils/inputs';
 
 export default function BudgetsPage() {
   const { activeBusinessId } = useBusiness();
@@ -229,12 +230,13 @@ export default function BudgetsPage() {
           <div>
             <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Target Monthly Cap (PKR)</label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               required
-              min="1"
               placeholder="e.g. 50000"
               value={targetAmountRs}
-              onChange={(e) => setTargetAmountRs(e.target.value)}
+              onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+              onChange={(e) => setTargetAmountRs(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
               className="hw-input mt-1 w-full text-xs"
             />
           </div>

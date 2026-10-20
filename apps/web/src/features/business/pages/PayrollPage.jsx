@@ -7,6 +7,7 @@ import Modal from '../../../shared/components/ui/Modal';
 import businessApi from '../api/businessApi';
 import { useBusiness } from '../BusinessContext';
 import { formatRs } from '../../../shared/utils/money';
+import { allowOnlyNumbers, sanitizeNumericString, sanitizeDigitsOnly } from '../../../shared/utils/inputs';
 import { downloadDocumentPdf, DOCUMENT_TYPES } from '../utils/businessDocuments';
 
 export default function PayrollPage() {
@@ -447,19 +448,21 @@ export default function PayrollPage() {
                     <td className="p-2">{formatRs(item.baseSalaryMinor)}</td>
                     <td className="p-2">
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         placeholder="0"
-                        min="0"
-                        onChange={(e) => updatePayrollItem(item.employeeId, 'allowancesMinor', e.target.value)}
+                        onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                        onChange={(e) => updatePayrollItem(item.employeeId, 'allowancesMinor', sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                         className="hw-input w-24 text-xs"
                       />
                     </td>
                     <td className="p-2">
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         placeholder="0"
-                        min="0"
-                        onChange={(e) => updatePayrollItem(item.employeeId, 'deductionsMinor', e.target.value)}
+                        onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                        onChange={(e) => updatePayrollItem(item.employeeId, 'deductionsMinor', sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                         className="hw-input w-24 text-xs"
                       />
                     </td>
@@ -523,9 +526,11 @@ export default function PayrollPage() {
               <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Phone</label>
               <input
                 type="tel"
-                placeholder="0300-1234567"
+                inputMode="numeric"
+                placeholder="03001234567"
                 value={empPhone}
-                onChange={(e) => setEmpPhone(e.target.value)}
+                onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: false, allowNegative: false })}
+                onChange={(e) => setEmpPhone(sanitizeDigitsOnly(e.target.value))}
                 className="hw-input mt-1 w-full text-xs"
               />
             </div>
@@ -533,10 +538,12 @@ export default function PayrollPage() {
           <div>
             <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Base Monthly Salary (PKR)</label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               placeholder="e.g. 35000"
               value={empSalaryRs}
-              onChange={(e) => setEmpSalaryRs(e.target.value)}
+              onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+              onChange={(e) => setEmpSalaryRs(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
               className="hw-input mt-1 w-full text-xs"
             />
           </div>
@@ -599,11 +606,11 @@ export default function PayrollPage() {
           <div>
             <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Hours Worked</label>
             <input
-              type="number"
-              min="0"
-              max="24"
+              type="text"
+              inputMode="decimal"
               value={attHours}
-              onChange={(e) => setAttHours(e.target.value)}
+              onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+              onChange={(e) => setAttHours(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
               className="hw-input mt-1 w-full text-xs"
             />
           </div>

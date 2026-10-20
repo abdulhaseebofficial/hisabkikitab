@@ -7,6 +7,7 @@ import businessApi from '../api/businessApi';
 import { useBusiness } from '../BusinessContext';
 import { BUSINESS_CATEGORIES } from '@hisabkikitab/contracts/business';
 import { formatRs } from '../../../shared/utils/money';
+import { allowOnlyNumbers, sanitizeNumericString, sanitizeDigitsOnly } from '../../../shared/utils/inputs';
 
 export default function BusinessOnboardingModal({ open, onClose }) {
   const { refreshBusinesses, setActiveBusinessId, setMode } = useBusiness();
@@ -133,10 +134,12 @@ export default function BusinessOnboardingModal({ open, onClose }) {
                   Phone Number
                 </label>
                 <input
-                  type="text"
+                  type="tel"
+                  inputMode="numeric"
                   value={contactNumber}
-                  onChange={(e) => setContactNumber(e.target.value)}
-                  placeholder="0300-1234567"
+                  onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: false, allowNegative: false })}
+                  onChange={(e) => setContactNumber(sanitizeDigitsOnly(e.target.value))}
+                  placeholder="03001234567"
                   className="hw-input mt-1 w-full"
                 />
               </div>
@@ -180,10 +183,11 @@ export default function BusinessOnboardingModal({ open, onClose }) {
                   Opening Cash in Hand (Rs)
                 </label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={openingCash}
-                  onChange={(e) => setOpeningCash(e.target.value)}
+                  onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                  onChange={(e) => setOpeningCash(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                   placeholder="0"
                   className="hw-input mt-1 w-full"
                 />
@@ -194,10 +198,11 @@ export default function BusinessOnboardingModal({ open, onClose }) {
                   Opening Bank Balance (Rs)
                 </label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={openingBank}
-                  onChange={(e) => setOpeningBank(e.target.value)}
+                  onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                  onChange={(e) => setOpeningBank(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                   placeholder="0"
                   className="hw-input mt-1 w-full"
                 />
@@ -208,10 +213,11 @@ export default function BusinessOnboardingModal({ open, onClose }) {
                   Opening Inventory Value (Rs)
                 </label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={openingInventory}
-                  onChange={(e) => setOpeningInventory(e.target.value)}
+                  onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                  onChange={(e) => setOpeningInventory(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                   placeholder="0"
                   className="hw-input mt-1 w-full"
                 />
@@ -222,10 +228,11 @@ export default function BusinessOnboardingModal({ open, onClose }) {
                   Customer Receivables (Udhaar / Khata)
                 </label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={openingReceivables}
-                  onChange={(e) => setOpeningReceivables(e.target.value)}
+                  onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                  onChange={(e) => setOpeningReceivables(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                   placeholder="0"
                   className="hw-input mt-1 w-full"
                 />
@@ -236,10 +243,11 @@ export default function BusinessOnboardingModal({ open, onClose }) {
                   Supplier Payables (Wajib-ul-Ada / Karobar Dena Hai)
                 </label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={openingPayables}
-                  onChange={(e) => setOpeningPayables(e.target.value)}
+                  onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                  onChange={(e) => setOpeningPayables(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                   placeholder="0"
                   className="hw-input mt-1 w-full"
                 />

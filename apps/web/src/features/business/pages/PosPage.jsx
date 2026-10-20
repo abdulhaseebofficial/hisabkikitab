@@ -35,6 +35,7 @@ import storage from '../services/posOfflineStorage';
 import { usePosOfflineSync } from '../hooks/usePosOfflineSync';
 import { downloadDocumentPdf, printDocumentPdf, DOCUMENT_TYPES } from '../utils/businessDocuments';
 import { formatRs } from '../../../shared/utils/money';
+import { allowOnlyNumbers, sanitizeNumericString } from '../../../shared/utils/inputs';
 
 export default function PosPage() {
   const { user } = useAuth();
@@ -783,10 +784,11 @@ export default function PosPage() {
             <div className="flex items-center justify-between">
               <span>Discount (Rs):</span>
               <input
-                type="number"
-                min="0"
+                type="text"
+                inputMode="decimal"
                 value={discountRs}
-                onChange={(e) => setDiscountRs(e.target.value)}
+                onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                onChange={(e) => setDiscountRs(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                 placeholder="0"
                 className="hw-input h-7 w-20 text-right text-xs"
               />
@@ -970,10 +972,11 @@ export default function PosPage() {
               Opening Float / Cash in Drawer (PKR)
             </label>
             <input
-              type="number"
-              min="0"
+              type="text"
+              inputMode="decimal"
               value={shiftOpeningCashRs}
-              onChange={(e) => setShiftOpeningCashRs(e.target.value)}
+              onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+              onChange={(e) => setShiftOpeningCashRs(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
               placeholder="e.g. 5000"
               className="hw-input mt-1 w-full text-xs"
             />
@@ -1018,11 +1021,12 @@ export default function PosPage() {
               Actual Physical Cash Counted (PKR)
             </label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               required
-              min="0"
               value={shiftActualCashRs}
-              onChange={(e) => setShiftActualCashRs(e.target.value)}
+              onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+              onChange={(e) => setShiftActualCashRs(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
               placeholder="Enter exact cash in drawer"
               className="hw-input mt-1 w-full text-xs"
             />
@@ -1087,12 +1091,13 @@ export default function PosPage() {
                         <td className="p-2">{item.maxQty}</td>
                         <td className="p-2">
                           <input
-                            type="number"
-                            min="0"
-                            max={item.maxQty}
+                            type="text"
+                            inputMode="decimal"
                             value={item.returnQty}
+                            onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
                             onChange={(e) => {
-                              const val = Math.min(item.maxQty, Math.max(0, Number(e.target.value)));
+                              const cleaned = sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false });
+                              const val = Math.min(item.maxQty, Math.max(0, Number(cleaned || 0)));
                               setReturnItems((prev) =>
                                 prev.map((p, i) => (i === idx ? { ...p, returnQty: val } : p))
                               );

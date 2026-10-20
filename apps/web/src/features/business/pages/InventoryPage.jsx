@@ -17,6 +17,7 @@ import Modal from '../../../shared/components/ui/Modal';
 import businessApi from '../api/businessApi';
 import { useBusiness } from '../BusinessContext';
 import { formatRs } from '../../../shared/utils/money';
+import { allowOnlyNumbers, sanitizeNumericString } from '../../../shared/utils/inputs';
 
 export default function InventoryPage() {
   const { activeBusinessId } = useBusiness();
@@ -437,10 +438,11 @@ export default function InventoryPage() {
                 Purchase / Cost Price (Rs)
               </label>
               <input
-                type="number"
-                min="0"
+                type="text"
+                inputMode="decimal"
                 value={newPurchasePrice}
-                onChange={(e) => setNewPurchasePrice(e.target.value)}
+                onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                onChange={(e) => setNewPurchasePrice(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                 placeholder="0"
                 className="hw-input mt-1 w-full"
               />
@@ -451,11 +453,12 @@ export default function InventoryPage() {
                 Sale / Retail Price (Rs) <span className="text-rose-500">*</span>
               </label>
               <input
-                type="number"
-                min="0"
+                type="text"
+                inputMode="decimal"
                 required
                 value={newSellingPrice}
-                onChange={(e) => setNewSellingPrice(e.target.value)}
+                onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                onChange={(e) => setNewSellingPrice(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                 placeholder="0"
                 className="hw-input mt-1 w-full"
               />
@@ -468,10 +471,11 @@ export default function InventoryPage() {
                 Initial Stock Quantity
               </label>
               <input
-                type="number"
-                min="0"
+                type="text"
+                inputMode="decimal"
                 value={newStock}
-                onChange={(e) => setNewStock(e.target.value)}
+                onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                onChange={(e) => setNewStock(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                 className="hw-input mt-1 w-full"
               />
             </div>
@@ -481,10 +485,11 @@ export default function InventoryPage() {
                 Low Stock Alert Limit
               </label>
               <input
-                type="number"
-                min="1"
+                type="text"
+                inputMode="decimal"
                 value={newMinAlert}
-                onChange={(e) => setNewMinAlert(e.target.value)}
+                onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+                onChange={(e) => setNewMinAlert(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
                 className="hw-input mt-1 w-full"
               />
             </div>
@@ -551,11 +556,12 @@ export default function InventoryPage() {
               Quantity to Adjust ({adjustProduct?.unit})
             </label>
             <input
-              type="number"
-              min="1"
+              type="text"
+              inputMode="decimal"
               required
               value={adjustQty}
-              onChange={(e) => setAdjustQty(e.target.value)}
+              onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+              onChange={(e) => setAdjustQty(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
               placeholder="e.g. 5"
               className="hw-input mt-1 w-full"
             />
@@ -618,11 +624,12 @@ export default function InventoryPage() {
                       </td>
                       <td className="p-2.5">
                         <input
-                          type="number"
-                          min="0"
+                          type="text"
+                          inputMode="decimal"
                           value={counted}
+                          onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
                           onChange={(e) => {
-                            const val = e.target.value;
+                            const val = sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false });
                             setAuditCounts((prev) => ({ ...prev, [p.id]: val }));
                           }}
                           className="hw-input w-24 text-xs"
@@ -727,11 +734,12 @@ export default function InventoryPage() {
           <div>
             <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Quantity</label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               required
-              min="1"
               value={transferQty}
-              onChange={(e) => setTransferQty(e.target.value)}
+              onKeyDown={(e) => allowOnlyNumbers(e, { allowDecimal: true, allowNegative: false })}
+              onChange={(e) => setTransferQty(sanitizeNumericString(e.target.value, { allowDecimal: true, allowNegative: false }))}
               placeholder="e.g. 10"
               className="hw-input mt-1 w-full text-xs"
             />

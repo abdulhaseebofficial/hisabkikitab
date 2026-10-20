@@ -3,7 +3,22 @@ import client from '../../../shared/api/client';
 export const businessApi = {
   // Businesses
   listBusinesses: () => client.get('/business').then((r) => r.data.data),
-  createBusiness: (payload) => client.post('/business', payload).then((r) => r.data.data),
+  createBusiness: (payload, options = {}) => {
+    const key = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+          const r = (Math.random() * 16) | 0;
+          const v = c === 'x' ? r : (r & 0x3) | 0x8;
+          return v.toString(16);
+        });
+    return client.post('/business', payload, {
+      ...options,
+      headers: {
+        'Idempotency-Key': key,
+        ...(options.headers || {}),
+      },
+    }).then((r) => r.data.data);
+  },
   getBusiness: (id) => client.get(`/business/${id}`).then((r) => r.data.data),
   updateBusiness: (id, payload) => client.patch(`/business/${id}`, payload).then((r) => r.data.data),
 

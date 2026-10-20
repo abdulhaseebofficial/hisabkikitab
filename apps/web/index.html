@@ -18,6 +18,13 @@
     <meta name="apple-mobile-web-app-title" content="HisabKi Kitab" />
     <title>HisabKi Kitab | Personal and Shared Money Management</title>
     <script>
+      // Early PWA install prompt capture to ensure beforeinstallprompt is never lost
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.__deferredPwaPrompt = e;
+      });
+    </script>
+    <script>
       // Match ThemeProvider before first paint to prevent a palette flash.
       (function () {
         var theme = 'light';
