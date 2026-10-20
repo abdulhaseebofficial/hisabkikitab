@@ -1,16 +1,11 @@
 import client from '../../../shared/api/client';
+import generateUuidV4 from '../../../shared/utils/uuid';
 
 export const businessApi = {
   // Businesses
   listBusinesses: () => client.get('/business').then((r) => r.data.data),
   createBusiness: (payload, options = {}) => {
-    const key = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-      ? crypto.randomUUID()
-      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-          const r = (Math.random() * 16) | 0;
-          const v = c === 'x' ? r : (r & 0x3) | 0x8;
-          return v.toString(16);
-        });
+    const key = options.headers?.['Idempotency-Key'] || generateUuidV4();
     return client.post('/business', payload, {
       ...options,
       headers: {

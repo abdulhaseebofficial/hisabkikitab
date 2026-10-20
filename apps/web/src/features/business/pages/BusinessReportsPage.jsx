@@ -40,6 +40,8 @@ export default function BusinessReportsPage() {
 
   // Load all accounts for the GL selector
   useEffect(() => {
+    setAccounts([]);
+    setSelectedAccountId('');
     if (!activeBusinessId) return;
     businessApi.listAccounts(activeBusinessId).then((accs) => {
       setAccounts(accs || []);
@@ -50,7 +52,15 @@ export default function BusinessReportsPage() {
   }, [activeBusinessId]);
 
   const fetchReports = () => {
-    if (!activeBusinessId) return;
+    setPnl(null);
+    setBalanceSheet(null);
+    setCashFlow(null);
+    setTrialBalance(null);
+    setLedgerStatement(null);
+    if (!activeBusinessId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
     if (reportType === 'pnl') {

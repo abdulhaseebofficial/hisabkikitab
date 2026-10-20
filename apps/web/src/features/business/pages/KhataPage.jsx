@@ -62,7 +62,14 @@ export default function KhataPage() {
   const [loadingStatement, setLoadingStatement] = useState(false);
 
   const fetchParties = () => {
-    if (!activeBusinessId) return;
+    setCustomers([]);
+    setSuppliers([]);
+    setCustomerAging(null);
+    setSupplierAging(null);
+    if (!activeBusinessId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     Promise.all([
       businessApi.listCustomers(activeBusinessId),

@@ -12,6 +12,9 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
+      screens: {
+        xs: '380px',
+      },
       colors: {
         slate: {
           50: 'rgb(var(--slate-50) / <alpha-value>)',

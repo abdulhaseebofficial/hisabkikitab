@@ -15,7 +15,11 @@ export default function SalesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!activeBusinessId) return;
+    setSales([]);
+    if (!activeBusinessId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     businessApi
       .listSales(activeBusinessId)

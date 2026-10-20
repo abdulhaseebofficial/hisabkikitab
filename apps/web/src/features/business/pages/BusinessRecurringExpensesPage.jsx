@@ -96,7 +96,15 @@ export default function BusinessRecurringExpensesPage() {
   const [generating, setGenerating] = useState(false);
 
   const fetchData = async () => {
-    if (!activeBusinessId) return;
+    setTemplates([]);
+    setUpcoming([]);
+    setOverdue([]);
+    setAccounts([]);
+    setSuppliers([]);
+    if (!activeBusinessId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [allTemplates, upcomingList, overdueList, allAccounts, allSuppliers] = await Promise.all([

@@ -38,7 +38,11 @@ export default function BusinessExpensesPage() {
   const [saving, setSaving] = useState(false);
 
   const fetchExpenses = () => {
-    if (!activeBusinessId) return;
+    setExpenses([]);
+    if (!activeBusinessId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     businessApi
       .listExpenses(activeBusinessId)

@@ -164,7 +164,20 @@ export default function ProcurementPage() {
   // Data Fetching
   // ---------------------------------------------------------------------------
   const fetchAllData = async () => {
-    if (!activeBusinessId) return;
+    setRequests([]);
+    setOrders([]);
+    setGrns([]);
+    setBills([]);
+    setPayments([]);
+    setReturns([]);
+    setSuppliers([]);
+    setProducts([]);
+    setWarehouses([]);
+    setAccounts([]);
+    if (!activeBusinessId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [

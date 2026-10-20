@@ -27,16 +27,27 @@ export default function BusinessDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setSummary(null);
     if (!activeBusinessId) {
       setLoading(false);
       return;
     }
     setLoading(true);
+    let cancelled = false;
     businessApi
       .getDashboard(activeBusinessId)
-      .then((data) => setSummary(data))
-      .catch((err) => console.error('[dashboard] Failed to load business metrics:', err))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        if (!cancelled) setSummary(data);
+      })
+      .catch((err) => {
+        if (!cancelled) console.error('[dashboard] Failed to load business metrics:', err);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [activeBusinessId]);
 
   if (!activeBusinessId) {
@@ -107,9 +118,9 @@ export default function BusinessDashboard() {
       )}
 
       {/* Primary KPI Metric Cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {/* Today's Sales */}
-        <Card className="p-4 sm:p-5">
+        <Card className="p-3 sm:p-5">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <span>Today's Sales</span>
             <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -123,7 +134,7 @@ export default function BusinessDashboard() {
         </Card>
 
         {/* Cash in Hand */}
-        <Card className="p-4 sm:p-5">
+        <Card className="p-3 sm:p-5">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <span>Cash in Hand</span>
             <Wallet className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -137,7 +148,7 @@ export default function BusinessDashboard() {
         </Card>
 
         {/* Customer Receivables (Khata) */}
-        <Card className="p-4 sm:p-5">
+        <Card className="p-3 sm:p-5">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <span>Customer Receivables</span>
             <ArrowDownLeft className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -151,7 +162,7 @@ export default function BusinessDashboard() {
         </Card>
 
         {/* Supplier Payables */}
-        <Card className="p-4 sm:p-5">
+        <Card className="p-3 sm:p-5">
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <span>Supplier Payables</span>
             <ArrowUpRight className="h-4 w-4 text-rose-600 dark:text-rose-400" />
@@ -192,7 +203,7 @@ export default function BusinessDashboard() {
         </Card>
 
         {/* Quick Nav Tiles */}
-        <div className="grid grid-cols-2 gap-3 lg:col-span-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:col-span-2">
           <Link to="/business/khata" className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 transition hover:shadow-md dark:border-slate-800 dark:bg-canvas-darkCard">
             <Users className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
             <div className="mt-3">

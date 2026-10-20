@@ -48,7 +48,14 @@ export default function PayrollPage() {
   const [savingEmployee, setSavingEmployee] = useState(false);
 
   const fetchData = () => {
-    if (!activeBusinessId) return;
+    setEmployees([]);
+    setPayrollRuns([]);
+    setAccounts([]);
+    setAttendanceList([]);
+    if (!activeBusinessId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     Promise.all([
       businessApi.listEmployees(activeBusinessId),

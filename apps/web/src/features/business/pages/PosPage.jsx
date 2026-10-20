@@ -94,12 +94,14 @@ export default function PosPage() {
   // V2 Held Orders State (Queue)
   const [heldOrders, setHeldOrders] = useState(() => {
     try {
+      if (!activeBusinessId) return [];
       const saved = localStorage.getItem(`hisab_held_orders_${activeBusinessId}`);
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
     }
   });
+  const heldOrdersBizRef = useRef(activeBusinessId);
   const [heldOrdersModalOpen, setHeldOrdersModalOpen] = useState(false);
 
   // V2 Returns Modal State
@@ -115,7 +117,25 @@ export default function PosPage() {
   const searchInputRef = useRef(null);
 
   const fetchBaseData = () => {
-    if (!activeBusinessId) return;
+    setProducts([]);
+    setCategories([]);
+    setCustomers([]);
+    setActiveShift(null);
+    setCart([]);
+    heldOrdersBizRef.current = activeBusinessId;
+
+    if (!activeBusinessId) {
+      setHeldOrders([]);
+      return;
+    }
+
+    try {
+      const saved = localStorage.getItem(`hisab_held_orders_${activeBusinessId}`);
+      setHeldOrders(saved ? JSON.parse(saved) : []);
+    } catch {
+      setHeldOrders([]);
+    }
+
     businessApi
       .listProducts(activeBusinessId)
       .then((prods) => {
@@ -152,8 +172,10 @@ export default function PosPage() {
   }, [activeBusinessId]);
 
   useEffect(() => {
-    if (activeBusinessId) {
-      localStorage.setItem(`hisab_held_orders_${activeBusinessId}`, JSON.stringify(heldOrders));
+    if (activeBusinessId && heldOrdersBizRef.current === activeBusinessId) {
+      try {
+        localStorage.setItem(`hisab_held_orders_${activeBusinessId}`, JSON.stringify(heldOrders));
+      } catch { /* optional */ }
     }
   }, [heldOrders, activeBusinessId]);
 

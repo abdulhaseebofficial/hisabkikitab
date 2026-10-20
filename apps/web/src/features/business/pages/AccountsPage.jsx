@@ -33,7 +33,12 @@ export default function AccountsPage() {
   const [savingEquity, setSavingEquity] = useState(false);
 
   const fetchAccountsData = () => {
-    if (!activeBusinessId) return;
+    setAccounts([]);
+    setPayments([]);
+    if (!activeBusinessId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     Promise.all([
       businessApi.listAccounts(activeBusinessId),

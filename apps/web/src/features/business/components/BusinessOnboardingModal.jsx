@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Building2, Check, ArrowRight, ArrowLeft, Store, DollarSign, Layers } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../../../shared/components/ui/Modal';
 import Button from '../../../shared/components/ui/Button';
 import businessApi from '../api/businessApi';
 import { useBusiness } from '../BusinessContext';
-import { BUSINESS_CATEGORIES } from '@hisabkikitab/contracts/business';
+import businessContracts from '@hisabkikitab/contracts/business';
+const { BUSINESS_CATEGORIES } = businessContracts;
 import { formatRs } from '../../../shared/utils/money';
 import { allowOnlyNumbers, sanitizeNumericString, sanitizeDigitsOnly } from '../../../shared/utils/inputs';
+import generateUuidV4 from '../../../shared/utils/uuid';
 
 export default function BusinessOnboardingModal({ open, onClose }) {
   const { refreshBusinesses, setActiveBusinessId, setMode } = useBusiness();
@@ -39,34 +41,55 @@ export default function BusinessOnboardingModal({ open, onClose }) {
   const totalAssetsMinor = cashMinor + bankMinor + invMinor + recMinor;
   const netCapitalMinor = totalAssetsMinor - payMinor;
 
+  const submissionKeyRef = useRef(null);
+
   const handleFinish = async () => {
     if (!name.trim()) {
       toast.error('Please enter your business name');
       return;
     }
+
+    // Generate or retain idempotency UUID across network retries for this attempt
+    if (!submissionKeyRef.current) {
+      submissionKeyRef.current = generateUuidV4();
+    }
+    const idempotencyKey = submissionKeyRef.current;
+
     setSaving(true);
     try {
-      const created = await businessApi.createBusiness({
-        name: name.trim(),
-        category,
-        currency,
-        contactNumber,
-        city,
-        openingBalances: {
-          cashMinor,
-          bankMinor,
-          inventoryMinor: invMinor,
-          receivablesMinor: recMinor,
-          payablesMinor: payMinor,
+      const created = await businessApi.createBusiness(
+        {
+          name: name.trim(),
+          category,
+          currency,
+          contactNumber,
+          city,
+          openingBalances: {
+            cashMinor,
+            bankMinor,
+            inventoryMinor: invMinor,
+            receivablesMinor: recMinor,
+            payablesMinor: payMinor,
+          },
         },
-      });
+        {
+          headers: {
+            'Idempotency-Key': idempotencyKey,
+          },
+        }
+      );
 
+      submissionKeyRef.current = null;
       await refreshBusinesses();
       setActiveBusinessId(created.id);
       setMode('business');
       toast.success(`Business "${created.name}" created successfully!`);
       onClose();
     } catch (err) {
+      // If validation error (400), reset key so next corrected submit gets a fresh key
+      if (err?.response?.status && err.response.status < 500) {
+        submissionKeyRef.current = null;
+      }
       toast.error(err?.response?.data?.message || err.message || 'Failed to create business');
     } finally {
       setSaving(false);
@@ -271,7 +294,7 @@ export default function BusinessOnboardingModal({ open, onClose }) {
             </div>
 
             <div className="flex items-center justify-between pt-4">
-              <Button variant="secondary" onClick={() => setStep(1)} className="flex items-center gap-2">
+              <Button variant="secondary" onClick={() => { submissionKeyRef.current = null; setStep(1); }} className="flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" /> Back
               </Button>
               <Button onClick={() => setStep(3)} className="flex items-center gap-2">
@@ -300,7 +323,7 @@ export default function BusinessOnboardingModal({ open, onClose }) {
             </div>
 
             <div className="flex items-center justify-between pt-4">
-              <Button variant="secondary" onClick={() => setStep(2)} className="flex items-center gap-2">
+              <Button variant="secondary" onClick={() => { submissionKeyRef.current = null; setStep(2); }} className="flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" /> Back
               </Button>
               <Button disabled={saving} onClick={handleFinish} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">

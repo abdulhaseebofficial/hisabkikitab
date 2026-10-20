@@ -39,6 +39,7 @@ export default defineConfig(({ isSsrBuild, mode }) => {
     include: [
       '@hisabkikitab/contracts/catalogue',
       '@hisabkikitab/contracts/validation',
+      '@hisabkikitab/contracts/business',
     ],
   },
 

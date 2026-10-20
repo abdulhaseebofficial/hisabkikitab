@@ -50,7 +50,7 @@ describe('DesktopOnlyWorkspaceGuard', () => {
     expect(screen.queryByTestId('desktop-only-guard-notice')).not.toBeInTheDocument();
   });
 
-  it('renders children workspace on tablet (768px <= width < 1024px)', () => {
+  it('renders branded notice on tablet (768px <= width < 1024px) to align with drawer navigation', () => {
     window.innerWidth = 800;
     render(
       <MemoryRouter>
@@ -60,8 +60,9 @@ describe('DesktopOnlyWorkspaceGuard', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByTestId('desktop-workspace-content')).toBeInTheDocument();
-    expect(screen.queryByTestId('desktop-only-guard-notice')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('desktop-workspace-content')).not.toBeInTheDocument();
+    expect(screen.getByTestId('desktop-only-guard-notice')).toBeInTheDocument();
+    expect(screen.getByText('General Ledger')).toBeInTheDocument();
   });
 
   it('renders branded notice on mobile (< 768px) and hides children', () => {

@@ -5,7 +5,8 @@ import Card from '../../../shared/components/ui/Card';
 import Button from '../../../shared/components/ui/Button';
 import businessApi from '../api/businessApi';
 import { useBusiness } from '../BusinessContext';
-import { BUSINESS_CATEGORIES } from '@hisabkikitab/contracts/business';
+import businessContracts from '@hisabkikitab/contracts/business';
+const { BUSINESS_CATEGORIES } = businessContracts;
 
 export default function BusinessSettingsPage() {
   const { activeBusiness, activeBusinessId, refreshBusinesses } = useBusiness();

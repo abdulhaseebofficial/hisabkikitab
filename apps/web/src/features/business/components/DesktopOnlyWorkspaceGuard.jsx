@@ -10,9 +10,9 @@ import useT from '../../../shared/i18n/I18nProvider';
  * DesktopOnlyWorkspaceGuard
  *
  * Enforces the Desktop Business Experience policy:
- * - On desktop & tablet (>= 768px): Renders full advanced business workspace.
- * - On mobile (< 768px): Renders a clean branded notice with an essential mobile summary
- *   and a working "Back to Business Dashboard" action.
+ * - On desktop & laptop (>= 1024px / lg): Renders full advanced business workspace.
+ * - Below desktop (< 1024px, mobile & tablet): Renders a clean branded notice with an essential mobile summary
+ *   and a working "Back to Business Dashboard" action, aligning 100% with the responsive sidebar drawer.
  * - Preserves business selection and login session.
  */
 export default function DesktopOnlyWorkspaceGuard({
@@ -23,12 +23,12 @@ export default function DesktopOnlyWorkspaceGuard({
   quickActionLink,
   children,
 }) {
-  const { isMobile } = useViewport();
+  const { isDesktop } = useViewport();
   const navigate = useNavigate();
   const { activeBusiness } = useBusiness();
   const { t } = useT();
 
-  if (!isMobile) {
+  if (isDesktop) {
     return <>{children}</>;
   }
 

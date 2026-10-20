@@ -1,4 +1,5 @@
 import axios from 'axios';
+import generateUuidV4 from '../utils/uuid';
 
 const BASE_URL = import.meta.env.VITE_API_URL || '/api';
 export const DEMO_MODE_KEY = 'hkk-demo-finance-mode';
@@ -70,17 +71,20 @@ api.interceptors.request.use((config) => {
   if (financialRoute(String(config.method || '').toLowerCase(), config.url)) {
     const fingerprint = `${config.method}:${config.url}:${typeof config.data === 'string' ? config.data : JSON.stringify(config.data || {})}`;
     if (!pendingFinancial.has(fingerprint)) {
-      const key = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-        ? crypto.randomUUID()
-        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-            const r = (Math.random() * 16) | 0;
-            const v = c === 'x' ? r : (r & 0x3) | 0x8;
-            return v.toString(16);
-          });
-      pendingFinancial.set(fingerprint, key);
+      pendingFinancial.set(fingerprint, generateUuidV4());
     }
-    if (!config.headers['Idempotency-Key']) {
-      config.headers['Idempotency-Key'] = pendingFinancial.get(fingerprint);
+    const existingKey = config.headers?.get
+      ? config.headers.get('Idempotency-Key') || config.headers.get('idempotency-key')
+      : (config.headers?.['Idempotency-Key'] || config.headers?.['idempotency-key']);
+
+    if (!existingKey) {
+      const key = pendingFinancial.get(fingerprint);
+      if (config.headers?.set) {
+        config.headers.set('Idempotency-Key', key);
+      } else {
+        config.headers = config.headers || {};
+        config.headers['Idempotency-Key'] = key;
+      }
     }
     config._financialFingerprint = fingerprint;
   }

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import businessApi from './api/businessApi';
 import { useAuth } from '../auth';
 
@@ -8,8 +8,12 @@ const ACTIVE_BIZ_KEY = 'hkk_active_business_id';
 
 export function BusinessProvider({ children }) {
   const { isAuthenticated, user } = useAuth();
+  const userId = user?._id || user?.id || null;
+  const isDemo = Boolean(user?.isDemo);
+
   const [mode, setModeState] = useState(() => {
     try {
+      if (isDemo) return 'personal';
       return localStorage.getItem(MODE_STORAGE_KEY) || 'personal';
     } catch {
       return 'personal';
@@ -19,6 +23,7 @@ export function BusinessProvider({ children }) {
   const [businesses, setBusinesses] = useState([]);
   const [activeBusinessId, setActiveBusinessIdState] = useState(() => {
     try {
+      if (isDemo) return null;
       return localStorage.getItem(ACTIVE_BIZ_KEY) || null;
     } catch {
       return null;
@@ -27,13 +32,17 @@ export function BusinessProvider({ children }) {
 
   const [loading, setLoading] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const prevUserIdRef = useRef(userId);
 
   const setMode = useCallback((newMode) => {
+    if (isDemo && newMode === 'business') {
+      return; // Demo users cannot enter Business Mode
+    }
     setModeState(newMode);
     try {
       localStorage.setItem(MODE_STORAGE_KEY, newMode);
     } catch { /* optional storage */ }
-  }, []);
+  }, [isDemo]);
 
   const setActiveBusinessId = useCallback((id) => {
     setActiveBusinessIdState(id);
@@ -44,56 +53,93 @@ export function BusinessProvider({ children }) {
   }, []);
 
   const refreshBusinesses = useCallback(async () => {
-    if (!isAuthenticated || user?.isDemo) return [];
+    if (!isAuthenticated || isDemo) {
+      setBusinesses([]);
+      setActiveBusinessId(null);
+      return [];
+    }
     setLoading(true);
     try {
       const list = await businessApi.listBusinesses();
-      setBusinesses(list || []);
-      if (list && list.length > 0) {
-        if (!activeBusinessId || !list.some((b) => b.id === activeBusinessId)) {
-          setActiveBusinessId(list[0].id);
+      const safeList = list || [];
+      setBusinesses(safeList);
+      if (safeList.length > 0) {
+        if (!activeBusinessId || !safeList.some((b) => b.id === activeBusinessId)) {
+          setActiveBusinessId(safeList[0].id);
         }
       } else {
         setActiveBusinessId(null);
       }
-      return list;
+      return safeList;
     } catch (e) {
       console.error('[business] Failed to fetch businesses:', e);
+      setBusinesses([]);
+      setActiveBusinessId(null);
       return [];
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, user?.isDemo, activeBusinessId, setActiveBusinessId]);
+  }, [isAuthenticated, isDemo, activeBusinessId, setActiveBusinessId]);
 
+  // Purge and reload on authentication/user changes or demo mode
   useEffect(() => {
-    if (isAuthenticated) {
-      refreshBusinesses();
-    } else {
+    if (prevUserIdRef.current !== userId || !isAuthenticated || isDemo) {
+      prevUserIdRef.current = userId;
       setBusinesses([]);
       setActiveBusinessId(null);
+      try {
+        localStorage.removeItem(ACTIVE_BIZ_KEY);
+      } catch { /* optional */ }
+
+      if (isDemo || !isAuthenticated) {
+        setModeState('personal');
+        try {
+          localStorage.setItem(MODE_STORAGE_KEY, 'personal');
+        } catch { /* optional */ }
+      }
     }
-  }, [isAuthenticated, refreshBusinesses, setActiveBusinessId]);
+
+    if (isAuthenticated && !isDemo) {
+      refreshBusinesses();
+    }
+  }, [userId, isAuthenticated, isDemo, refreshBusinesses, setActiveBusinessId]);
 
   const activeBusiness = useMemo(() => {
+    if (!activeBusinessId) return null;
     return businesses.find((b) => b.id === activeBusinessId) || null;
   }, [businesses, activeBusinessId]);
 
+  const validatedActiveBusinessId = activeBusiness ? activeBusiness.id : null;
+
   const value = useMemo(
     () => ({
-      mode,
+      mode: isDemo ? 'personal' : mode,
       setMode,
-      isBusinessMode: mode === 'business',
+      isBusinessMode: !isDemo && mode === 'business',
       businesses,
       activeBusiness,
-      activeBusinessId,
+      activeBusinessId: validatedActiveBusinessId,
       setActiveBusinessId,
       loading,
       refreshBusinesses,
       onboardingOpen,
-      openOnboarding: () => setOnboardingOpen(true),
+      openOnboarding: () => {
+        if (!isDemo) setOnboardingOpen(true);
+      },
       closeOnboarding: () => setOnboardingOpen(false),
     }),
-    [mode, setMode, businesses, activeBusiness, activeBusinessId, setActiveBusinessId, loading, refreshBusinesses, onboardingOpen]
+    [
+      isDemo,
+      mode,
+      setMode,
+      businesses,
+      activeBusiness,
+      validatedActiveBusinessId,
+      setActiveBusinessId,
+      loading,
+      refreshBusinesses,
+      onboardingOpen,
+    ]
   );
 
   return <BusinessContext.Provider value={value}>{children}</BusinessContext.Provider>;
@@ -120,4 +166,3 @@ export const useBusiness = () => {
 };
 
 export default BusinessContext;
-

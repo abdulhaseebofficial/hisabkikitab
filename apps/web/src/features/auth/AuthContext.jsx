@@ -8,6 +8,7 @@ import { routePath } from '../../shared/seo/urls';
 
 const AuthContext = createContext(null);
 const protectedPaths = new Set(['/onboarding', '/dashboard', '/expenses', '/income', '/goals', '/debts', '/budget', '/advisor', '/reports', '/settings']);
+const isProtectedPath = (p) => protectedPaths.has(p) || p === '/business' || (typeof p === 'string' && p.startsWith('/business/'));
 const DEMO_MODES = new Set(['student', 'householder', 'shared_living']);
 const updateDemoMode = (value) => {
   try {
@@ -42,7 +43,7 @@ export function AuthProvider({ children }) {
   const pathname = routePath(currentPathname);
   const [user, setUser] = useState(null);
   const [restored, setRestored] = useState(false);
-  const loading = protectedPaths.has(pathname) && !restored;
+  const loading = isProtectedPath(pathname) && !restored;
   // A page can receive a login click while a /me -> /refresh
   // restoration is still in flight. Its late 401 must not clear the newly
   // authenticated user.
@@ -64,7 +65,7 @@ export function AuthProvider({ children }) {
   }, [clearSession, pathname]);
 
   useEffect(() => {
-    if (!protectedPaths.has(pathname) || restored) return undefined;
+    if (!isProtectedPath(pathname) || restored) return undefined;
     let cancelled = false;
 
     const restore = async () => {

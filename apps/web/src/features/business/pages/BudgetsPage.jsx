@@ -28,7 +28,12 @@ export default function BudgetsPage() {
   const [saving, setSaving] = useState(false);
 
   const fetchBudgets = () => {
-    if (!activeBusinessId) return;
+    setBudgets([]);
+    setAccounts([]);
+    if (!activeBusinessId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     Promise.all([
       businessApi.listBudgets(activeBusinessId, { period }),

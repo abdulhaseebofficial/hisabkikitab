@@ -46,7 +46,7 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-canvas-card/80 backdrop-blur dark:border-slate-800 dark:bg-canvas-darkCard/80">
-      <div className="flex h-16 items-center gap-3 px-4 sm:px-6">
+      <div className="flex h-16 items-center gap-1.5 sm:gap-3 px-2.5 sm:px-6">
         <button
           type="button"
           onClick={onOpenMenu}
@@ -106,7 +106,7 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
               className="flex items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50/60 px-2.5 py-1 text-xs font-semibold text-brand-700 transition hover:bg-brand-100 dark:border-brand-800/70 dark:bg-brand-950/40 dark:text-brand-300 dark:hover:bg-brand-900/40"
             >
               <Building2 className="h-3.5 w-3.5 shrink-0" />
-              <span className="max-w-[130px] truncate sm:max-w-[180px]">
+              <span className="max-w-[75px] xs:max-w-[110px] truncate sm:max-w-[180px]">
                 {activeBusiness?.name || t('business.selectBusiness', 'Select Business')}
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60" />
@@ -177,7 +177,7 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
             }
           }}
           title={isBusinessMode ? 'Switch to Personal Mode' : 'Switch to Business Mode'}
-          className="md:hidden inline-flex h-9 items-center gap-1 rounded-xl border border-slate-200 px-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200"
+          className="hidden xs:inline-flex md:hidden h-9 items-center gap-1 rounded-xl border border-slate-200 px-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200"
         >
           {isBusinessMode ? (
             <>
@@ -199,7 +199,7 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
               onClick={triggerInstall}
               title={t('pwa.installAppBtn', 'Install App')}
               aria-label={t('pwa.installAppBtn', 'Install App')}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50/70 px-2.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-950/40 dark:text-brand-300 dark:hover:bg-brand-900/40"
+              className="hidden sm:inline-flex h-9 items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50/70 px-2.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-950/40 dark:text-brand-300 dark:hover:bg-brand-900/40"
             >
               <Download className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{t('pwa.install', 'Install')}</span>

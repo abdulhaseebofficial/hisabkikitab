@@ -68,7 +68,13 @@ export default function InventoryPage() {
   const [savingAdjust, setSavingAdjust] = useState(false);
 
   const fetchInventory = () => {
-    if (!activeBusinessId) return;
+    setProducts([]);
+    setCategories([]);
+    setWarehouses([]);
+    if (!activeBusinessId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     Promise.all([
       businessApi.listProducts(activeBusinessId),
