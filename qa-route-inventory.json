@@ -1,0 +1,629 @@
+{
+  "meta": {
+    "generatedAt": "2026-10-20T21:40:20.542Z",
+    "totalDiscoveredRoutes": 79,
+    "counts": {
+      "publicMarketingAndGuides": 35,
+      "authAndOnboarding": 5,
+      "studentPersonal": 9,
+      "householder": 9,
+      "sharedLiving": 8,
+      "businessMode": 13,
+      "businessDesktopOnly": 5,
+      "businessMobileEssential": 8
+    }
+  },
+  "routes": {
+    "public": [
+      {
+        "path": "/",
+        "name": "Homepage",
+        "mode": "public",
+        "type": "marketing"
+      },
+      {
+        "path": "/learn/",
+        "name": "Financial Guides Index",
+        "mode": "public",
+        "type": "educational"
+      },
+      {
+        "path": "/learn/saving/",
+        "name": "Guides: Saving Category",
+        "mode": "public",
+        "type": "educational"
+      },
+      {
+        "path": "/learn/budgeting/",
+        "name": "Guides: Budgeting Category",
+        "mode": "public",
+        "type": "educational"
+      },
+      {
+        "path": "/learn/personal-finance/",
+        "name": "Guides: Personal Finance Category",
+        "mode": "public",
+        "type": "educational"
+      },
+      {
+        "path": "/learn/household/",
+        "name": "Guides: Household Category",
+        "mode": "public",
+        "type": "educational"
+      },
+      {
+        "path": "/learn/shared-living/",
+        "name": "Guides: Shared Living Category",
+        "mode": "public",
+        "type": "educational"
+      },
+      {
+        "path": "/learn/lending-borrowing/",
+        "name": "Guides: Lending & Borrowing Category",
+        "mode": "public",
+        "type": "educational"
+      },
+      {
+        "path": "/learn/freelancing/",
+        "name": "Guides: Freelancing Category",
+        "mode": "public",
+        "type": "educational"
+      },
+      {
+        "path": "/learn/financial-habits/",
+        "name": "Guides: Financial Habits Category",
+        "mode": "public",
+        "type": "educational"
+      },
+      {
+        "path": "/learn/budgeting/beginners-guide-to-personal-budgeting/",
+        "name": "Article: Beginner Budgeting",
+        "mode": "public",
+        "type": "article"
+      },
+      {
+        "path": "/learn/personal-finance/emergency-fund-how-much-should-you-save/",
+        "name": "Article: Emergency Fund",
+        "mode": "public",
+        "type": "article"
+      },
+      {
+        "path": "/learn/freelancing/how-freelancers-can-manage-irregular-income/",
+        "name": "Article: Freelancers Irregular Income",
+        "mode": "public",
+        "type": "article"
+      },
+      {
+        "path": "/learn/budgeting/how-to-create-a-monthly-budget/",
+        "name": "Article: Monthly Budget Guide",
+        "mode": "public",
+        "type": "article"
+      },
+      {
+        "path": "/learn/lending-borrowing/how-to-track-money-you-lend-and-borrow/",
+        "name": "Article: Track Lending & Borrowing",
+        "mode": "public",
+        "type": "article"
+      },
+      {
+        "path": "/learn/household/how-to-manage-household-expenses/",
+        "name": "Article: Manage Household Expenses",
+        "mode": "public",
+        "type": "article"
+      },
+      {
+        "path": "/learn/saving/how-to-reduce-unnecessary-spending/",
+        "name": "Article: Reduce Unnecessary Spending",
+        "mode": "public",
+        "type": "article"
+      },
+      {
+        "path": "/learn/saving/how-to-save-money-every-month/",
+        "name": "Article: Save Money Every Month",
+        "mode": "public",
+        "type": "article"
+      },
+      {
+        "path": "/learn/saving/how-to-set-financial-goals/",
+        "name": "Article: Set Financial Goals",
+        "mode": "public",
+        "type": "article"
+      },
+      {
+        "path": "/learn/shared-living/how-to-split-expenses-with-roommates/",
+        "name": "Article: Split Expenses Roommates",
+        "mode": "public",
+        "type": "article"
+      },
+      {
+        "path": "/learn/financial-habits/how-to-track-monthly-expenses/",
+        "name": "Article: Track Monthly Expenses",
+        "mode": "public",
+        "type": "article"
+      },
+      {
+        "path": "/learn/financial-habits/simple-ways-to-track-income-and-expenses/",
+        "name": "Article: Simple Ways Track Income",
+        "mode": "public",
+        "type": "article"
+      },
+      {
+        "path": "/tools/",
+        "name": "Financial Calculators Hub",
+        "mode": "public",
+        "type": "tools"
+      },
+      {
+        "path": "/tools/budget-calculator/",
+        "name": "Calculator: Budget",
+        "mode": "public",
+        "type": "calculator"
+      },
+      {
+        "path": "/tools/savings-goal-calculator/",
+        "name": "Calculator: Savings Goal",
+        "mode": "public",
+        "type": "calculator"
+      },
+      {
+        "path": "/tools/expense-split-calculator/",
+        "name": "Calculator: Expense Split",
+        "mode": "public",
+        "type": "calculator"
+      },
+      {
+        "path": "/tools/emergency-fund-calculator/",
+        "name": "Calculator: Emergency Fund",
+        "mode": "public",
+        "type": "calculator"
+      },
+      {
+        "path": "/tools/debt-repayment-calculator/",
+        "name": "Calculator: Debt Repayment",
+        "mode": "public",
+        "type": "calculator"
+      },
+      {
+        "path": "/tools/net-worth-calculator/",
+        "name": "Calculator: Net Worth",
+        "mode": "public",
+        "type": "calculator"
+      },
+      {
+        "path": "/tools/freelancer-income-calculator/",
+        "name": "Calculator: Freelancer Income",
+        "mode": "public",
+        "type": "calculator"
+      },
+      {
+        "path": "/about/",
+        "name": "About HisabKi Kitab",
+        "mode": "public",
+        "type": "trust"
+      },
+      {
+        "path": "/contact/",
+        "name": "Contact & Support",
+        "mode": "public",
+        "type": "trust"
+      },
+      {
+        "path": "/privacy/",
+        "name": "Privacy Policy",
+        "mode": "public",
+        "type": "trust"
+      },
+      {
+        "path": "/terms/",
+        "name": "Terms of Service",
+        "mode": "public",
+        "type": "trust"
+      },
+      {
+        "path": "/disclaimer/",
+        "name": "Financial Disclaimer",
+        "mode": "public",
+        "type": "trust"
+      }
+    ],
+    "auth": [
+      {
+        "path": "/login",
+        "name": "User Sign In",
+        "mode": "public_only",
+        "type": "auth",
+        "apis": [
+          "/api/auth/login",
+          "/api/auth/google",
+          "/api/auth/config"
+        ]
+      },
+      {
+        "path": "/register",
+        "name": "Create Account",
+        "mode": "public_only",
+        "type": "auth",
+        "apis": [
+          "/api/auth/register",
+          "/api/auth/config"
+        ]
+      },
+      {
+        "path": "/forgot-password",
+        "name": "Password Recovery",
+        "mode": "public_only",
+        "type": "auth",
+        "apis": [
+          "/api/auth/forgot-password"
+        ]
+      },
+      {
+        "path": "/reset-password/:token",
+        "name": "Password Reset Form",
+        "mode": "public_only",
+        "type": "auth",
+        "apis": [
+          "/api/auth/reset-password"
+        ]
+      },
+      {
+        "path": "/onboarding",
+        "name": "New User Financial Setup",
+        "mode": "authenticated",
+        "type": "onboarding",
+        "apis": [
+          "/api/onboarding/complete"
+        ]
+      }
+    ],
+    "student": [
+      {
+        "path": "/dashboard",
+        "name": "Student Financial Dashboard",
+        "mode": "student",
+        "apis": [
+          "/api/dashboard/summary",
+          "/api/expenses",
+          "/api/income",
+          "/api/budget"
+        ]
+      },
+      {
+        "path": "/expenses",
+        "name": "Personal Expense Ledger",
+        "mode": "student",
+        "apis": [
+          "/api/expenses"
+        ]
+      },
+      {
+        "path": "/income",
+        "name": "Pocket Money & Income Tracker",
+        "mode": "student",
+        "apis": [
+          "/api/income"
+        ]
+      },
+      {
+        "path": "/goals",
+        "name": "Student Savings Goals",
+        "mode": "student",
+        "apis": [
+          "/api/goals"
+        ]
+      },
+      {
+        "path": "/debts",
+        "name": "Personal Udhaar & Debt Tracker",
+        "mode": "student",
+        "apis": [
+          "/api/debts"
+        ]
+      },
+      {
+        "path": "/budget",
+        "name": "Monthly Budget Planning",
+        "mode": "student",
+        "apis": [
+          "/api/budget"
+        ]
+      },
+      {
+        "path": "/advisor",
+        "name": "AI Financial Advisor",
+        "mode": "student",
+        "apis": [
+          "/api/advisor/chat"
+        ]
+      },
+      {
+        "path": "/reports",
+        "name": "Student Spending Reports",
+        "mode": "student",
+        "apis": [
+          "/api/reports/monthly"
+        ]
+      },
+      {
+        "path": "/settings",
+        "name": "User Profile & Preferences",
+        "mode": "student",
+        "apis": [
+          "/api/profile",
+          "/api/auth/me"
+        ]
+      }
+    ],
+    "householder": [
+      {
+        "path": "/dashboard",
+        "name": "Householder Dashboard",
+        "mode": "householder",
+        "apis": [
+          "/api/dashboard/summary",
+          "/api/expenses",
+          "/api/debts"
+        ]
+      },
+      {
+        "path": "/expenses",
+        "name": "Household Expenses & Groceries",
+        "mode": "householder",
+        "apis": [
+          "/api/expenses"
+        ]
+      },
+      {
+        "path": "/income",
+        "name": "Household Salary & Incomes",
+        "mode": "householder",
+        "apis": [
+          "/api/income"
+        ]
+      },
+      {
+        "path": "/goals",
+        "name": "Family Savings Targets",
+        "mode": "householder",
+        "apis": [
+          "/api/goals"
+        ]
+      },
+      {
+        "path": "/debts",
+        "name": "Household Dues & Udhaar",
+        "mode": "householder",
+        "apis": [
+          "/api/debts"
+        ]
+      },
+      {
+        "path": "/budget",
+        "name": "Household Monthly Budget",
+        "mode": "householder",
+        "apis": [
+          "/api/budget"
+        ]
+      },
+      {
+        "path": "/advisor",
+        "name": "Household Budget Advisor",
+        "mode": "householder",
+        "apis": [
+          "/api/advisor/chat"
+        ]
+      },
+      {
+        "path": "/reports",
+        "name": "Household Spending Breakdown",
+        "mode": "householder",
+        "apis": [
+          "/api/reports/monthly"
+        ]
+      },
+      {
+        "path": "/settings",
+        "name": "Household Settings & Mode Switcher",
+        "mode": "householder",
+        "apis": [
+          "/api/profile",
+          "/api/auth/me"
+        ]
+      }
+    ],
+    "sharedLiving": [
+      {
+        "path": "/dashboard?section=dashboard",
+        "name": "Shared Living Overview",
+        "mode": "shared_living",
+        "apis": [
+          "/api/shared-living/spaces"
+        ]
+      },
+      {
+        "path": "/dashboard?section=daily",
+        "name": "Shared Daily Meals & Canteen",
+        "mode": "shared_living",
+        "apis": [
+          "/api/shared-living/spaces/:id/daily"
+        ]
+      },
+      {
+        "path": "/dashboard?section=bills",
+        "name": "Shared Utilities & Rent Bills",
+        "mode": "shared_living",
+        "apis": [
+          "/api/shared-living/spaces/:id/bills"
+        ]
+      },
+      {
+        "path": "/dashboard?section=members",
+        "name": "Roommate Roster & Shares",
+        "mode": "shared_living",
+        "apis": [
+          "/api/shared-living/spaces/:id/members"
+        ]
+      },
+      {
+        "path": "/dashboard?section=payments",
+        "name": "Settlement Ledger & Transfers",
+        "mode": "shared_living",
+        "apis": [
+          "/api/shared-living/spaces/:id/payments"
+        ]
+      },
+      {
+        "path": "/dashboard?section=manage",
+        "name": "Space Administration & Rules",
+        "mode": "shared_living",
+        "apis": [
+          "/api/shared-living/spaces/:id/settings"
+        ]
+      },
+      {
+        "path": "/dashboard?section=activity",
+        "name": "Shared Audit Log & Activity",
+        "mode": "shared_living",
+        "apis": [
+          "/api/shared-living/spaces/:id/activity"
+        ]
+      },
+      {
+        "path": "/settings",
+        "name": "Shared Space User Settings",
+        "mode": "shared_living",
+        "apis": [
+          "/api/profile"
+        ]
+      }
+    ],
+    "business": [
+      {
+        "path": "/business",
+        "name": "Business Overview Dashboard",
+        "mode": "business",
+        "isDesktopOnly": false,
+        "apis": [
+          "/api/business",
+          "/api/business/:id/dashboard"
+        ]
+      },
+      {
+        "path": "/business/pos",
+        "name": "Point of Sale (POS) Terminal",
+        "mode": "business",
+        "isDesktopOnly": false,
+        "apis": [
+          "/api/business/:id/pos/products",
+          "/api/business/:id/sales"
+        ]
+      },
+      {
+        "path": "/business/sales",
+        "name": "Sales & Invoice Ledger",
+        "mode": "business",
+        "isDesktopOnly": false,
+        "apis": [
+          "/api/business/:id/sales"
+        ]
+      },
+      {
+        "path": "/business/inventory",
+        "name": "Inventory & Stock Control",
+        "mode": "business",
+        "isDesktopOnly": false,
+        "apis": [
+          "/api/business/:id/products",
+          "/api/business/:id/inventory/movements"
+        ]
+      },
+      {
+        "path": "/business/khata",
+        "name": "Customer & Supplier Khata",
+        "mode": "business",
+        "isDesktopOnly": false,
+        "apis": [
+          "/api/business/:id/khata/customers",
+          "/api/business/:id/khata/suppliers"
+        ]
+      },
+      {
+        "path": "/business/expenses",
+        "name": "Business Expense Ledger",
+        "mode": "business",
+        "isDesktopOnly": false,
+        "apis": [
+          "/api/business/:id/expenses"
+        ]
+      },
+      {
+        "path": "/business/recurring",
+        "name": "Recurring Commercial Expenses",
+        "mode": "business",
+        "isDesktopOnly": false,
+        "apis": [
+          "/api/business/:id/recurring-expenses"
+        ]
+      },
+      {
+        "path": "/business/settings",
+        "name": "Business Profile & Tax Settings",
+        "mode": "business",
+        "isDesktopOnly": false,
+        "apis": [
+          "/api/business/:id"
+        ]
+      },
+      {
+        "path": "/business/procurement",
+        "name": "Procurement (PO/GRN/Bills/PPV)",
+        "mode": "business",
+        "isDesktopOnly": true,
+        "apis": [
+          "/api/business/:id/purchase-orders",
+          "/api/business/:id/grns",
+          "/api/business/:id/supplier-bills"
+        ]
+      },
+      {
+        "path": "/business/accounts",
+        "name": "General Ledger & Chart of Accounts",
+        "mode": "business",
+        "isDesktopOnly": true,
+        "apis": [
+          "/api/business/:id/accounts",
+          "/api/business/:id/journal-entries"
+        ]
+      },
+      {
+        "path": "/business/payroll",
+        "name": "Staff Attendance & Payroll Run",
+        "mode": "business",
+        "isDesktopOnly": true,
+        "apis": [
+          "/api/business/:id/payroll/runs",
+          "/api/business/:id/payroll/staff"
+        ]
+      },
+      {
+        "path": "/business/budgets",
+        "name": "Business Budgets & Variance Analysis",
+        "mode": "business",
+        "isDesktopOnly": true,
+        "apis": [
+          "/api/business/:id/budgets"
+        ]
+      },
+      {
+        "path": "/business/reports",
+        "name": "Financial Statements (P&L, BS, Trial Balance)",
+        "mode": "business",
+        "isDesktopOnly": true,
+        "apis": [
+          "/api/business/:id/reports/trial-balance",
+          "/api/business/:id/reports/profit-loss"
+        ]
+      }
+    ]
+  }
+}
