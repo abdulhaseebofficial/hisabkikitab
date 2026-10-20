@@ -22,7 +22,7 @@
     "seed": "npm run seed -w @hisabkikitab/api",
     "test": "node --test tests/unit/*.test.js",
     "test:e2e": "node tests/e2e/api.test.js && node tests/e2e/settings.test.js && node tests/e2e/debts.test.js && node tests/e2e/refresh.test.js && node --test tests/e2e/shared-living.test.js && node tests/e2e/shared-living-ownership.test.js && npm run test:browser",
-    "test:browser": "node node_modules/@playwright/test/cli.js test --config tests/browser/config.js",
+    "test:browser": "node scripts/run-browser-tests.js",
     "qa": "npm run test:e2e",
     "qa:api": "node tests/e2e/api.test.js",
     "qa:settings": "node tests/e2e/settings.test.js",
