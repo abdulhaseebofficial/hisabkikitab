@@ -1,3 +1,4 @@
+import DesktopOnlyWorkspaceGuard from '../components/DesktopOnlyWorkspaceGuard';
 import { useEffect, useState } from 'react';
 import { Wallet, ArrowLeftRight, ArrowDownLeft, ArrowUpRight, Plus, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -109,7 +110,18 @@ export default function AccountsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <DesktopOnlyWorkspaceGuard
+      featureName="Full General Ledger & Accounts"
+      featureDescription="Cash & Bank Accounts, Double-Entry General Ledger, Journal entries, and Capital/Drawings"
+      featureIcon={Wallet}
+      quickActionLink={{ to: '/business/expenses', label: 'Record Business Expense' }}
+      essentialSummary={
+        <p className="text-slate-600 dark:text-slate-400">
+          Daily cash sales and expenses are recorded via <strong>POS</strong> and <strong>Business Expenses</strong>. Bank transfers, Chart of Accounts, and General Ledger reconciliation are available on desktop.
+        </p>
+      }
+    >
+      <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
@@ -370,5 +382,6 @@ export default function AccountsPage() {
         </form>
       </Modal>
     </div>
+    </DesktopOnlyWorkspaceGuard>
   );
 }

@@ -210,7 +210,12 @@ export default function BusinessDashboard() {
           </Link>
 
           <Link to="/business/accounts" className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 transition hover:shadow-md dark:border-slate-800 dark:bg-canvas-darkCard">
-            <Wallet className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            <div className="flex items-center justify-between">
+              <Wallet className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800">
+                Desktop
+              </span>
+            </div>
             <div className="mt-3">
               <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">Accounts & Transfers</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400">Cash, banks, owner capital & drawings</p>
@@ -218,7 +223,12 @@ export default function BusinessDashboard() {
           </Link>
 
           <Link to="/business/reports" className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 transition hover:shadow-md dark:border-slate-800 dark:bg-canvas-darkCard">
-            <FileText className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+            <div className="flex items-center justify-between">
+              <FileText className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+              <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800">
+                Desktop
+              </span>
+            </div>
             <div className="mt-3">
               <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">Financial Reports</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400">P&L, Trial Balance, Aging</p>

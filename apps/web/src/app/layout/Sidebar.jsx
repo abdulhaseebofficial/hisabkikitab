@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
 import { Link, matchPath, useLocation, useNavigate } from 'react-router-dom';
-import { BookOpen, CreditCard, FileBarChart, HandCoins, History, LayoutDashboard, Package, PieChart, Receipt, Settings, Settings2, Sparkles, Store, Target, Users, Utensils, Wallet, X, ArrowLeftRight, CalendarClock, ShoppingBag } from 'lucide-react';
+import { Laptop, BookOpen, CreditCard, FileBarChart, HandCoins, History, LayoutDashboard, Package, PieChart, Receipt, Settings, Settings2, Sparkles, Store, Target, Users, Utensils, Wallet, X, ArrowLeftRight, CalendarClock, ShoppingBag } from 'lucide-react';
 import { sharedSection, sharedSectionSearch } from '../../features/sharedLiving';
 import { useBusiness } from '../../features/business';
 import useT from '../../shared/i18n/I18nProvider';
@@ -26,16 +26,19 @@ export const BUSINESS_NAV_ITEMS = [
   { to: '/business/pos', key: 'pos', label: 'Point of Sale (POS)', icon: Store },
   { to: '/business/sales', key: 'sales', label: 'Sales & Invoices', icon: Receipt },
   { to: '/business/inventory', key: 'inventory', label: 'Inventory & Stock', icon: Package },
-  { to: '/business/procurement', key: 'procurement', label: 'Procurement (Kharidari)', icon: ShoppingBag },
+  { to: '/business/procurement', key: 'procurement', label: 'Procurement (Kharidari)', icon: ShoppingBag, isDesktopOnly: true },
   { to: '/business/khata', key: 'khata', label: 'Khata (Ledgers)', icon: Users },
   { to: '/business/expenses', key: 'businessExpenses', label: 'Business Expenses', icon: CreditCard },
   { to: '/business/recurring', key: 'recurringExpenses', label: 'Recurring Expenses', icon: CalendarClock },
-  { to: '/business/accounts', key: 'businessAccounts', label: 'Cash & Bank Accounts', icon: Wallet },
-  { to: '/business/payroll', key: 'businessPayroll', label: 'Staff & Payroll', icon: Users },
-  { to: '/business/budgets', key: 'businessBudgets', label: 'Budgets & Targets', icon: Target },
-  { to: '/business/reports', key: 'businessReports', label: 'Financial Reports & P&L', icon: FileBarChart },
+  { to: '/business/accounts', key: 'businessAccounts', label: 'Cash & Bank Accounts', icon: Wallet, isDesktopOnly: true },
+  { to: '/business/payroll', key: 'businessPayroll', label: 'Staff & Payroll', icon: Users, isDesktopOnly: true },
+  { to: '/business/budgets', key: 'businessBudgets', label: 'Budgets & Targets', icon: Target, isDesktopOnly: true },
+  { to: '/business/reports', key: 'businessReports', label: 'Financial Reports & P&L', icon: FileBarChart, isDesktopOnly: true },
   { to: '/business/settings', key: 'businessSettings', label: 'Business Settings', icon: Settings },
 ];
+
+export const DESKTOP_ONLY_BUSINESS_ROUTES = BUSINESS_NAV_ITEMS.filter((item) => item.isDesktopOnly).map((item) => item.to);
+export const ESSENTIAL_MOBILE_BUSINESS_NAV_ITEMS = BUSINESS_NAV_ITEMS.filter((item) => !item.isDesktopOnly);
 
 
 export const MOBILE_BUSINESS_NAV_ITEMS = [
@@ -68,13 +71,13 @@ const SHARED_NAV_ITEMS = [
   { to: '/settings', key: 'nav.settings', icon: Settings },
 ];
 
-function NavItems({ onNavigate, mode }) {
+function NavItems({ onNavigate, mode, isDrawer = false }) {
   const { isBusinessMode, setMode: setAppMode } = useBusiness();
   const location = useLocation();
   const navigate = useNavigate();
   const inBusinessMode = isBusinessMode || location.pathname.startsWith('/business');
   const shared = mode === 'shared_living' && !inBusinessMode;
-  const items = inBusinessMode ? BUSINESS_NAV_ITEMS : (shared ? SHARED_NAV_ITEMS : NAV_ITEMS);
+  const items = inBusinessMode ? (isDrawer ? ESSENTIAL_MOBILE_BUSINESS_NAV_ITEMS : BUSINESS_NAV_ITEMS) : (shared ? SHARED_NAV_ITEMS : NAV_ITEMS);
   const { t } = useT();
 
   const getLabel = (item) => {
@@ -100,7 +103,7 @@ function NavItems({ onNavigate, mode }) {
             to={destination}
             onClick={onNavigate}
             aria-current={isActive ? 'page' : undefined}
-            className={cn('hw-nav-item', isActive && 'hw-nav-item-active')}
+            className={cn('hw-nav-item justify-between', isActive && 'hw-nav-item-active')}
           >
             <Icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
             {getLabel(item)}
@@ -139,6 +142,9 @@ function NavItems({ onNavigate, mode }) {
  */
 export default function Sidebar({ open, onClose, mode }) {
   const { t } = useT();
+  const { isBusinessMode } = useBusiness();
+  const location = useLocation();
+  const inBusinessMode = isBusinessMode || location?.pathname?.startsWith('/business');
   const drawerRef = useRef(null);
   const closeRef = useRef(onClose);
   const titleId = useId();
@@ -199,7 +205,7 @@ export default function Sidebar({ open, onClose, mode }) {
         list, so a small laptop still reaches Settings.
       */}
       <aside className={cn('hidden w-60 shrink-0 overflow-y-auto border-r border-slate-200 bg-canvas-card px-3 py-4 lg:h-full dark:border-slate-800 dark:bg-canvas-darkCard', mode === 'shared_living' ? 'lg:flex lg:flex-col' : 'lg:block')}>
-        <NavItems mode={mode} />
+        <NavItems mode={mode} isDrawer={false} />
       </aside>
 
       {/* Mobile drawer */}
@@ -218,7 +224,18 @@ export default function Sidebar({ open, onClose, mode }) {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <NavItems onNavigate={onClose} mode={mode} />
+            <NavItems onNavigate={onClose} mode={mode} isDrawer={true} />
+            {inBusinessMode && (
+              <div className="mt-4 rounded-xl border border-slate-200/80 bg-slate-50 p-3 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
+                <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-300">
+                  <Laptop className="h-3.5 w-3.5 text-brand-600 dark:text-brand-400" />
+                  <span>{t('business.desktopWorkspaces', 'Desktop Workspaces')}</span>
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed">
+                  {t('business.desktopWorkspacesDrawerNotice', 'General Ledger, Procurement, Payroll, Budgets, and Financial Reports are available on Desktop or Laptop.')}
+                </p>
+              </div>
+            )}
           </aside>
         </div>
       )}

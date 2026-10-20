@@ -1,3 +1,4 @@
+import DesktopOnlyWorkspaceGuard from '../components/DesktopOnlyWorkspaceGuard';
 import { useEffect, useState } from 'react';
 import {
   FileText,
@@ -225,7 +226,18 @@ export default function BusinessReportsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <DesktopOnlyWorkspaceGuard
+      featureName="Financial Statements & General Ledger"
+      featureDescription="Enterprise double-entry reporting, Profit & Loss, Balance Sheet, Cash Flow, and Trial Balance"
+      featureIcon={FileText}
+      quickActionLink={{ to: '/business/sales', label: 'View Sales History' }}
+      essentialSummary={
+        <p className="text-slate-600 dark:text-slate-400">
+          Live daily metrics (sales, receivables, cash in hand) are available on your <strong>Business Dashboard</strong>. Multi-column financial statements and General Ledger exports are formatted for desktop screens.
+        </p>
+      }
+    >
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -720,5 +732,6 @@ export default function BusinessReportsPage() {
         </div>
       )}
     </div>
+    </DesktopOnlyWorkspaceGuard>
   );
 }

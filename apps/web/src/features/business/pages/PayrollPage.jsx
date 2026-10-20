@@ -1,3 +1,4 @@
+import DesktopOnlyWorkspaceGuard from '../components/DesktopOnlyWorkspaceGuard';
 import { useEffect, useState } from 'react';
 import { Users, UserPlus, Calendar, DollarSign, CheckCircle2, Clock, AlertCircle, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -171,7 +172,18 @@ export default function PayrollPage() {
   const totalPayrollGross = payrollItems.reduce((sum, item) => sum + item.netPayableMinor, 0);
 
   return (
-    <div className="space-y-6">
+    <DesktopOnlyWorkspaceGuard
+      featureName="Staff & Payroll Administration"
+      featureDescription="Employee registers, daily staff attendance tracking, and monthly payroll disbursements"
+      featureIcon={Users}
+      quickActionLink={{ to: '/business', label: 'Back to Overview' }}
+      essentialSummary={
+        <p className="text-slate-600 dark:text-slate-400">
+          Monthly salary registers, attendance logging, and salary slip generation are configured on desktop screens.
+        </p>
+      }
+    >
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -635,5 +647,6 @@ export default function PayrollPage() {
         </form>
       </Modal>
     </div>
+    </DesktopOnlyWorkspaceGuard>
   );
 }

@@ -102,7 +102,16 @@
     "yourBusinesses": "Your Businesses",
     "noBusinessesYet": "No businesses yet",
     "addNewBusiness": "Add New Business",
-    "addBusiness": "Register New Business"
+    "addBusiness": "Register New Business",
+    "desktopWorkspaceBadge": "Desktop Workspace",
+    "largeScreenOnly": "Laptop / Desktop",
+    "desktopOnlyNotice": "This advanced Business Mode feature is available on Desktop or Laptop. Please open HisabKi Kitab on a larger screen to use this workspace.",
+    "essentialSummaryTitle": "Essential Mobile Summary",
+    "backToDashboard": "Back to Business Dashboard",
+    "desktopWorkspaces": "Desktop Workspaces",
+    "desktopWorkspacesDrawerNotice": "General Ledger, Procurement, Payroll, Budgets, and Financial Reports are available on Desktop or Laptop.",
+    "businessLabel": "Business",
+    "sessionActive": "Session Active"
   },
   "mode": {
     "label": "Finance mode",

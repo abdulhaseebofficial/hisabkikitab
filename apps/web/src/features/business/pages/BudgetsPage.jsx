@@ -1,3 +1,4 @@
+import DesktopOnlyWorkspaceGuard from '../components/DesktopOnlyWorkspaceGuard';
 import { useEffect, useState } from 'react';
 import { Target, Plus, AlertTriangle, CheckCircle2, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -80,7 +81,18 @@ export default function BudgetsPage() {
   const overallUtilizationPct = totalBudgetMinor > 0 ? Math.round((totalSpentMinor / totalBudgetMinor) * 100) : 0;
 
   return (
-    <div className="space-y-6">
+    <DesktopOnlyWorkspaceGuard
+      featureName="Business Budgets & Cost Controls"
+      featureDescription="Expense category targets, live burn monitoring, and general ledger budget variance analysis"
+      featureIcon={Target}
+      quickActionLink={{ to: '/business/expenses', label: 'View Business Expenses' }}
+      essentialSummary={
+        <p className="text-slate-600 dark:text-slate-400">
+          Day-to-day spending is logged under <strong>Business Expenses</strong>. Budget allocations, monthly thresholds, and variance metrics are configured on desktop.
+        </p>
+      }
+    >
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -263,5 +275,6 @@ export default function BudgetsPage() {
         </form>
       </Modal>
     </div>
+    </DesktopOnlyWorkspaceGuard>
   );
 }

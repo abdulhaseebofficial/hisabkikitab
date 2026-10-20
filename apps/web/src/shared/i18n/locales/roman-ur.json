@@ -102,7 +102,16 @@
     "yourBusinesses": "Aap ke Karobar",
     "noBusinessesYet": "Abhi koi karobar darj nahi",
     "addNewBusiness": "Naya Karobar Shamil Karein",
-    "addBusiness": "Naya Karobar Register Karein"
+    "addBusiness": "Naya Karobar Register Karein",
+    "desktopWorkspaceBadge": "Desktop Workspace",
+    "largeScreenOnly": "Laptop / Desktop",
+    "desktopOnlyNotice": "Yeh advanced Business Mode feature Desktop ya Laptop par dastiyab hai. Is workspace ko istemal karne ke liye baraye meherbani barri screen par HisabKi Kitab kholein.",
+    "essentialSummaryTitle": "Zaroori Mobile Khulasa",
+    "backToDashboard": "Business Dashboard par wapis jayein",
+    "desktopWorkspaces": "Desktop Workspaces",
+    "desktopWorkspacesDrawerNotice": "General Ledger, Procurement, Payroll, Budgets, aur Financial Reports Desktop ya Laptop par dastiyab hain.",
+    "businessLabel": "Karobar",
+    "sessionActive": "Session Fa'al Hai"
   },
   "mode": {
     "label": "Hisab ka tareeqa",

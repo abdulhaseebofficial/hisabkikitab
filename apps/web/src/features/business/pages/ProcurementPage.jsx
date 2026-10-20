@@ -1,3 +1,4 @@
+import DesktopOnlyWorkspaceGuard from '../components/DesktopOnlyWorkspaceGuard';
 import { useEffect, useState, useMemo } from 'react';
 import {
   ShoppingBag,
@@ -808,7 +809,18 @@ export default function ProcurementPage() {
   }, [suppliers, paySupplierId]);
 
   return (
-    <div className="space-y-6 pb-12">
+    <DesktopOnlyWorkspaceGuard
+      featureName="Advanced Procurement & Purchasing"
+      featureDescription="Purchase Orders, RFQs, Goods Received Notes (GRN), 3-Way Matching, and Supplier Bills"
+      featureIcon={ShoppingBag}
+      quickActionLink={{ to: '/business/khata', label: 'View Supplier Khata' }}
+      essentialSummary={
+        <p className="text-slate-600 dark:text-slate-400">
+          Supplier balances and payments can be tracked and settled via <strong>Supplier Khata</strong> on mobile. Complete purchase orders, RFQs, and warehouse receipts are managed on desktop.
+        </p>
+      }
+    >
+      <div className="space-y-6 pb-12">
       {/* Header Banner */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -2396,5 +2408,6 @@ export default function ProcurementPage() {
         </div>
       </Modal>
     </div>
+    </DesktopOnlyWorkspaceGuard>
   );
 }
