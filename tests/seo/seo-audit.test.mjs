@@ -6,7 +6,7 @@ import { JSDOM } from 'jsdom';
 import { publicPaths, toolPaths, trustPaths, sitemapPaths } from '../../apps/web/dist-ssr/prerender.js';
 import { scanGeneratedLinks } from './link-graph.mjs';
 
-const origin = 'https://hisabkikitab.com';
+const origin = 'https://www.hisabkikitab.com';
 const dist = resolve('apps/web/dist');
 const generated = [...publicPaths, ...toolPaths, ...trustPaths];
 const documentFor = async (path) => new JSDOM(await readFile(resolve(dist, path === '/' ? 'index.html' : `${path.slice(1)}/index.html`), 'utf8')).window.document;

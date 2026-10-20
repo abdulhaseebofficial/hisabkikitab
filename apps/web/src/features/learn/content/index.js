@@ -50,7 +50,7 @@ export const disclaimer = 'This content is for educational and informational pur
 
 export function resolvePage(pathname) {
   const path = pathname.replace(/\/$/, '') || '/';
-  if (path === '/') return { type: 'home', path, title: 'Hisab Ki Kitab | Personal and Shared Money Management', description: 'Track expenses and income, plan budgets and goals, and organize household or shared costs with Hisab Ki Kitab.' };
+  if (path === '/') return { type: 'home', path, title: 'Hisab Ki Kitab | Expense Tracker & Budget Planner', description: 'Track income and expenses, plan budgets and savings goals, and manage shared household costs with Hisab Ki Kitab.' };
   if (path === '/learn') return { type: 'index', path, title: learnTitle, description: learnDescription };
   const category = categories.find((item) => path === `/learn/${item.slug}`);
   if (category) return { type: 'category', path, category, hasArticles: articles.some((article) => article.category === category.slug), title: `${category.name} Guides`, description: category.description };

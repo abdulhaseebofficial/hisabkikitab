@@ -4,6 +4,7 @@ import ContactLinks from '../../../shared/components/ContactLinks';
 import { PrivacyChoices } from '../../../shared/analytics/ConsentBanner';
 import { DEVELOPER } from '../../../shared/utils/constants';
 import useT from '../../../shared/i18n/I18nProvider';
+import './auth-shell.css';
 
 // Keys rather than text: this panel is the first thing a signed-out visitor
 // reads, and it has to be in their language before there is a profile to ask.
@@ -21,7 +22,7 @@ export default function AuthShell({ title, subtitle, children, footer }) {
   const { t } = useT();
 
   return (
-    <div className="flex min-h-full bg-canvas-light dark:bg-canvas-dark">
+    <div className="hkk-auth-shell flex min-h-full bg-canvas-light dark:bg-canvas-dark">
       {/*
         The pitch is one block with the logo, not a third thing spread to the
         far corner: `justify-between` on three children left ~225px of dead
@@ -31,7 +32,7 @@ export default function AuthShell({ title, subtitle, children, footer }) {
       */}
       {/* pb reserves the strip the absolutely-placed small print sits in, so the
           centred pitch cannot grow into it on a short laptop screen. */}
-      <aside className="relative hidden w-1/2 flex-col justify-center bg-brand-600 p-10 pb-24 text-white lg:flex xl:p-14 xl:pb-28">
+      <aside className="hkk-auth-brand relative hidden w-1/2 flex-col justify-center bg-brand-600 p-10 pb-24 text-white lg:flex xl:p-14 xl:pb-28">
         <div className="max-w-lg">
           <BrandMark to="/" inverted className="mb-12" />
 
@@ -62,7 +63,7 @@ export default function AuthShell({ title, subtitle, children, footer }) {
         </p>
       </aside>
 
-      <main className="flex w-full flex-col justify-center px-4 py-8 sm:px-10 sm:py-12 lg:w-1/2">
+      <main className="hkk-auth-form-panel flex w-full flex-col justify-center px-4 py-8 sm:px-10 sm:py-12 lg:w-1/2">
         <div className="mx-auto w-full max-w-[26rem] rounded-[1.5rem] border border-slate-200 bg-canvas-card p-5 shadow-raised sm:p-8 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none dark:border-slate-800 dark:bg-canvas-darkCard lg:dark:bg-transparent">
           <BrandMark to="/" className="mb-8 lg:hidden" />
 

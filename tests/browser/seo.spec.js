@@ -1,8 +1,9 @@
 const { test, expect } = require('@playwright/test');
-const canonicalUrl = (path, baseURL) => new URL(
-  path === '/' ? '/' : `${path.replace(/\/+$/, '')}/`,
-  process.env.VITE_SITE_URL || baseURL
-).href;
+const canonicalUrl = (path, baseURL) => {
+  const origin = new URL(process.env.VITE_SITE_URL || baseURL);
+  if (origin.hostname === 'hisabkikitab.com') origin.hostname = 'www.hisabkikitab.com';
+  return new URL(path === '/' ? '/' : `${path.replace(/\/+$/, '')}/`, origin).href;
+};
 
 test.beforeEach(async ({ page }) => {
   await page.route((url) => url.pathname.startsWith('/api/'), (route) => {

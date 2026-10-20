@@ -12,6 +12,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('all public routes render, have metadata, and fit the viewport', async ({ page, baseURL }) => {
+  const { canonicalSiteOrigin } = await import('../../scripts/site-origin.mjs');
+  const expectedOrigin = canonicalSiteOrigin(process.env.VITE_SITE_URL || '') || baseURL;
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   const calculatorRoutes=['budget-calculator','savings-goal-calculator','expense-split-calculator','emergency-fund-calculator','debt-repayment-calculator','net-worth-calculator','freelancer-income-calculator'].map((slug)=>`/tools/${slug}`);
@@ -20,7 +22,7 @@ test('all public routes render, have metadata, and fit the viewport', async ({ p
     await expect(page.locator('h1')).toBeVisible();
     await expect(page).not.toHaveURL(/\/login/);
     await expect(page.getByText('Your session expired. Please log in again.')).toHaveCount(0);
-    const canonical = new URL(route === '/' ? '/' : `${route}/`, process.env.VITE_SITE_URL || baseURL).href;
+    const canonical = new URL(route === '/' ? '/' : `${route}/`, expectedOrigin).href;
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonical);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', ['/learn/earning', '/learn/small-business'].includes(route) ? 'noindex,follow' : 'index,follow');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -126,7 +128,9 @@ test('production route loading keeps tools and private entry free of article bod
   expect(tool.resources.scripts.some((name)=>name.startsWith('how-to-'))).toBe(false);
   const article = await metric(page, '/learn/saving/how-to-save-money-every-month');
   await expect(page.getByRole('heading', { name:'How to Save Money Every Month' })).toBeVisible();
-  expect(article.resources.assets.some((name)=>name.startsWith('how-to-save-money-every-month'))).toBe(true);
+  // Prerendered headings can appear before the lazy article chunk finishes loading.
+  await expect.poll(() => page.evaluate(() => performance.getEntriesByType('resource')
+    .some((entry) => new URL(entry.name).pathname.split('/').pop().startsWith('how-to-save-money-every-month')))).toBe(true);
   const privatePage = await context.newPage();
   const privateEntry = await metric(privatePage, '/dashboard');
   expect(privateEntry.resources.assets.some((name)=>name.startsWith('LearnPage') || name.startsWith('how-to-'))).toBe(false);

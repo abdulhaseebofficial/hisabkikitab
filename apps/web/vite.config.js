@@ -1,11 +1,12 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import frontendConfig from '../../scripts/frontend-config.js';
+import { canonicalSiteOrigin } from '../../scripts/site-origin.mjs';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ isSsrBuild, mode }) => {
   const buildEnv = loadEnv(mode, process.cwd(), '');
-  const siteOrigin = buildEnv.VITE_SITE_URL || (buildEnv.VERCEL_PROJECT_PRODUCTION_URL ? `https://${buildEnv.VERCEL_PROJECT_PRODUCTION_URL}` : '');
+  const siteOrigin = canonicalSiteOrigin(buildEnv.VITE_SITE_URL || (buildEnv.VERCEL_PROJECT_PRODUCTION_URL ? `https://${buildEnv.VERCEL_PROJECT_PRODUCTION_URL}` : ''));
   return ({
   // Vite 6 is shared by the build and Vitest, so both need the React JSX transform.
   plugins: [react()],

@@ -67,7 +67,7 @@ async function main() {
     // Mock Google transport so QA cannot add events to the real GA property.
     await context.route('**/*', async route => {
       const url = new URL(route.request().url());
-      if (url.hostname === 'hisabkikitab.com') {
+      if (url.hostname === 'www.hisabkikitab.com') {
         const response = await fetch(`http://127.0.0.1:4181${url.pathname}${url.search}`, { redirect: 'manual' });
         const headers = Object.fromEntries(response.headers.entries());
         delete headers['content-encoding']; delete headers['content-length'];
@@ -75,7 +75,7 @@ async function main() {
       } else if (url.hostname === 'www.googletagmanager.com') await route.fulfill({ contentType: 'text/javascript', body: 'window.__gaStubLoaded = true;' });
       else await route.abort();
     });
-    await page.goto('https://hisabkikitab.com/', { waitUntil: 'networkidle' });
+    await page.goto('https://www.hisabkikitab.com/', { waitUntil: 'networkidle' });
     assert.equal(requests.length, 0, 'GA must not load before consent');
     await page.getByRole('button', { name: 'Reject analytics', exact: true }).click();
     assert.equal(requests.length, 0, 'Reject must not load GA');
@@ -89,7 +89,7 @@ async function main() {
       await page.evaluate(path => { history.pushState({}, '', path); window.dispatchEvent(new PopStateEvent('popstate')); }, path);
       await page.getByRole('heading', { name: heading, exact: true }).waitFor();
       await page.waitForTimeout(100);
-      assert.equal(await page.locator('link[rel=canonical]').getAttribute('href'), `https://hisabkikitab.com${path}`);
+      assert.equal(await page.locator('link[rel=canonical]').getAttribute('href'), `https://www.hisabkikitab.com${path}`);
     }
     const views = await page.evaluate(() => window.dataLayer.filter(call => call[0] === 'event' && call[1] === 'page_view').map(call => call[2]));
     assert.deepEqual(views.map(view => view.page_path), ['/', '/learn/', '/tools/', '/about/']);
@@ -114,7 +114,7 @@ async function main() {
       assert.equal(await page.getByRole('button', { name: 'Open navigation' }).getAttribute('aria-expanded'), 'false');
     }
     await page.screenshot({ path: `test-results/verified-article-${width}.png`, fullPage: true });
-    await page.goto('https://hisabkikitab.com/', { waitUntil: 'networkidle' });
+    await page.goto('https://www.hisabkikitab.com/', { waitUntil: 'networkidle' });
     await page.screenshot({ path: `test-results/verified-home-${width}.png`, fullPage: true });
     assert.deepEqual(errors, []);
     contexts.push({ width, errors, appPageviews: views, consent: 'initial deny, reject persist, accept, withdraw verified; transport mocked' });
