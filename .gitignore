@@ -58,3 +58,8 @@ supabase/.temp/
 # Release and visual test scratch artifacts
 release-artifacts/
 tailwind4-visual/
+
+
+# Database backups and dumps
+backups/
+*.dump
