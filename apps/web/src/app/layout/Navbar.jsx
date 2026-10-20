@@ -56,7 +56,7 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
           <Menu className="h-5 w-5" />
         </button>
 
-        <BrandMark to={isBusinessMode ? '/business' : '/dashboard'} nameClassName="hidden sm:block" />
+        <BrandMark to={isBusinessMode ? '/business' : '/dashboard'} nameClassName="hidden lg:block" />
 
         {/* Mode Switcher Segmented Control (Desktop) */}
         <div className="hidden md:flex items-center rounded-xl bg-slate-100 p-1 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 text-xs font-semibold">
@@ -106,7 +106,7 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
               className="flex items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50/60 px-2.5 py-1 text-xs font-semibold text-brand-700 transition hover:bg-brand-100 dark:border-brand-800/70 dark:bg-brand-950/40 dark:text-brand-300 dark:hover:bg-brand-900/40"
             >
               <Building2 className="h-3.5 w-3.5 shrink-0" />
-              <span className="max-w-[75px] xs:max-w-[110px] truncate sm:max-w-[180px]">
+              <span className="max-w-[55px] xs:max-w-[85px] truncate sm:max-w-[180px]">
                 {activeBusiness?.name || t('business.selectBusiness', 'Select Business')}
               </span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60" />
@@ -177,7 +177,7 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
             }
           }}
           title={isBusinessMode ? 'Switch to Personal Mode' : 'Switch to Business Mode'}
-          className="hidden xs:inline-flex md:hidden h-9 items-center gap-1 rounded-xl border border-slate-200 px-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200"
+          className="hidden sm:inline-flex md:hidden h-9 items-center gap-1 rounded-xl border border-slate-200 px-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200"
         >
           {isBusinessMode ? (
             <>
@@ -199,14 +199,14 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
               onClick={triggerInstall}
               title={t('pwa.installAppBtn', 'Install App')}
               aria-label={t('pwa.installAppBtn', 'Install App')}
-              className="hidden sm:inline-flex h-9 items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50/70 px-2.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-950/40 dark:text-brand-300 dark:hover:bg-brand-900/40"
+              className="hidden lg:inline-flex h-9 items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50/70 px-2.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-100 dark:border-brand-800 dark:bg-brand-950/40 dark:text-brand-300 dark:hover:bg-brand-900/40"
             >
               <Download className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{t('pwa.install', 'Install')}</span>
             </button>
           )}
 
-          <ThemeToggle />
+          <div className="hidden xs:block"><div className="hidden xs:block"><ThemeToggle /></div></div>
 
           <NotificationBell readOnly={Boolean(user?.isDemo)} />
 
@@ -219,10 +219,10 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
                 {initials(user ? user.name : '')}
               </span>
-              <span className="hidden max-w-28 truncate text-sm font-medium text-slate-700 sm:block dark:text-slate-200">
+              <span className="hidden max-w-28 truncate text-sm font-medium text-slate-700 lg:block dark:text-slate-200">
                 {user ? user.name.split(' ')[0] : ''}
               </span>
-              <ChevronDown className="hidden h-4 w-4 text-slate-400 sm:block" />
+              <ChevronDown className="hidden h-4 w-4 text-slate-400 lg:block" />
             </button>
 
             {menuOpen && (

@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Eye, Plus, Store } from 'lucide-react';
 import Navbar from './Navbar';
@@ -55,9 +55,11 @@ function QuickAddForm({ onDone, onCancel }) {
  */
 export default function AppLayout() {
   const { user, setDemoFinanceMode } = useAuth();
-  const { isBusinessMode, onboardingOpen, closeOnboarding } = useBusiness();
+  const { isBusinessMode, setMode: setBusinessMode, onboardingOpen, closeOnboarding } = useBusiness();
   const location = useLocation();
   const inBusinessMode = isBusinessMode || location.pathname.startsWith('/business');
+
+
   const shared = user?.financeMode === 'shared_living' && !inBusinessMode;
   const mobileItems = inBusinessMode
     ? MOBILE_BUSINESS_NAV_ITEMS
@@ -138,11 +140,11 @@ export default function AppLayout() {
                 const isPersonalRoute = ['/dashboard', '/expenses', '/income', '/goals', '/debts', '/budget', '/advisor', '/reports'].includes(location.pathname);
                 const isBusinessRoute = location.pathname.startsWith('/business');
 
+                if (user?.isDemo && isBusinessRoute) {
+                  return <Navigate to="/dashboard" replace />;
+                }
                 if (isBusinessMode && isPersonalRoute) {
                   return <Navigate to="/business" replace />;
-                }
-                if (!isBusinessMode && isBusinessRoute) {
-                  return <Navigate to="/dashboard" replace />;
                 }
                 if (shared && !['/dashboard', '/settings'].includes(location.pathname)) {
                   return <Navigate to="/dashboard" replace />;
@@ -168,7 +170,7 @@ export default function AppLayout() {
           ))}
 
           {inBusinessMode ? (
-            <li className="flex flex-1 justify-center">
+            <li className="flex flex-1 min-w-0 justify-center">
               <Link
                 to="/business/pos"
                 aria-label="POS Checkout"
@@ -228,7 +230,7 @@ function MobileTab({ item: { to, key, label, icon: Icon }, shared = false }) {
   const displayLabel = translated !== itemKey ? translated : (label || key);
 
   return (
-    <li className="flex-1">
+    <li className="flex-1 min-w-0">
       <Link
         to={to}
         aria-current={isActive ? 'page' : undefined}

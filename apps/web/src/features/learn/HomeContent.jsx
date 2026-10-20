@@ -2,7 +2,7 @@
 import Link from '../../shared/seo/PublicLink';
 import { useLocation } from 'react-router-dom';
 import {
-  ArrowDownLeft, ArrowRight, ArrowUpRight, BookOpen, Check, House,
+  ArrowDownLeft, ArrowRight, ArrowUpRight, BookOpen, Briefcase, Check, House,
   Plus, Target, Users, Wallet
 } from 'lucide-react';
 import OfficialLogo from '../../shared/components/layout/OfficialLogo';
@@ -31,6 +31,13 @@ const previews = [
     transactions: [['Contributions', '+60,000', 'income'], ['Shared groceries', '-6,750', 'expense']],
     bars: [36, 54, 49, 72, 63, 87, 75],
   },
+  {
+    id: 'business', title: 'Business', icon: Briefcase,
+    description: 'POS, sales, inventory, Khata, and commercial accounting.',
+    balance: '425,000', income: '850,000', expenses: '425,000', goal: '82%',
+    transactions: [['Daily POS Sales', '+85,000', 'income'], ['Supplier Khata Payment', '-32,000', 'expense']],
+    bars: [50, 65, 72, 80, 88, 92, 95],
+  },
 ];
 
 const featureCards = [
@@ -51,6 +58,12 @@ const featureCards = [
     description: 'Stay on top of the costs you manage together in a shared space.',
     points: ['Shared expenses', 'Member contributions', 'Pending balances', 'Settlement records'],
     to: '/dashboard', action: 'Explore shared view'
+  },
+  {
+    title: 'Business Finance', icon: Briefcase,
+    description: 'Point of sale, stock control, Khata, and commercial accounting in a dedicated ledger.',
+    points: ['Point of sale & invoicing', 'Customer & supplier Khata', 'Inventory & stock control', 'Financial statements & P&L'],
+    to: '/business', action: 'Explore business view'
   },
 ];
 
@@ -179,8 +192,8 @@ export default function HomeContent({ ArticleCard }) {
             <Link to="/register" className="hkk-button hkk-button-primary">Start Managing Your Money <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
             <Link to="/login" className="hkk-button hkk-button-secondary">Sign In</Link>
           </div>
-          <div className="hkk-trust" aria-label="Built for individuals, households and shared living">
-            <span><Check aria-hidden="true" /> Built for Individuals</span><span><Check aria-hidden="true" /> Households</span><span><Check aria-hidden="true" /> Shared Living</span>
+          <div className="hkk-trust" aria-label="Built for individuals, households, shared living and small businesses">
+            <span><Check aria-hidden="true" /> Built for Individuals</span><span><Check aria-hidden="true" /> Households</span><span><Check aria-hidden="true" /> Shared Living</span><span><Check aria-hidden="true" /> Small Businesses</span>
           </div>
         </div>
         <div className={`hkk-hero-visual${previewVisible ? '' : ' is-offscreen'}`} id="finance-preview" ref={visualRef}>
@@ -198,7 +211,7 @@ export default function HomeContent({ ArticleCard }) {
       </section>
 
       <section className="hkk-features" aria-labelledby="hkk-features-heading">
-        <div className="hkk-section-intro"><p className="hkk-eyebrow">Made for real life</p><h2 id="hkk-features-heading">One app. Every way you manage money.</h2><p>Whether you're managing your own finances, your family's money, or shared costs with friends, HisabKi Kitab brings everything together.</p></div>
+        <div className="hkk-section-intro"><p className="hkk-eyebrow">Made for real life &amp; commerce</p><h2 id="hkk-features-heading">One app. Four independent financial domains.</h2><p>Whether you're managing your personal finances, family budget, shared costs with roommates, or your small business, HisabKi Kitab provides dedicated, financially isolated workspaces.</p></div>
         <div className="hkk-feature-grid">
           {featureCards.map(({ title, icon: Icon, description, points, to, action }) => (
             <article key={title} className="hkk-feature-card">

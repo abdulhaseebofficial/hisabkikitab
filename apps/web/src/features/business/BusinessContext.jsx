@@ -7,7 +7,7 @@ const MODE_STORAGE_KEY = 'hkk_app_mode';
 const ACTIVE_BIZ_KEY = 'hkk_active_business_id';
 
 export function BusinessProvider({ children }) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
   const userId = user?._id || user?.id || null;
   const isDemo = Boolean(user?.isDemo);
 
@@ -83,6 +83,9 @@ export function BusinessProvider({ children }) {
 
   // Purge and reload on authentication/user changes or demo mode
   useEffect(() => {
+    // Never purge while initial session authentication is in flight
+    if (authLoading) return;
+
     if (prevUserIdRef.current !== userId || !isAuthenticated || isDemo) {
       prevUserIdRef.current = userId;
       setBusinesses([]);
@@ -102,7 +105,7 @@ export function BusinessProvider({ children }) {
     if (isAuthenticated && !isDemo) {
       refreshBusinesses();
     }
-  }, [userId, isAuthenticated, isDemo, refreshBusinesses, setActiveBusinessId]);
+  }, [userId, isAuthenticated, isDemo, authLoading, refreshBusinesses, setActiveBusinessId]);
 
   const activeBusiness = useMemo(() => {
     if (!activeBusinessId) return null;

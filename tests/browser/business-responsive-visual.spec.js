@@ -235,10 +235,21 @@ test.describe('Business Mode Mobile vs Desktop Visual QA & Breakpoints', () => {
       await page.waitForLoadState('networkidle');
 
       // Verify no horizontal overflow
-      const overflow = await page.evaluate(() => {
-        return document.documentElement.scrollWidth > window.innerWidth;
+      const overflowInfo = await page.evaluate(() => {
+        const docWidth = window.innerWidth;
+        const over = [];
+        document.querySelectorAll('*').forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          if (rect.right > docWidth + 1) {
+            over.push({ tag: el.tagName, className: typeof el.className === 'string' ? el.className.slice(0, 50) : '', right: Math.round(rect.right), width: Math.round(rect.width) });
+          }
+        });
+        return { isOver: document.documentElement.scrollWidth > window.innerWidth, scrollWidth: document.documentElement.scrollWidth, innerWidth: window.innerWidth, over: over.slice(0, 5) };
       });
-      expect(overflow).toBe(false);
+      if (overflowInfo.isOver) {
+        console.log(`[OVERFLOW at ${vp.name}]:`, JSON.stringify(overflowInfo));
+      }
+      expect(overflowInfo.isOver).toBe(false);
 
       await saveScreenshot(page, `dashboard-${vp.name}.png`);
 
