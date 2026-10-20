@@ -130,7 +130,25 @@ export default function AppLayout() {
               </div>
             )}
             <Suspense fallback={<PageSpinner label={t('common.loading')} />}>
-              {shared && !['/dashboard', '/settings'].includes(location.pathname) ? <Navigate to="/dashboard" replace /> : <Outlet key={user?.financeMode} />}
+              {(() => {
+                // Strict four-mode route isolation:
+                // 1. In Business Mode: personal financial routes redirect to /business.
+                // 2. In Personal Mode: business routes redirect to /dashboard.
+                // 3. In Shared Living: non-shared routes redirect to /dashboard.
+                const isPersonalRoute = ['/dashboard', '/expenses', '/income', '/goals', '/debts', '/budget', '/advisor', '/reports'].includes(location.pathname);
+                const isBusinessRoute = location.pathname.startsWith('/business');
+
+                if (isBusinessMode && isPersonalRoute) {
+                  return <Navigate to="/business" replace />;
+                }
+                if (!isBusinessMode && isBusinessRoute) {
+                  return <Navigate to="/dashboard" replace />;
+                }
+                if (shared && !['/dashboard', '/settings'].includes(location.pathname)) {
+                  return <Navigate to="/dashboard" replace />;
+                }
+                return <Outlet key={`${user?.financeMode}-${isBusinessMode ? 'biz' : 'pers'}`} />;
+              })()}
             </Suspense>
           </div>
           <div className="hidden lg:block">

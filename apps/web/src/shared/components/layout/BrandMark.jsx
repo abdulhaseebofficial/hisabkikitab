@@ -1,4 +1,4 @@
-﻿import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import OfficialLogo from './OfficialLogo';
 import { cn } from '../../utils/format';
 

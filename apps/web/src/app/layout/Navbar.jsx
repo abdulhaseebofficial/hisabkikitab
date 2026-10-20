@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, LogOut, User, ChevronDown, MessageSquarePlus, Download, Briefcase, Building2, Plus, Check } from 'lucide-react';
+import { Menu, LogOut, User, ChevronDown, MessageSquarePlus, Download, Briefcase, Building2, Plus, Check, Settings } from 'lucide-react';
 import { useAuth } from '../../features/auth/AuthContext';
 import { useBusiness } from '../../features/business';
 import ThemeToggle from './ThemeToggle';
@@ -56,7 +56,7 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
           <Menu className="h-5 w-5" />
         </button>
 
-        <BrandMark nameClassName="hidden sm:block" />
+        <BrandMark to={isBusinessMode ? '/business' : '/dashboard'} nameClassName="hidden sm:block" />
 
         {/* Mode Switcher Segmented Control (Desktop) */}
         <div className="hidden md:flex items-center rounded-xl bg-slate-100 p-1 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 text-xs font-semibold">
@@ -234,6 +234,17 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
                       {user ? user.name : ''}
                     </p>
                     <p className="truncate text-xs text-slate-500 dark:text-slate-400">{user ? user.email : ''}</p>
+                    <div className="mt-2 flex items-center gap-1.5">
+                      <span className={cn(
+                        "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold",
+                        isBusinessMode 
+                          ? "bg-brand-100 text-brand-800 dark:bg-brand-950/60 dark:text-brand-300"
+                          : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                      )}>
+                        {isBusinessMode ? <Briefcase className="h-3 w-3" /> : <User className="h-3 w-3" />}
+                        {isBusinessMode ? 'Business Mode' : (user?.financeMode === 'householder' ? 'Household Mode' : (user?.financeMode === 'shared_living' ? 'Shared Living' : 'Personal Mode'))}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="my-1 border-t border-slate-100 dark:border-slate-800/80" />
@@ -243,11 +254,9 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
                     onClick={() => setMenuOpen(false)}
                     className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
-                    <User className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
+                    <Settings className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
                     <span className="truncate">{t('nav.profileSettings', 'Profile and settings')}</span>
                   </Link>
-
-                  <div className="my-1 border-t border-slate-100 dark:border-slate-800/80" />
 
                   <button
                     type="button"
@@ -271,37 +280,6 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
                     )}
                     <span className="truncate">
                       {isBusinessMode ? t('nav.switchToPersonal', 'Switch to Personal Mode') : t('nav.switchToBusiness', 'Switch to Business Mode')}
-                    </span>
-                  </button>
-
-                  {(isBusinessMode || businesses.length > 0) && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        openOnboarding();
-                      }}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                    >
-                      <Plus className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" />
-                      <span className="truncate">{t('business.addNewBusiness', 'Add New Business')}</span>
-                    </button>
-                  )}
-
-                  <div className="my-1 border-t border-slate-100 dark:border-slate-800/80" />
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      if (isInstalled) openModal();
-                      else triggerInstall();
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    <Download className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
-                    <span className="truncate">
-                      {isInstalled ? t('pwa.appInstalledBtn', 'App Ready') : t('pwa.installAppBtn', 'Install App')}
                     </span>
                   </button>
 

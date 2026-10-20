@@ -31,8 +31,15 @@ export default function Login() {
   // so the button cannot appear on an install that has not configured it.
   const { data: config } = useAsync(() => authService.config(), []);
 
-  /** Where the student was heading before they were sent to log in. */
-  const target = location.state && location.state.from ? location.state.from.pathname : '/dashboard';
+  /** Where the user was heading before they were sent to log in. */
+  const defaultTarget = (() => {
+    try {
+      const savedMode = localStorage.getItem('hkk_app_mode');
+      if (savedMode === 'business') return '/business';
+    } catch { /* optional */ }
+    return '/dashboard';
+  })();
+  const target = location.state && location.state.from ? location.state.from.pathname : defaultTarget;
 
   const onGoogle = async (idToken) => {
     try {
