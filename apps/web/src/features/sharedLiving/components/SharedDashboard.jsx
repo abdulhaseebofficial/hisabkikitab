@@ -8,7 +8,7 @@ const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#a855f7', '#ef4444', '#14b8a6'
 export default function SharedDashboard({ space, month, data, writable, format, categoryLabel, onAddExpense, onAddPayment, onOpenBills, onOpenMembers, onDownload }) {
   const { t } = useT();
   const summary = data.summary;
-  const categories = summary.categories
+  const categories = (summary.categories || [])
     .map((category) => ({ name: categoryLabel(category.category_id), value: Number(category.amount) }))
     .filter((category) => category.value > 0);
   const metrics = [

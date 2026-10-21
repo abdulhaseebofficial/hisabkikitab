@@ -93,11 +93,30 @@ test.describe('Cross-Mode Independence & Zero Data Overlap Browser Suite', () =>
       const u = new URL(route.request().url());
       const p = u.pathname;
 
-      if (p === '/api/auth/me') {
+      if (p === '/api/auth/me' || p === '/api/profile' || p === '/api/settings/profile') {
+        const req = route.request();
+        const method = req.method();
+        if (method === 'PUT' || method === 'PATCH') {
+          const body = JSON.parse(req.postData() || '{}');
+          if (body.financeMode) {
+            studentData.user.financeMode = body.financeMode;
+          }
+        }
         return route.fulfill({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({ success: true, data: { user: studentData.user } }),
+        });
+      }
+
+      if (p === '/api/profile/categories') {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: { defaults: ['Food', 'Groceries', 'Utilities', 'Rent'], custom: [], all: ['Food', 'Groceries', 'Utilities', 'Rent'] },
+          }),
         });
       }
 
@@ -169,8 +188,14 @@ test.describe('Cross-Mode Independence & Zero Data Overlap Browser Suite', () =>
     // 2. Switch to Business Mode via Settings -> Finance Mode
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
-    await page.getByRole('button', { name: /business/i }).click();
-    await page.getByRole('button', { name: /switch to business|confirm/i }).click();
+    const bizCard = page.locator('div.grid button').filter({ hasText: /business/i });
+    await expect(bizCard.first()).toBeVisible({ timeout: 5000 });
+    await bizCard.first().click();
+
+    const confirmBiz = page.getByRole('button', { name: /^switch mode$/i });
+    await expect(confirmBiz).toBeVisible({ timeout: 5000 });
+    await confirmBiz.click();
+    await expect(page).toHaveURL(/\/business$/, { timeout: 10000 });
     await page.waitForLoadState('networkidle');
 
     // Verify Business A items render and Student items do NOT exist
@@ -181,8 +206,14 @@ test.describe('Cross-Mode Independence & Zero Data Overlap Browser Suite', () =>
     // 3. Switch back to Personal Mode via Settings -> Finance Mode
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
-    await page.getByRole('button', { name: /student/i }).click();
-    await page.getByRole('button', { name: /switch to individual|confirm/i }).click();
+    const studentCard = page.locator('div.grid button').filter({ hasText: /student/i });
+    await expect(studentCard.first()).toBeVisible({ timeout: 5000 });
+    await studentCard.first().click();
+
+    const confirmStudent = page.getByRole('button', { name: /^switch mode$/i });
+    await expect(confirmStudent).toBeVisible({ timeout: 5000 });
+    await confirmStudent.click();
+    await expect(page).toHaveURL(/\/dashboard$/, { timeout: 10000 });
     await page.waitForLoadState('networkidle');
 
     // Verify Student data restored cleanly with zero business overlap

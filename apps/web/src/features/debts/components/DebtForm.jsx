@@ -155,7 +155,13 @@ export default function DebtForm({ open, onClose, onSubmit, debt = null, currenc
                 const duplicates = contacts.filter((c) => c.displayName.trim().toLowerCase() === contact.displayName.trim().toLowerCase());
                 let detail = '';
                 if (contact.contactInfo) {
-                  detail = ` (${contact.contactInfo})`;
+                  const samePhoneDuplicates = duplicates.filter((c) => (c.contactInfo || '').trim() === contact.contactInfo.trim());
+                  if (samePhoneDuplicates.length > 1) {
+                    const dupIndex = samePhoneDuplicates.findIndex((c) => c.id === contact.id) + 1;
+                    detail = ` (${contact.contactInfo}) (Person ${dupIndex})`;
+                  } else {
+                    detail = ` (${contact.contactInfo})`;
+                  }
                 } else if (duplicates.length > 1) {
                   const dupIndex = duplicates.findIndex((c) => c.id === contact.id) + 1;
                   detail = ` (Person ${dupIndex})`;

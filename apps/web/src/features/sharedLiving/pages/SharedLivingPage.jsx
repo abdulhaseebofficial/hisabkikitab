@@ -122,12 +122,12 @@ export default function SharedLivingPage({ userId, readOnly = false }) {
   const selected = spaces.find((s) => s.id === spaceId),
     admin = selected?.role === "admin",
     periodManageable = !readOnly && admin && data,
-    writable = !readOnly && admin && data && !data.period.closed;
+    writable = !readOnly && admin && data && !data.period?.closed;
   const base = `/spaces/${spaceId}`,
     periodPath = `${base}/months/${month}`;
   const categoryLabel = useCallback(
     (id) => {
-      const c = data?.categories.find((item) => item.id === id);
+      const c = data?.categories?.find((item) => item.id === id);
       return c?.name || t(`shared.categories.${c?.stable_key || "other"}`);
     },
     [data, t],
