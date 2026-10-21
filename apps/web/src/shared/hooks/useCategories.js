@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import profileService from '../api/profileApi';
 import { CATEGORIES } from '../utils/constants';
+import { DATA_CHANGED_EVENT } from './useAsync';
 
 /**
- * The student's full category list (built-ins plus their own).
+ * The user's full category list (built-ins plus their own) for the active finance mode.
  * Starts from the bundled defaults so dropdowns render instantly, then
  * replaces them with the authoritative list from the API.
  */
@@ -26,6 +27,12 @@ export default function useCategories() {
 
   useEffect(() => {
     load();
+  }, [load]);
+
+  useEffect(() => {
+    const onChanged = () => { load(); };
+    window.addEventListener(DATA_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(DATA_CHANGED_EVENT, onChanged);
   }, [load]);
 
   const add = useCallback(async (name) => {

@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import PageHeader from '../../../shared/components/ui/PageHeader';
 import { useAuth } from '../../auth';
+import { useBusiness } from '../../business';
 import { useTheme } from '../../../app/providers/ThemeProvider';
 import useT from '../../../shared/i18n/I18nProvider';
 import ConfirmDialog from '../../../shared/components/ui/ConfirmDialog';
@@ -62,6 +63,7 @@ const changePasswordSchema = z
 export default function Settings() {
   const navigate = useNavigate();
   const { user, updateUser, logout } = useAuth();
+  const { isBusinessMode, setMode: setBusinessMode, businesses, openOnboarding } = useBusiness();
   const { theme, setTheme } = useTheme();
   const { t } = useT();
   const { categories, custom, add, remove } = useCategories();
@@ -150,10 +152,20 @@ export default function Settings() {
         updateUser(updated);
         trackEvent('finance_mode_changed', { finance_mode: updated.financeMode });
         setPendingMode(null);
-        // Every mounted screen is showing the other mode's numbers. This is the
-        // same broadcast quick-add uses, and it is what makes the switch take
-        // effect now rather than on the next navigation.
+        // Invalidate stale caches across all mounted queries
         notifyDataChanged();
+
+        // Synchronize Business Mode context and navigate to the mode's dedicated workspace
+        if (mode === 'business') {
+          setBusinessMode('business');
+          if (businesses.length === 0) {
+            openOnboarding();
+          }
+          navigate('/business');
+        } else {
+          setBusinessMode('personal');
+          navigate('/dashboard');
+        }
       },
     });
   };

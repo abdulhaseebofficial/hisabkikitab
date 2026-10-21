@@ -199,7 +199,7 @@ export default function DebtsPage() {
             <div key={person.key} className="hw-card overflow-hidden p-3 sm:p-4">
               <button type="button" className="flex w-full items-center justify-between gap-3 text-left" aria-expanded={openPerson === person.key}
                 onClick={() => { setOpenPerson(openPerson === person.key ? '' : person.key); setRecordPage(1); }}>
-                <span className="min-w-0"><strong className="block truncate">{person.name}</strong><span className="text-xs text-slate-500 dark:text-slate-400">{person.recordCount} {t('udhaar.records')} · {person.contactInfo ? `${person.contactInfo} · ` : ''}{t('udhaar.contactRef')} {person.contactId?.slice(-6)}</span></span>
+                <span className="min-w-0"><strong className="block truncate">{person.name}</strong><span className="text-xs text-slate-500 dark:text-slate-400">{person.recordCount} {t('udhaar.records')}{person.contactInfo ? ` · ${person.contactInfo}` : ''}</span></span>
                 <span className="flex shrink-0 items-center gap-2 text-right"><span className="text-sm font-semibold tabular-nums">{person.netBalance > 0 ? t('udhaar.personOwesYou') : person.netBalance < 0 ? t('udhaar.youOwePerson') : t('udhaar.settled')}: {formatMoney(Math.abs(person.netBalance), currency)}</span><ChevronDown className="h-4 w-4" /></span>
               </button>
               {openPerson === person.key && <div className="mt-3 space-y-2 border-t border-slate-200 pt-3 dark:border-slate-700">

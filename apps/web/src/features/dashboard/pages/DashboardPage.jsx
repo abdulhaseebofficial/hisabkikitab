@@ -33,7 +33,7 @@ export default function Dashboard() {
   return user?.financeMode === 'shared_living' ? (
     <SharedLivingPage key={user._id} userId={user._id} readOnly={Boolean(user?.isDemo)} />
   ) : (
-    <PersonalDashboard />
+    <PersonalDashboard key={user?.financeMode || 'student'} />
   );
 }
 
@@ -50,7 +50,7 @@ function PersonalDashboard() {
     const now = new Date();
     return dashboardService.summary(now.getMonth() + 1, now.getFullYear());
   }, []);
-  const { data, loading, error, reload } = useAsync(load, []);
+  const { data, loading, error, reload } = useAsync(load, [user?.financeMode]);
 
   if (loading && !data) {
     return (

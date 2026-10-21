@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
-import { Link, matchPath, useLocation, useNavigate } from 'react-router-dom';
-import { Laptop, BookOpen, CreditCard, FileBarChart, HandCoins, History, LayoutDashboard, Package, PieChart, Receipt, Settings, Settings2, Sparkles, Store, Target, Users, Utensils, Wallet, X, ArrowLeftRight, CalendarClock, ShoppingBag } from 'lucide-react';
+import { Link, matchPath, useLocation } from 'react-router-dom';
+import { Laptop, BookOpen, CreditCard, FileBarChart, HandCoins, History, LayoutDashboard, Package, PieChart, Receipt, Settings, Settings2, Sparkles, Store, Target, Users, Utensils, Wallet, X, CalendarClock, ShoppingBag } from 'lucide-react';
 import { sharedSection, sharedSectionSearch } from '../../features/sharedLiving';
 import { useBusiness } from '../../features/business';
 import useT from '../../shared/i18n/I18nProvider';
@@ -72,9 +72,8 @@ const SHARED_NAV_ITEMS = [
 ];
 
 function NavItems({ onNavigate, mode, isDrawer = false }) {
-  const { isBusinessMode, setMode: setAppMode } = useBusiness();
+  const { isBusinessMode } = useBusiness();
   const location = useLocation();
-  const navigate = useNavigate();
   const inBusinessMode = isBusinessMode || location.pathname.startsWith('/business');
   const shared = mode === 'shared_living' && !inBusinessMode;
   const items = inBusinessMode ? (isDrawer ? ESSENTIAL_MOBILE_BUSINESS_NAV_ITEMS : BUSINESS_NAV_ITEMS) : (shared ? SHARED_NAV_ITEMS : NAV_ITEMS);
@@ -85,6 +84,12 @@ function NavItems({ onNavigate, mode, isDrawer = false }) {
       const k = `nav.${item.key}`;
       const res = t(k);
       return res !== k ? res : (item.label || item.key);
+    }
+    if (mode === 'householder') {
+      if (item.key === 'dashboard') return t('nav.householdDashboard', 'Household Dashboard');
+      if (item.key === 'expenses') return t('nav.householdExpenses', 'Household Expenses');
+      if (item.key === 'income') return t('nav.householdIncome', 'Household Income');
+      if (item.key === 'budget') return t('nav.householdBudget', 'Household Budget');
     }
     return t(shared ? item.key : `nav.${item.key}`);
   };
@@ -103,31 +108,22 @@ function NavItems({ onNavigate, mode, isDrawer = false }) {
             to={destination}
             onClick={onNavigate}
             aria-current={isActive ? 'page' : undefined}
-            className={cn('hw-nav-item justify-between', isActive && 'hw-nav-item-active')}
+            className={cn('hw-nav-item group relative flex items-center gap-3', isActive && 'hw-nav-item-active')}
           >
             <Icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
-            {getLabel(item)}
-            {isActive && <span className="sr-only">{t('nav.currentPage')}</span>}
+            <span className="flex-1 truncate">{getLabel(item)}</span>
+            {isActive && (
+              <>
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600 dark:bg-brand-400" aria-hidden="true" />
+                <span className="sr-only">{t('nav.currentPage')}</span>
+              </>
+            )}
           </Link>
         );
         return (shared && to === '/settings') || (inBusinessMode && to === '/business/settings') ? (
           <div key={to} className="mt-auto pt-4">
             <div className="border-t border-slate-200 pt-3 dark:border-slate-800">
               {link}
-              {inBusinessMode && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAppMode('personal');
-                    onNavigate?.();
-                    navigate('/dashboard');
-                  }}
-                  className="mt-2 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                >
-                  <ArrowLeftRight className="h-3.5 w-3.5" />
-                  {t('nav.switchToPersonal', 'Switch to Personal Mode')}
-                </button>
-              )}
             </div>
           </div>
         ) : link;

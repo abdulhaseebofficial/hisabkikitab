@@ -107,6 +107,29 @@ export function BusinessProvider({ children }) {
     }
   }, [userId, isAuthenticated, isDemo, authLoading, refreshBusinesses, setActiveBusinessId]);
 
+  // Synchronize BusinessContext mode with the authoritative user.financeMode
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
+    if (isDemo) {
+      if (mode !== 'personal') {
+        setModeState('personal');
+        try { localStorage.setItem(MODE_STORAGE_KEY, 'personal'); } catch { /* optional */ }
+      }
+      return;
+    }
+    if (user?.financeMode === 'business') {
+      if (mode !== 'business') {
+        setModeState('business');
+        try { localStorage.setItem(MODE_STORAGE_KEY, 'business'); } catch { /* optional */ }
+      }
+    } else if (user?.financeMode && user?.financeMode !== 'business') {
+      if (mode === 'business') {
+        setModeState('personal');
+        try { localStorage.setItem(MODE_STORAGE_KEY, 'personal'); } catch { /* optional */ }
+      }
+    }
+  }, [authLoading, isAuthenticated, isDemo, user?.financeMode, mode]);
+
   const activeBusiness = useMemo(() => {
     if (!activeBusinessId) return null;
     return businesses.find((b) => b.id === activeBusinessId) || null;

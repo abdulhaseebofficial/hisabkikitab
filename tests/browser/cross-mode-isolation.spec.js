@@ -166,9 +166,11 @@ test.describe('Cross-Mode Independence & Zero Data Overlap Browser Suite', () =>
     await expect(page.getByText(/Lahore Electronics/i)).toHaveCount(0);
     await saveScreenshot(page, 'isolation-step1-student-dashboard.png');
 
-    // 2. Switch to Business Mode via the Navbar Mode Switcher button
-    const bizModeBtn = page.locator('header').getByRole('button', { name: 'Business' });
-    await bizModeBtn.click();
+    // 2. Switch to Business Mode via Settings -> Finance Mode
+    await page.goto('/settings');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: /business/i }).click();
+    await page.getByRole('button', { name: /switch to business|confirm/i }).click();
     await page.waitForLoadState('networkidle');
 
     // Verify Business A items render and Student items do NOT exist
@@ -176,9 +178,11 @@ test.describe('Cross-Mode Independence & Zero Data Overlap Browser Suite', () =>
     await expect(page.getByText(/Your planned pocket money/i)).toHaveCount(0);
     await saveScreenshot(page, 'isolation-step2-businessA-dashboard.png');
 
-    // 3. Switch back to Personal Mode via the Navbar Mode Switcher button
-    const personalModeBtn = page.locator('header').getByRole('button', { name: 'Personal' });
-    await personalModeBtn.click();
+    // 3. Switch back to Personal Mode via Settings -> Finance Mode
+    await page.goto('/settings');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: /student/i }).click();
+    await page.getByRole('button', { name: /switch to individual|confirm/i }).click();
     await page.waitForLoadState('networkidle');
 
     // Verify Student data restored cleanly with zero business overlap

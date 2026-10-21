@@ -31,20 +31,13 @@ export default function Login() {
   // so the button cannot appear on an install that has not configured it.
   const { data: config } = useAsync(() => authService.config(), []);
 
-  /** Where the user was heading before they were sent to log in. */
-  const defaultTarget = (() => {
-    try {
-      const savedMode = localStorage.getItem('hkk_app_mode');
-      if (savedMode === 'business') return '/business';
-    } catch { /* optional */ }
-    return '/dashboard';
-  })();
-  const target = location.state && location.state.from ? location.state.from.pathname : defaultTarget;
+  const targetFromState = location.state && location.state.from ? location.state.from.pathname : null;
 
   const onGoogle = async (idToken) => {
     try {
       const result = await loginWithGoogle(idToken);
-      navigate(result.created ? '/onboarding' : target, { replace: true });
+      const destination = targetFromState || (result.user?.financeMode === 'business' ? '/business' : '/dashboard');
+      navigate(result.created ? '/onboarding' : destination, { replace: true });
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
@@ -58,9 +51,9 @@ export default function Login() {
 
   const onSubmit = async (values) => {
     try {
-      await login(values);
-      // Send the student back to wherever they were headed before the redirect.
-      navigate(target, { replace: true });
+      const loggedIn = await login(values);
+      const destination = targetFromState || (loggedIn?.financeMode === 'business' ? '/business' : '/dashboard');
+      navigate(destination, { replace: true });
     } catch (error) {
       toast.error(getErrorMessage(error));
     }

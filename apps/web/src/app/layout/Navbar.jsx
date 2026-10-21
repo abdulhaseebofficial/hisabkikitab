@@ -28,8 +28,6 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
   } = usePwaInstall();
 
   const {
-    mode: appMode,
-    setMode: setAppMode,
     isBusinessMode,
     businesses,
     activeBusiness,
@@ -57,45 +55,6 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
         </button>
 
         <BrandMark to={isBusinessMode ? '/business' : '/dashboard'} nameClassName="hidden lg:block" />
-
-        {/* Mode Switcher Segmented Control (Desktop) */}
-        <div className="hidden md:flex items-center rounded-xl bg-slate-100 p-1 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 text-xs font-semibold">
-          <button
-            type="button"
-            onClick={() => {
-              setAppMode('personal');
-              navigate('/dashboard');
-            }}
-            className={cn(
-              'flex items-center gap-1.5 rounded-lg px-2.5 py-1 transition',
-              !isBusinessMode
-                ? 'bg-white text-brand-700 shadow-sm dark:bg-canvas-darkCard dark:text-brand-300'
-                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
-            )}
-          >
-            <User className="h-3.5 w-3.5" />
-            <span>{t('nav.personalMode', 'Personal')}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setAppMode('business');
-              if (businesses.length === 0) {
-                openOnboarding();
-              }
-              navigate('/business');
-            }}
-            className={cn(
-              'flex items-center gap-1.5 rounded-lg px-2.5 py-1 transition',
-              isBusinessMode
-                ? 'bg-brand-600 text-white shadow-sm dark:bg-brand-500'
-                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
-            )}
-          >
-            <Briefcase className="h-3.5 w-3.5" />
-            <span>{t('nav.businessMode', 'Business')}</span>
-          </button>
-        </div>
 
         {/* Business Selector (shown when in Business Mode) */}
         {isBusinessMode && (
@@ -163,35 +122,6 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
           </div>
         )}
 
-        {/* Mobile Quick Mode Toggle */}
-        <button
-          type="button"
-          onClick={() => {
-            if (isBusinessMode) {
-              setAppMode('personal');
-              navigate('/dashboard');
-            } else {
-              setAppMode('business');
-              if (businesses.length === 0) openOnboarding();
-              navigate('/business');
-            }
-          }}
-          title={isBusinessMode ? 'Switch to Personal Mode' : 'Switch to Business Mode'}
-          className="hidden sm:inline-flex md:hidden h-9 items-center gap-1 rounded-xl border border-slate-200 px-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200"
-        >
-          {isBusinessMode ? (
-            <>
-              <Briefcase className="h-3.5 w-3.5 text-brand-600" />
-              <span className="text-[11px]">Biz</span>
-            </>
-          ) : (
-            <>
-              <User className="h-3.5 w-3.5 text-slate-500" />
-              <span className="text-[11px]">Personal</span>
-            </>
-          )}
-        </button>
-
         <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
           {!isInstalled && (
             <button
@@ -236,13 +166,36 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
                     <p className="truncate text-xs text-slate-500 dark:text-slate-400">{user ? user.email : ''}</p>
                     <div className="mt-2 flex items-center gap-1.5">
                       <span className={cn(
-                        "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold",
-                        isBusinessMode 
+                        "inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold",
+                        isBusinessMode || user?.financeMode === 'business'
                           ? "bg-brand-100 text-brand-800 dark:bg-brand-950/60 dark:text-brand-300"
+                          : user?.financeMode === 'householder'
+                          ? "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300"
+                          : user?.financeMode === 'shared_living'
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
                           : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                       )}>
-                        {isBusinessMode ? <Briefcase className="h-3 w-3" /> : <User className="h-3 w-3" />}
-                        {isBusinessMode ? 'Business Mode' : (user?.financeMode === 'householder' ? 'Household Mode' : (user?.financeMode === 'shared_living' ? 'Shared Living' : 'Personal Mode'))}
+                        {(isBusinessMode || user?.financeMode === 'business') ? (
+                          <>
+                            <Briefcase className="h-3 w-3" />
+                            <span>Business Mode</span>
+                          </>
+                        ) : user?.financeMode === 'householder' ? (
+                          <>
+                            <Building2 className="h-3 w-3" />
+                            <span>Household Mode</span>
+                          </>
+                        ) : user?.financeMode === 'shared_living' ? (
+                          <>
+                            <User className="h-3 w-3" />
+                            <span>Shared Living</span>
+                          </>
+                        ) : (
+                          <>
+                            <User className="h-3 w-3" />
+                            <span>Individual / Student</span>
+                          </>
+                        )}
                       </span>
                     </div>
                   </div>
@@ -257,31 +210,6 @@ export default function Navbar({ onOpenMenu, onOpenFeedback }) {
                     <Settings className="h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400" />
                     <span className="truncate">{t('nav.profileSettings', 'Profile and settings')}</span>
                   </Link>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      if (isBusinessMode) {
-                        setAppMode('personal');
-                        navigate('/dashboard');
-                      } else {
-                        setAppMode('business');
-                        if (businesses.length === 0) openOnboarding();
-                        navigate('/business');
-                      }
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
-                  >
-                    {isBusinessMode ? (
-                      <User className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" />
-                    ) : (
-                      <Briefcase className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" />
-                    )}
-                    <span className="truncate">
-                      {isBusinessMode ? t('nav.switchToPersonal', 'Switch to Personal Mode') : t('nav.switchToBusiness', 'Switch to Business Mode')}
-                    </span>
-                  </button>
 
                   {!user?.isDemo && (
                     <button
