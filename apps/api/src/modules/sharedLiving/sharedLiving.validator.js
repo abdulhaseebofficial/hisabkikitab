@@ -3,16 +3,30 @@ const ApiError = require("../../shared/errors/ApiError");
 const invalid = () => {
   throw ApiError.badRequest("shared.invalid");
 };
+/**
+ * A member name, space name or note, in whatever script the household writes.
+ *
+ * NFC first, for the reason given on `unicodeText` in shared/validation/rules:
+ * the same Urdu or Devanagari word can be encoded two ways, Postgres compares
+ * bytes, and a space named from one keyboard would not match a search typed on
+ * another. Length is then counted in characters, so a 100-character space name
+ * is 100 Urdu characters and not the 33 a byte limit would allow.
+ *
+ * The refused set is the whole C0 control block except tab, newline and
+ * carriage return - a NUL reaches Postgres as a 22021 - plus the angle brackets
+ * this module has always rejected as defence in depth.
+ */
 const text = (value, max = 1000, required = false) => {
   if (value === undefined && !required) return "";
+  if (typeof value !== "string") return invalid();
+  const normalized = value.normalize("NFC");
   if (
-    typeof value !== "string" ||
-    value.trim().length > max ||
-    (required && !value.trim()) ||
-    /[<>\u0000-\u0008]/.test(value)
+    normalized.trim().length > max ||
+    (required && !normalized.trim()) ||
+    /[<>\u0000-\u0008\u000B\u000C\u000E-\u001F]/u.test(normalized)
   )
     return invalid();
-  return value.trim();
+  return normalized.trim();
 };
 const uuid = (value) => {
   if (

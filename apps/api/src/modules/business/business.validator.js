@@ -4,25 +4,30 @@
 
 const { body, param, query } = require('express-validator');
 const { CURRENCY_CODES } = require('@hisabkikitab/contracts');
+// Business names, products, customers and suppliers are written in whatever
+// script the shop keeps its books in. `unicodeText` normalises to NFC so a
+// search matches across keyboards, and refuses only the characters Postgres
+// cannot store - see shared/validation/rules.js.
+const { unicodeText } = require('../../shared/validation/rules');
 
 const BusinessValidator = {
   createBusiness: [
-    body('name').trim().notEmpty().withMessage('Business name is required').isLength({ max: 150 }),
+    unicodeText(body('name'), { min: 1, max: 150, message: 'Business name is required' }),
     body('currency').optional().isIn(CURRENCY_CODES).withMessage('Unsupported currency code'),
   ],
 
   createProduct: [
-    body('name').trim().notEmpty().withMessage('Product name is required').isLength({ max: 200 }),
+    unicodeText(body('name'), { min: 1, max: 200, message: 'Product name is required' }),
     body('sellingPriceMinor').notEmpty().withMessage('Selling price is required'),
   ],
 
   createCustomer: [
-    body('name').trim().notEmpty().withMessage('Customer name is required').isLength({ max: 150 }),
+    unicodeText(body('name'), { min: 1, max: 150, message: 'Customer name is required' }),
     body('phone').optional().trim().isLength({ max: 30 }),
   ],
 
   createSupplier: [
-    body('name').trim().notEmpty().withMessage('Supplier name is required').isLength({ max: 150 }),
+    unicodeText(body('name'), { min: 1, max: 150, message: 'Supplier name is required' }),
     body('phone').optional().trim().isLength({ max: 30 }),
   ],
 
@@ -56,7 +61,7 @@ const BusinessValidator = {
   ],
 
   createWarehouse: [
-    body('name').trim().notEmpty().withMessage('Warehouse name is required').isLength({ max: 150 }),
+    unicodeText(body('name'), { min: 1, max: 150, message: 'Warehouse name is required' }),
   ],
 
   createStockTransfer: [
@@ -95,7 +100,7 @@ const BusinessValidator = {
 
   createPurchaseRequest: [
     body('items').isArray({ min: 1 }).withMessage('At least one item is required for a purchase request'),
-    body('items.*.productName').trim().notEmpty().withMessage('Product name is required'),
+    unicodeText(body('items.*.productName'), { min: 1, max: 200, message: 'Product name is required' }),
     body('items.*.quantity').notEmpty().withMessage('Quantity is required'),
   ],
 

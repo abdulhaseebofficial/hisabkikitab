@@ -1,5 +1,5 @@
 const { body, param, query } = require('express-validator');
-const { idParam, amount } = require('../../shared/validation/rules');
+const { idParam, amount, unicodeText } = require('../../shared/validation/rules');
 const catalogue = require('@hisabkikitab/contracts/catalogue');
 
 const KINDS = ['BORROWED', 'LENT'];
@@ -16,7 +16,7 @@ const PURPOSE_CATEGORIES = catalogue.idsOf('udhaarPurpose');
  * someone recording a debt in a hurry gets "asdf".
  */
 const purpose = (chain) =>
-  chain.isString().trim().isLength({ max: 300 }).withMessage('Keep the purpose under 300 characters');
+  unicodeText(chain, { max: 300, message: 'Keep the purpose under 300 characters' });
 
 /**
  * A purpose category must be one of the known ones, and the ones the catalogue
@@ -38,7 +38,7 @@ const purposeCategory = (chain) =>
 
 /** Shared by create and update; optional on update, required on create. */
 const personName = (chain) =>
-  chain.isString().trim().isLength({ min: 1, max: 80 }).withMessage('Whose name should this be under?');
+  unicodeText(chain, { min: 1, max: 80, message: 'Whose name should this be under?' });
 
 const debtValidators = {
   create: [
@@ -55,7 +55,7 @@ const debtValidators = {
     body('transactionDate').optional().isISO8601().toDate(),
     body('dueDate').optional({ nullable: true }).isISO8601().toDate(),
     body('category').optional({ nullable: true }).isString().trim().isLength({ max: 40 }),
-    body('note').optional().isString().trim().isLength({ max: 500 }),
+    unicodeText(body('note').optional(), { max: 500 }),
     purpose(body('purpose').optional({ nullable: true })),
     purposeCategory(body('purposeCategory').optional({ nullable: true, checkFalsy: true })),
   ],
@@ -69,7 +69,7 @@ const debtValidators = {
     body('transactionDate').optional().isISO8601().toDate(),
     body('dueDate').optional({ nullable: true }).isISO8601().toDate(),
     body('category').optional({ nullable: true }).isString().trim().isLength({ max: 40 }),
-    body('note').optional().isString().trim().isLength({ max: 500 }),
+    unicodeText(body('note').optional(), { max: 500 }),
     purpose(body('purpose').optional({ nullable: true })),
     purposeCategory(body('purposeCategory').optional({ nullable: true, checkFalsy: true })),
   ],
@@ -81,13 +81,13 @@ const debtValidators = {
     idParam('id'),
     amount('amount'),
     body('paidOn').optional().isISO8601().toDate(),
-    body('note').optional().isString().trim().isLength({ max: 200 }),
+    unicodeText(body('note').optional(), { max: 200 }),
   ],
 
   /** A reason is optional; if given it is appended to the note, not replacing it. */
   cancel: [idParam('id'), body('reason').optional().isString().trim().isLength({ max: 200 })],
 
-  settle: [idParam('id'), body('note').optional().isString().trim().isLength({ max: 200 })],
+  settle: [idParam('id'), unicodeText(body('note').optional(), { max: 200 })],
 
   /** Both ids matter: a payment is only reachable through the debt that owns it. */
   removePayment: [idParam('id'), param('paymentId').isUUID().withMessage('Invalid payment id')],
