@@ -285,8 +285,32 @@ const removeAccountSafely = (userId) =>
     if (owned.length) {
       return {
         deleted: false,
+        blocker: 'space',
         // If any owned space lacks a successor, that is the actionable blocker.
         hasSuccessor: owned.every((space) => space.has_successor),
+      };
+    }
+    // businesses.owner_id is ON DELETE RESTRICT, so an owned business stops the
+    // DELETE at the database instead of cascading. Report it the same way an
+    // owned space is reported: without this the foreign key violation surfaces
+    // as "a change happened at the same time, retry", which can never succeed.
+    await tx.query(
+      'SELECT b.id FROM businesses b WHERE b.owner_id=$1 ORDER BY b.id FOR UPDATE OF b',
+      [userId],
+    );
+    const ownedBusinesses = await tx.query(
+      `SELECT b.id,EXISTS(
+         SELECT 1 FROM business_members m
+         WHERE m.business_id=b.id AND m.user_id<>$1 AND m.is_active
+       ) AS has_successor
+       FROM businesses b WHERE b.owner_id=$1 ORDER BY b.id`,
+      [userId],
+    );
+    if (ownedBusinesses.length) {
+      return {
+        deleted: false,
+        blocker: 'business',
+        hasSuccessor: ownedBusinesses.every((business) => business.has_successor),
       };
     }
     const removed = await tx.queryOne(

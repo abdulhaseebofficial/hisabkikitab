@@ -16,6 +16,7 @@ const ApiError = require('../../shared/errors/ApiError');
 const {
   advance,
   firstRunAfter,
+  nextRunAfter,
   materializeForUser,
 } = require('../../infrastructure/scheduling/recurringExpenses.job');
 const events = require('../../shared/events');
@@ -123,7 +124,11 @@ const update = async (id, user, body) => {
   if (willRecur) {
     const when = patch.date ? new Date(patch.date) : new Date(existing.date);
     const frequency = patch.recurringFrequency || existing.recurringFrequency;
-    if (!existing.nextRunAt) patch.nextRunAt = firstRunAfter(when, frequency);
+    const dateChanged = patch.date !== undefined && when.getTime() !== new Date(existing.date).getTime();
+    if (!existing.nextRunAt || dateChanged ||
+      (patch.recurringFrequency !== undefined && patch.recurringFrequency !== existing.recurringFrequency)) {
+      patch.nextRunAt = nextRunAfter(when, frequency);
+    }
   } else {
     patch.nextRunAt = null;
   }
@@ -197,7 +202,7 @@ const markBillPaid = async (id, user, { amount, paidOn } = {}, requestKey) => {
           generatedFrom: template._id,
         }, billTx);
 
-        const next = advance(scheduled, template.recurringFrequency);
+        const next = advance(scheduled, template.recurringFrequency, template.date || scheduled);
         await expensesRepo.setNextRunAt(template._id, next, billTx);
         return { expense: created, nextDueAt: next };
       }, tx);

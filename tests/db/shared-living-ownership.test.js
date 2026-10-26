@@ -144,7 +144,7 @@ test('Shared Living ownership transfer, exit and account deletion preserve the o
       assert.equal(retry.status, 403, 'former owner retry is not treated as a new authorized transfer');
       assert.equal((await db.query("SELECT count(*)::int AS n FROM sl_activity WHERE space_id=$1 AND action='ownership_transferred'", [main.id]))[0].n, 1);
       const preflight = await usersRepo.removeAccountSafely(newOwner);
-      assert.deepEqual(preflight, { deleted: false, hasSuccessor: true });
+      assert.deepEqual(preflight, { deleted: false, blocker: 'space', hasSuccessor: true });
       assert.equal(await ownerState(main.id), newOwner);
       const leave = await request('DELETE', `/api/shared-living/spaces/${main.id}/membership`, undefined, 0);
       assert.equal(leave.status, 200, JSON.stringify(leave.body));
@@ -213,7 +213,7 @@ test('Shared Living ownership transfer, exit and account deletion preserve the o
       const blockedLeave = await request('DELETE', `/api/shared-living/spaces/${lone.id}/membership`, undefined, 7);
       assert.equal(blockedLeave.status, 409);
       const blockedDeletion = await usersRepo.removeAccountSafely(accounts[7].id);
-      assert.deepEqual(blockedDeletion, { deleted: false, hasSuccessor: false }, 'one untransferable space takes precedence over another eligible space');
+      assert.deepEqual(blockedDeletion, { deleted: false, blocker: 'space', hasSuccessor: false }, 'one untransferable space takes precedence over another eligible space');
       assert.equal(await ownerState(lone.id), accounts[7].id);
       assert.equal(await ownerState(eligible.id), accounts[7].id);
       const ordinaryDeletion = await usersRepo.removeAccountSafely(accounts[10].id);

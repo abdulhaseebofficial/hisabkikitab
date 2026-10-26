@@ -243,16 +243,19 @@ const createApp = () => {
   const bootstrap = createBootstrap();
   app.bootstrap = bootstrap; // server.js awaits this before it starts listening
 
-  // Vercel Cron sends CRON_SECRET as a Bearer token. Fail closed when absent.
-  // This endpoint is intentionally separate from user-facing financial routes.
-  app.get('/api/internal/recurring', async (req, res, next) => {
+  // Vercel Cron sends GET with CRON_SECRET as a Bearer token. Support POST for administrative triggers.
+  // Fail closed when absent or shorter than 16 chars. Fail with 405 on unsupported methods.
+  const handleRecurring = async (req, res, next) => {
     const secret = process.env.CRON_SECRET;
     const supplied = req.get('authorization') || '';
-    if (!secret || secret.length < 16) return res.status(503).json({ success: false });
+    if (!secret || secret.length < 16) {
+      return res.status(503).json({ success: false, error: 'Recurring scheduler secret not configured' });
+    }
     const expected = Buffer.from(`Bearer ${secret}`);
     const actual = Buffer.from(supplied);
-    if (actual.length !== expected.length || !timingSafeEqual(actual, expected))
-      return res.status(401).json({ success: false });
+    if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
     try {
       await bootstrap();
       const result = await runRecurringExpenses();
@@ -262,7 +265,12 @@ const createApp = () => {
       console.error('[scheduler] recurring sweep failed:', error.message);
       return next(error);
     }
-  });
+  };
+
+  app.route('/api/internal/recurring')
+    .get(handleRecurring)
+    .post(handleRecurring)
+    .all((_req, res) => res.status(405).json({ success: false, error: 'Method not allowed' }));
 
   app.use('/api', (_req, _res, next) => {
     bootstrap().then(() => next(), next);

@@ -38,4 +38,21 @@ const business = require('./business');
 /** Just the codes, which is what a validator or a <select> actually wants. */
 const CURRENCY_CODES = vocabulary.CURRENCIES.map((c) => c.code);
 
+/**
+ * The vocabulary and the business contracts are merged into one namespace, so
+ * two definitions of the same name cannot coexist: the later one wins and the
+ * earlier one disappears without a word. That happened once - business payment
+ * rails replaced the personal payment methods, and every expense a person
+ * submitted was rejected as an unknown payment method - so a repeat is a
+ * startup failure rather than a silent substitution. Business names that mean
+ * something different from a personal one get a BUSINESS_ prefix.
+ */
+const collisions = Object.keys(business).filter((name) => name in vocabulary);
+if (collisions.length) {
+  throw new Error(
+    `@hisabkikitab/contracts: business redefines ${collisions.join(', ')} from vocabulary.json. `
+    + 'Rename the business export (BUSINESS_* ) instead of shadowing the shared name.'
+  );
+}
+
 module.exports = Object.assign({}, vocabulary, { CURRENCY_CODES }, business);

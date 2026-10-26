@@ -74,7 +74,16 @@ const DEFAULT_CHART_OF_ACCOUNTS = [
   { code: '6990', name: 'Miscellaneous Expenses', type: 'expense', subtype: 'operating_expense', is_system: true },
 ];
 
-const PAYMENT_METHODS = [
+/**
+ * How a business takes money, as stored in biz_* `payment_method` columns.
+ *
+ * Named apart from the personal `PAYMENT_METHODS` in vocabulary.json on
+ * purpose. Both used to be called the same thing, and because this module is
+ * merged over the vocabulary in index.js, these objects silently replaced the
+ * personal list of strings - which made every expense validator reject every
+ * payment method a person could pick.
+ */
+const BUSINESS_PAYMENT_METHODS = [
   { id: 'cash', label: 'Cash in Hand (Naqad)' },
   { id: 'bank', label: 'Bank Transfer' },
   { id: 'wallet', label: 'Digital Wallet (JazzCash/Easypaisa/Raast)' },
@@ -106,7 +115,7 @@ module.exports = {
   BUSINESS_CATEGORIES,
   BUSINESS_ROLES,
   DEFAULT_CHART_OF_ACCOUNTS,
-  PAYMENT_METHODS,
+  BUSINESS_PAYMENT_METHODS,
   AGING_BUCKETS,
   PURCHASE_REQUEST_STATUSES,
   PURCHASE_ORDER_STATUSES,

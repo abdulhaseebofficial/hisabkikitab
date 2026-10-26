@@ -89,6 +89,43 @@ types.setTypeParser(1700, (value) => {
     && /^-?\d+(?:\.\d{1,2})?$/.test(value) ? number : value;
 });
 
+const KNOWN_PRODUCTION_DB_HOST = 'db.ojdwkjygitjrlyozkxmk.supabase.co';
+const KNOWN_PRODUCTION_PROJECT_REF = 'ojdwkjygitjrlyozkxmk';
+
+/**
+ * Fail-fast safety guard preventing tests or nonproduction preview environments
+ * from connecting to the live production database.
+ */
+const assertSafeDatabaseTarget = (uri) => {
+  let parsed;
+  try {
+    parsed = new URL(uri);
+  } catch {
+    return;
+  }
+  const host = parsed.hostname.toLowerCase();
+  const rawUrl = uri.toLowerCase();
+  const isProduction =
+    host === KNOWN_PRODUCTION_DB_HOST.toLowerCase() ||
+    rawUrl.includes(KNOWN_PRODUCTION_PROJECT_REF.toLowerCase()) ||
+    (process.env.PRODUCTION_DB_HOST && host === process.env.PRODUCTION_DB_HOST.toLowerCase());
+
+  if (process.env.NODE_ENV === 'test' || process.env.ALLOW_DESTRUCTIVE_TEST_DB === 'true') {
+    if (isProduction) {
+      throw new Error(
+        `[CRITICAL SAFETY GUARD] Refusing to connect to production database during test execution! (host=${host})`
+      );
+    }
+  }
+
+  if (process.env.VERCEL_ENV === 'preview' && isProduction) {
+    throw new Error(
+      `[CRITICAL SAFETY GUARD] Vercel Preview environment detected with production database configuration! ` +
+      `Preview environments must be isolated from production data. Set an isolated POSTGRES_URL for preview.`
+    );
+  }
+};
+
 let pool = null;
 
 /** The pool, created on first use. */
@@ -96,6 +133,8 @@ const getPool = () => {
   if (!pool) {
     const uri = databaseUrl();
     if (!uri) throw new Error(DATABASE_URL_MISSING);
+
+    assertSafeDatabaseTarget(uri);
 
     pool = new Pool({
       connectionString: withoutSslMode(uri),
