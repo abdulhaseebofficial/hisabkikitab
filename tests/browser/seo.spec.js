@@ -108,6 +108,7 @@ test('representative public pages expose generated SEO data and working links', 
   await page.getByRole('link', { name: 'Guides', exact: true }).filter({ visible: true }).first().click();
   await expect(page).toHaveURL(/\/learn\/$/);
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${origin}/learn/`);
+  const configResponse = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/auth/config');
   await page.goto('/login');
   await expect(page.getByRole('heading', { name: /Welcome back|Khush aamdeed/ })).toBeVisible();
   expect((await configResponse).status()).toBe(200);

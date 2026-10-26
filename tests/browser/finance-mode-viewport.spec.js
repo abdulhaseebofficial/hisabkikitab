@@ -29,7 +29,7 @@ for (const mode of ['student', 'householder']) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/dashboard');
       await expect(page.getByRole('heading', { name: 'Hey Test' })).toBeVisible();
-      await expect(page.getByText(mode === 'student' ? 'Money left this month' : 'Left for the household')).toBeVisible();
+      await expect(page.getByText(mode === 'student' ? 'Income minus spending' : 'Household income minus spending')).toBeVisible();
       const headerAction = page.locator('#main-content button[title="Shortcut: press N"]');
       if (width < 640) await expect(headerAction).toBeHidden();
       else await expect(headerAction).toBeVisible();

@@ -375,3 +375,44 @@ test('expired session is rejected and redirects a protected route to login', asy
   expect(requests).toContain('/api/auth/refresh');
   expect(requests.every((path) => path.startsWith('/api/auth/'))).toBe(true);
 });
+
+/**
+ * Ported from the older homepage-blue-ui spec, which covered four things the
+ * tests above do not: that the OS dark preference is honoured on first paint,
+ * that the official mark is a real image that actually decodes, that the blue
+ * tokens resolve to their approved values, and that a visitor's theme choice
+ * survives a reload. The button label is the current one; the old copy still
+ * asked for "Use light theme", which this branch renamed.
+ */
+test('official logo loads and the blue theme follows and persists the visitor preference', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ colorScheme: 'dark' });
+  const page = await context.newPage();
+  await page.route((url) => url.pathname.startsWith('/api/'), (route) => route.fulfill({
+    status: 401, contentType: 'application/json', body: '{"message":"Not authenticated"}',
+  }));
+
+  await page.goto(baseURL);
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await expect(page.locator('.hkk-phone-top img')).toBeVisible();
+  await expect
+    .poll(() => page.locator('.hkk-phone-top img').evaluate((img) => img.naturalWidth))
+    .toBeGreaterThan(0);
+
+  expect(await page.evaluate(() => ({
+    background: document.documentElement.style.backgroundColor,
+    brand: getComputedStyle(document.documentElement).getPropertyValue('--brand-600').trim(),
+    logoLoaded: document.querySelector('.hkk-phone-top img')?.naturalWidth > 0,
+  }))).toEqual({ background: 'rgb(8, 27, 75)', brand: '20 104 255', logoLoaded: true });
+
+  await page.getByRole('button', { name: 'Switch to light theme' }).click();
+  await expect(page.locator('html')).not.toHaveClass(/dark/);
+  expect(await page.evaluate(() => localStorage.getItem('hkk-theme'))).toBe('light');
+
+  // The choice has to outlive the page, not just the click.
+  await page.reload();
+  await expect(page.locator('html')).not.toHaveClass(/dark/);
+  expect(await page.evaluate(
+    () => getComputedStyle(document.documentElement).getPropertyValue('--brand-600').trim()
+  )).toBe('20 104 255');
+  await context.close();
+});
