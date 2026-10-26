@@ -12,7 +12,7 @@ const expenses = require('../expenses/expenses.service');
 const analytics = require('../analytics/analytics.service');
 const { modeOf } = require('../../shared/categories');
 const { buildSnapshot, MONTH_NAMES } = analytics;
-const { decimalToMinor, apiToMinor, minorToApi, roundRatio, ratioPercent2 } = require('../../shared/finance/personalMoney');
+const { apiToMinor, minorToApi, roundRatio, ratioPercent2 } = require('../../shared/finance/personalMoney');
 const {
   currentPeriod,
   previousPeriod,
@@ -54,6 +54,44 @@ const compareCategories = (snapshot, previous) => {
 };
 
 /**
+ * The month's totals.
+ *
+ * `netCashFlow` replaced `saved` and `netCashFlowRate` replaced `savingsRate`,
+ * because received income minus spending is a cash-flow figure and calling it
+ * savings asserted something the data does not show: money still in the account
+ * at month end has not been put aside, and a goal contribution is the only
+ * record of an actual saving. The rate is null rather than 0 when no income was
+ * received, so "no basis for a rate" is not read as "0% of your income".
+ *
+ * The old names are still sent, marked deprecated. This endpoint is first-party
+ * and authenticated, but the app is an installed PWA: a client that falls back
+ * to a cached shell keeps running an older bundle for a while, and that bundle
+ * reads `saved`. Mount paths and response fields are treated as a contract here
+ * (see the note in routes.js), so the rename gets a transition rather than a
+ * cut-over. Remove both aliases - and this comment - one release after the
+ * Phase 3 bundle is the only one in the wild.
+ */
+const reportTotals = (snapshot) => {
+  const netCashFlow = snapshot.remaining;
+  const netCashFlowRate = apiToMinor(snapshot.income) > 0n
+    ? roundRatio(apiToMinor(snapshot.remaining), apiToMinor(snapshot.income)) : null;
+  return {
+    income: snapshot.income,
+    plannedIncome: snapshot.plannedIncome,
+    spent: snapshot.totalSpent,
+    netCashFlow,
+    netCashFlowRate,
+    dailyAverage: snapshot.dailyAverage,
+    transactionCount: snapshot.expenseCount,
+
+    /** @deprecated use netCashFlow */
+    saved: netCashFlow,
+    /** @deprecated use netCashFlowRate. 0 where the new field is null. */
+    savingsRate: netCashFlowRate == null ? 0 : netCashFlowRate,
+  };
+};
+
+/**
  * The full month in one payload: totals, category breakdown, this-vs-last
  * comparison, budget adherence and the biggest single expense.
  */
@@ -75,14 +113,7 @@ const monthly = async (user, query) => {
     monthLabel: snapshot.monthLabel,
     currency: user.currency,
 
-    totals: {
-      income: snapshot.income,
-      spent: snapshot.totalSpent,
-      saved: snapshot.remaining,
-      savingsRate: roundRatio(apiToMinor(snapshot.remaining), apiToMinor(snapshot.income)),
-      dailyAverage: snapshot.dailyAverage,
-      transactionCount: snapshot.expenseCount,
-    },
+    totals: reportTotals(snapshot),
 
     breakdown: snapshot.breakdown,
     trend: snapshot.trend,
@@ -127,4 +158,4 @@ const exportData = async (user, query) => {
   };
 };
 
-module.exports = { monthly, exportData };
+module.exports = { monthly, exportData, reportTotals };

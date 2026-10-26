@@ -43,6 +43,7 @@ const snapshotToText = (snapshot, currency = 'INR') => {
   const {
     monthLabel,
     income,
+    plannedIncome,
     totalSpent,
     remaining,
     breakdown = [],
@@ -56,9 +57,10 @@ const snapshotToText = (snapshot, currency = 'INR') => {
 
   const lines = [];
   lines.push(`Period: ${monthLabel}`);
-  lines.push(`Monthly income / pocket money: ${money(currency, income)}`);
+  lines.push(`Received income in this period: ${money(currency, income)}`);
+  if (plannedIncome != null) lines.push(`Planned monthly income (not yet received): ${money(currency, plannedIncome)}`);
   lines.push(`Spent so far: ${money(currency, totalSpent)}`);
-  lines.push(`Money left: ${money(currency, remaining)}`);
+  lines.push(`Received income minus spending: ${money(currency, remaining)}`);
   lines.push(`Days remaining in the month: ${daysLeftInMonth}`);
   lines.push(`Average spend per day so far: ${money(currency, dailyAverage)}`);
   if (previousMonthSpent != null) {
@@ -384,7 +386,7 @@ const suggestBudget = async ({ user, snapshot, categories }) =>
             role: 'user',
             content: [
               `Build me a realistic monthly budget. Currency ${user.currency}.`,
-              `My monthly income is ${money(user.currency, user.monthlyIncome)}.`,
+              `My planned monthly income is ${money(user.currency, user.monthlyIncome)}; it may not have arrived yet.`,
               '',
               'My recent spending pattern:',
               snapshotToText(snapshot, user.currency),

@@ -17,8 +17,8 @@ const endOfCalendarMonth = (year, month) => new Date(Date.UTC(year, month, 0, 23
 
 /** Month/year of "now" (or of a supplied date) in 1-12 form. */
 const currentPeriod = (date = new Date()) => ({
-  month: date.getMonth() + 1,
-  year: date.getFullYear(),
+  month: date.getUTCMonth() + 1,
+  year: date.getUTCFullYear(),
 });
 
 /** Previous month/year, wrapping across the new year. */
