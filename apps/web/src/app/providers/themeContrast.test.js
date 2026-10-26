@@ -34,6 +34,13 @@ const configColor = (name) => {
   return value.match(/../g).map((pair) => Number.parseInt(pair, 16));
 };
 
+/*
+ * The dark tokens live under `.dark`, because ThemeProvider toggles that class
+ * on <html> and Tailwind's dark variant is bound to it
+ * (`@custom-variant dark (&:where(.dark, .dark *))`). An earlier revision
+ * scoped them to `:root[data-theme='dark']`; the values are the same, but a
+ * test reading a selector the stylesheet does not use proves nothing.
+ */
 describe('theme contrast tokens', () => {
   const white = [255, 255, 255];
 
@@ -42,15 +49,15 @@ describe('theme contrast tokens', () => {
     expect(cssToken(':root', 'canvas-surface')).toEqual([255, 255, 255]);
     expect(cssToken(':root', 'brand-600')).toEqual([20, 104, 255]);
     expect(cssToken(':root', 'brand-400')).toEqual([99, 173, 255]);
-    expect(cssToken(":root[data-theme='dark']", 'canvas-background')).toEqual([8, 27, 75]);
-    expect(cssToken(":root[data-theme='dark']", 'canvas-surface')).toEqual([16, 37, 88]);
+    expect(cssToken('.dark', 'canvas-background')).toEqual([8, 27, 75]);
+    expect(cssToken('.dark', 'canvas-surface')).toEqual([16, 37, 88]);
   });
 
   it.each([
     ['Light primary', ':root', 'brand-600'],
     ['Light disabled', ':root', 'brand-800'],
-    ['Dark primary', ":root[data-theme='dark']", 'brand-600'],
-    ['Dark disabled', ":root[data-theme='dark']", 'brand-800'],
+    ['Dark primary', '.dark', 'brand-600'],
+    ['Dark disabled', '.dark', 'brand-800'],
   ])('%s button text meets WCAG AA', (_label, scope, token) => {
     expect(contrast(white, cssToken(scope, token))).toBeGreaterThanOrEqual(4.5);
   });

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @font-face {
   font-family: 'Inter Variable';
@@ -37,9 +38,8 @@
     --brand-800: 11 62 166;
     --brand-900: 8 43 112;
     --shadow-ink: 8 27 75;
-    --theme-color: #f4f8ff;
   }
-  :root[data-theme='dark'] {
+  .dark {
     color-scheme: dark;
     --canvas-background: 8 27 75;
     --canvas-surface: 16 37 88;
@@ -66,10 +66,6 @@
     --brand-800: 11 62 166;
     --brand-900: 8 43 112;
     --shadow-ink: 0 8 35;
-    --theme-color: #081b4b;
-  }
-  .dark {
-    color-scheme: dark;
   }
 
   html,
@@ -157,7 +153,7 @@
    */
   .hw-card-hero {
     @apply rounded-2xl border border-brand-200 shadow-lift;
-    @apply bg-gradient-to-br from-brand-50 via-canvas-card to-canvas-card;
+    @apply bg-linear-to-br/srgb from-brand-50 via-canvas-card to-canvas-card;
     @apply dark:border-brand-500/25 dark:from-brand-500/10 dark:via-canvas-darkCard dark:to-canvas-darkCard;
   }
 
@@ -167,6 +163,9 @@
     @apply focus:border-brand-400 focus:ring-1 focus:ring-brand-400;
     @apply dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-100 dark:placeholder:text-slate-500;
     @apply dark:focus:border-brand-500 dark:focus:ring-brand-500;
+  }
+  input[type='month'].hw-input {
+    min-height: 44px;
   }
 
   .hw-label {

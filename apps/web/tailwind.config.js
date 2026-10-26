@@ -3,9 +3,9 @@
 /**
  * Hisabki Kitab theme.
  *
- * Both premium dark palettes are supplied by CSS custom properties in
- * index.css. Existing components continue to use the same semantic Tailwind
- * tokens, while changing data-theme on <html> repaints the whole application.
+ * Approved blue light and dark palettes are supplied by CSS custom properties
+ * in index.css. Existing components keep their semantic Tailwind tokens while
+ * the existing theme provider switches the dark class on <html>.
  */
 export default {
   darkMode: 'class',
@@ -51,11 +51,10 @@ export default {
           raised: 'rgb(var(--canvas-raised) / <alpha-value>)',
         },
 
-        // Status colours remain distinct from the blue brand accent, and
-        // always paired with an icon + text label so meaning is never colour alone.
-        safe: '#15803d',
-        caution: '#f59e0b',
-        danger: '#b91c1c',
+        // Keep baseline financial status colors; the homepage uses brand tokens.
+        safe: '#2f7d4f',
+        caution: '#a16207',
+        danger: '#b3261e',
       },
 
       fontFamily: {
@@ -71,15 +70,7 @@ export default {
       },
 
       boxShadow: {
-        /**
-         * A four-step elevation scale. Every shadow is tinted with the page's
-         * own warm ink (38 36 33) rather than pure black - a grey shadow on a
-         * cream page reads as dirt, which is most of what makes a warm palette
-         * look cheap.
-         *
-         * Surfaces still carry a hairline border; the shadow only says how far
-         * off the page something sits.
-         */
+        // Theme-aware shadows preserve depth across both blue surfaces.
         card: '0 1px 2px rgb(var(--shadow-ink) / 0.35)',
         raised: '0 8px 24px -16px rgb(var(--shadow-ink) / 0.8)',
         lift: '0 14px 34px -18px rgb(var(--shadow-ink) / 0.9)',

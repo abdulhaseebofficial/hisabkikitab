@@ -38,6 +38,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -72,6 +74,8 @@ jobs:
       VITE_SITE_URL: https://hisabkikitab.com
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -125,6 +129,8 @@ jobs:
       POSTGRES_URL_NON_POOLING: postgresql://postgres:postgres@127.0.0.1:5432/hisabkikitab_test
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -180,6 +186,8 @@ jobs:
       API_URL: http://localhost:5000
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -283,6 +291,8 @@ jobs:
       # origin, so canonical assertions compare like with like.
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -356,12 +366,42 @@ jobs:
         run: cat "$RUNNER_TEMP/api.log" || true
 
   # ---------------------------------------------------------------------------
+  dependency-security:
+    name: Production and build dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      # --ignore-scripts on purpose: the audit must not run package lifecycle
+      # code to decide whether that code is safe to run.
+      - name: Verify clean locked installation
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify patched build-tool dependency resolution
+        run: node scripts/check-build-tool-dependencies.mjs
+      - name: Enforce production and full-tree advisory policy
+        run: node scripts/check-dependency-security.mjs
+
+  # ---------------------------------------------------------------------------
   audit:
     name: Dependency security audit
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
+    env:
+      CI: 'true'
+      VITE_SITE_URL: https://hisabkikitab.com
+      VITE_API_URL: /api
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 24

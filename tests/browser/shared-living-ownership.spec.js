@@ -19,7 +19,7 @@ const api = async (method, path, body, token) => {
   return { status: response.status, body: await response.json() };
 };
 
-test('owner can transfer, leave and retry account deletion on desktop and mobile', async ({ page }, info) => {
+test('owner can transfer, leave and retry account deletion on desktop and mobile', async ({ page, baseURL }, info) => {
   const language = info.project.name.includes('roman') ? 'roman_ur' : 'en';
   const words = language === 'en' ? en : ur;
   const password = 'BrowserTest123!';

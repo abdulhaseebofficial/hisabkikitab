@@ -37,7 +37,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('query parameters keep the preferred public canonical', async ({ page }) => {
+test('query parameters keep the preferred public canonical', async ({ page, baseURL }) => {
   for (const path of ['/', '/learn', '/learn/budgeting/how-to-create-a-monthly-budget', '/tools/budget-calculator', '/about']) {
     await page.goto(`${path}?utm_source=seo-test`);
     await expect(page.locator('h1')).toHaveCount(1);
@@ -47,7 +47,7 @@ test('query parameters keep the preferred public canonical', async ({ page }) =>
   }
 });
 
-test('public metadata is removed on navigation to authentication and private routes', async ({ page }) => {
+test('public metadata is removed on navigation to authentication and private routes', async ({ page, baseURL }) => {
   await page.goto('/learn/budgeting/how-to-create-a-monthly-budget');
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
   await page.goto('/login');
@@ -68,7 +68,7 @@ test('unknown Learn and calculator pages are noindex without invented canonicals
   }
 });
 
-test('representative public pages expose generated SEO data and working links', async ({ page }) => {
+test('representative public pages expose generated SEO data and working links', async ({ page, baseURL }) => {
   const errors = [];
   const failedResponses = [];
   const failedRequests = [];
@@ -109,6 +109,8 @@ test('representative public pages expose generated SEO data and working links', 
   await expect(page).toHaveURL(/\/learn\/$/);
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${origin}/learn/`);
   await page.goto('/login');
+  await expect(page.getByRole('heading', { name: /Welcome back|Khush aamdeed/ })).toBeVisible();
+  expect((await configResponse).status()).toBe(200);
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex,follow');
   await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
   await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(0);

@@ -5,14 +5,26 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 
-test('API startup connects without importing or executing the migration runner', () => {
+test('API startup never runs DDL, and refuses a schema it does not match', () => {
   const source = fs.readFileSync(
     path.join(root, 'apps/api/src/infrastructure/database/connect.js'),
     'utf8'
   );
 
-  assert.doesNotMatch(source, /require\(['"]\.\/migrate['"]\)/);
-  assert.doesNotMatch(source, /\bawait\s+migrate\s*\(/);
+  // The invariant is that opening the database applies nothing. An earlier
+  // revision enforced that by forbidding the import outright, which also ruled
+  // out the stronger check below: startup now reads the ledger and refuses to
+  // serve a mismatched schema, and reading it requires the module. So the
+  // assertion is about the call, not the import.
+  assert.doesNotMatch(source, /\bawait\s+migrate\s*\(/, 'startup must not apply migrations');
+  assert.doesNotMatch(source, /\bmigrate\s*\(\s*\)/, 'startup must not call the runner at all');
+
+  // Only the read-only half of the runner may be used, and a mismatch has to
+  // stop the process rather than be logged and ignored.
+  assert.match(source, /\bstatus\s*\(\s*\)/, 'startup must read the migration ledger');
+  assert.match(source, /pending\.length/, 'a pending migration must stop startup');
+  assert.match(source, /unexpected\.length/, 'a schema ahead of this build must stop startup too');
+  assert.match(source, /throw new Error/, 'the mismatch must throw');
 });
 
 test('migrations remain available only through an explicit package command', () => {

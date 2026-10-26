@@ -6,11 +6,8 @@
  * transaction and recorded in schema_migrations, so a second run is a no-op and
  * a failure leaves the database exactly as it was.
  *
- * This also runs on the first request of a cold process, because a platform
- * that imports the app and serves it gives no deploy step to hang it off. The
- * advisory lock is what makes that safe when several instances start at once:
- * the first takes the lock and applies, the rest wait and then find nothing to
- * do.
+ * Only the explicit CLI invokes migrate(). Normal API requests check the
+ * ledger read-only and reject a mismatched schema.
  *
  * 0001 is the schema as it already exists in production. It is written with
  * IF NOT EXISTS throughout, so recording it against a database that was

@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('hkk-theme', 'purple'));
 });
 
-test('all public routes render, have metadata, and fit the viewport', async ({ page }) => {
+test('all public routes render, have metadata, and fit the viewport', async ({ page, baseURL }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   const calculatorRoutes=['budget-calculator','savings-goal-calculator','expense-split-calculator','emergency-fund-calculator','debt-repayment-calculator','net-worth-calculator','freelancer-income-calculator'].map((slug)=>`/tools/${slug}`);
@@ -157,20 +157,20 @@ test('Learn navigation, table of contents, themes, and missing content', async (
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex,follow');
 });
 
-test('homepage links and existing private route protection still work', async ({ page }) => {
+test('homepage links and existing private route protection still work', async ({ page, baseURL }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Browse all guides' }).click();
   await expect(page).toHaveURL(/\/learn\/$/);
   await expect(page.getByRole('heading', { name: 'Explore by category' })).toBeVisible();
   for (const route of ['dashboard', 'expenses', 'income', 'goals', 'debts', 'budget', 'advisor', 'reports', 'settings']) {
     await page.goto(`/${route}`);
-    await expect(page).toHaveURL(/\/login/);
+    await expect(page).toHaveURL(new URL('/login/', baseURL).href);
     await expect(page.locator('[data-learn-seo]')).toHaveCount(0);
     await expect(page.locator('[data-ad-slot]')).toHaveCount(0);
   }
 });
 
-test('public homepage and navigation stay usable at common mobile and desktop widths', async ({ page }) => {
+test('public homepage and navigation stay usable at common mobile and desktop widths', async ({ page, baseURL }) => {
   for (const width of [360, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: width < 500 ? 820 : 960 });
     await page.goto('/');

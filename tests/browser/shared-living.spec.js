@@ -21,7 +21,7 @@ const navigateSection = async (page, words, name) => {
   await link.press('Enter');
 };
 
-test('create a space, record shared costs, start a new month and join read-only', async ({ page, browser }, info) => {
+test('create a space, record shared costs, start a new month and join read-only', async ({ page, browser, baseURL }, info) => {
   const language = info.project.name.includes('roman') ? 'roman_ur' : 'en';
   const words = language === 'en' ? en : ur;
   const s = words.shared;
