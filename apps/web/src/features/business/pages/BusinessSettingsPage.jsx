@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Building2, Save, FileText, Check } from 'lucide-react';
+import { Building2, Save, FileText, Check, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Card from '../../../shared/components/ui/Card';
 import Button from '../../../shared/components/ui/Button';
@@ -9,7 +9,7 @@ import businessContracts from '@hisabkikitab/contracts/business';
 const { BUSINESS_CATEGORIES } = businessContracts;
 
 export default function BusinessSettingsPage() {
-  const { activeBusiness, activeBusinessId, refreshBusinesses } = useBusiness();
+  const { activeBusiness, activeBusinessId, businesses, setActiveBusinessId, refreshBusinesses, openOnboarding } = useBusiness();
   const [name, setName] = useState('');
   const [category, setCategory] = useState('grocery');
   const [contactNumber, setContactNumber] = useState('');
@@ -82,6 +82,31 @@ export default function BusinessSettingsPage() {
           Configure business details, invoice numbering, tax, and branding.
         </p>
       </div>
+
+      <Card className="p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="min-w-0 flex-1">
+            <label htmlFor="active-business" className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+              Your Businesses
+            </label>
+            <select
+              id="active-business"
+              value={activeBusinessId || ''}
+              onChange={(event) => setActiveBusinessId(event.target.value)}
+              disabled={businesses.length === 0}
+              className="hw-input mt-1 w-full"
+            >
+              {businesses.length === 0 && <option value="">No businesses yet</option>}
+              {businesses.map((business) => (
+                <option key={business.id} value={business.id}>{business.name}</option>
+              ))}
+            </select>
+          </div>
+          <Button type="button" variant="secondary" onClick={openOnboarding} className="flex items-center gap-1.5">
+            <Plus className="h-4 w-4" /> Add New Business
+          </Button>
+        </div>
+      </Card>
 
       <form onSubmit={handleSave} className="space-y-6">
         <Card className="p-6">

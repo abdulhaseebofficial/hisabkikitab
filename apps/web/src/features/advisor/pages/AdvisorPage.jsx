@@ -12,6 +12,7 @@ import useMutation from '../../../shared/hooks/useMutation';
 import aiService from '../api/advisorApi';
 import { cn } from '../../../shared/utils/format';
 import useT from '../../../shared/i18n/I18nProvider';
+import useCategoryLabel from '../../../shared/i18n/useCategoryLabel';
 
 const TABS = [
   { key: 'chat', labelKey: 'advisor.tabChat', icon: MessageSquare },
@@ -21,6 +22,7 @@ const TABS = [
 
 export default function AIAdvisor() {
   const { t } = useT();
+  const categoryLabel = useCategoryLabel();
   const { user, currency } = useAuth();
   const readOnly = Boolean(user?.isDemo);
   const [tab, setTab] = useState('chat');
@@ -144,7 +146,7 @@ export default function AIAdvisor() {
                 <ul className="divide-y divide-slate-100 text-sm dark:divide-slate-800">
                   {weekly.breakdown.map((row) => (
                     <li key={row.category} className="flex justify-between py-2">
-                      <span className="text-slate-600 dark:text-slate-400">{row.category}</span>
+                      <span dir="auto" className="text-slate-600 dark:text-slate-400">{categoryLabel(row.category)}</span>
                       <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                         {row.percent}%
                       </span>

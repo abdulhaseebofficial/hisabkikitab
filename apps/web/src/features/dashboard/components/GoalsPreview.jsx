@@ -39,7 +39,7 @@ export default function GoalsPreview({ goals = [], currency = 'INR', onCreate })
           {goals.map((goal) => (
             <li key={goal._id}>
               <div className="mb-1.5 flex items-baseline justify-between gap-2">
-                <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800 dark:text-slate-200">{goal.title}</span>
+                <span dir="auto" className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800 dark:text-slate-200">{goal.title}</span>
                 <span className="shrink-0 text-xs tabular-nums text-slate-500 dark:text-slate-400">
                   {formatMoney(goal.savedAmount, currency, { compact: true })} /{' '}
                   {formatMoney(goal.targetAmount, currency, { compact: true })}

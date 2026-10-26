@@ -19,15 +19,14 @@ import { MONTH_NAMES, formatChange, formatCalendarDate, formatMoney, cn } from '
 import useT from '../../../shared/i18n/I18nProvider';
 import useCategoryLabel from '../../../shared/i18n/useCategoryLabel';
 
-const now = new Date();
-const YEARS = [now.getFullYear(), now.getFullYear() - 1, now.getFullYear() - 2];
-
 export default function Reports() {
+  const now = new Date();
+  const YEARS = [now.getUTCFullYear(), now.getUTCFullYear() - 1, now.getUTCFullYear() - 2];
   const { t } = useT();
   const label = useCategoryLabel();
   const { user, currency } = useAuth();
   const householder = Boolean(user && user.financeMode === 'householder');
-  const [period, setPeriod] = useState({ month: now.getMonth() + 1, year: now.getFullYear() });
+  const [period, setPeriod] = useState({ month: now.getUTCMonth() + 1, year: now.getUTCFullYear() });
   const [downloading, setDownloading] = useState('');
   const [showTable, setShowTable] = useState(false);
 
@@ -112,11 +111,13 @@ export default function Reports() {
               }
             />
             <StatCard
-              label={t('reports.saved')}
-              value={totals.saved}
+              label={t('reports.netCashFlow')}
+              value={totals.netCashFlow}
               currency={currency}
-              tone={totals.saved < 0 ? 'danger' : 'brand'}
-              footnote={t('reports.savingsRate', { percent: totals.savingsRate })}
+              tone={totals.netCashFlow < 0 ? 'danger' : 'brand'}
+              footnote={totals.netCashFlowRate == null
+                ? t('reports.noIncomeForRate')
+                : t('reports.netCashFlowRate', { percent: totals.netCashFlowRate })}
             />
             <StatCard
               label={t('reports.transactions')}

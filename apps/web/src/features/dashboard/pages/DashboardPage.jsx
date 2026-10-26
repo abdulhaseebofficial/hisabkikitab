@@ -48,7 +48,7 @@ function PersonalDashboard() {
 
   const load = useCallback(() => {
     const now = new Date();
-    return dashboardService.summary(now.getMonth() + 1, now.getFullYear());
+    return dashboardService.summary(now.getUTCMonth() + 1, now.getUTCFullYear());
   }, []);
   const { data, loading, error, reload } = useAsync(load, [user?.financeMode]);
 

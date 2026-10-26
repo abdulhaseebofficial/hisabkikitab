@@ -32,7 +32,7 @@ export default function GoalCard({ goal, currency = 'INR', onContribute, onEdit,
         </span>
 
         <div className="min-w-0 flex-1">
-          <h3 className="line-clamp-2 text-sm font-bold leading-snug text-slate-900 dark:text-slate-100">{goal.title}</h3>
+          <h3 dir="auto" className="line-clamp-2 text-sm font-bold leading-snug text-slate-900 dark:text-slate-100">{goal.title}</h3>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             {formatMoney(goal.savedAmount, currency)} of {formatMoney(goal.targetAmount, currency)}
           </p>

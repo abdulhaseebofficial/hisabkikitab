@@ -21,6 +21,23 @@ const Input = forwardRef(function Input(
   const generatedId = useId();
   const inputId = id || props.name || generatedId;
 
+  /**
+   * Which way the text in this field runs.
+   *
+   * `auto` lets the browser decide from the first strong character the person
+   * types, so "گھر کا کرایہ" right-aligns and reads right-to-left while
+   * "Dhaba lunch" stays left-to-right, in the same box, without the page
+   * flipping around it.
+   *
+   * Only for the types a person writes prose into. A number, date, email or
+   * password is a structured value: `auto` would start right-aligning an
+   * amount the moment it began with an Urdu digit, and a currency column that
+   * changes side per row is harder to read, not easier. An explicit `dir` from
+   * the caller always wins.
+   */
+  const FREE_TEXT_TYPES = ['text', 'search', undefined];
+  const direction = props.dir || (FREE_TEXT_TYPES.includes(props.type) ? 'auto' : undefined);
+
   const handleKeyDown = (e) => {
     if (props.type === 'number') {
       const isNegativeAllowed = props.min !== undefined && Number(props.min) < 0;
@@ -57,6 +74,7 @@ const Input = forwardRef(function Input(
           aria-describedby={error ? `${inputId}-error` : undefined}
           onKeyDown={handleKeyDown}
           {...props}
+          dir={direction}
         />
         {suffix && <span className="absolute right-2.5 top-1/2 -translate-y-1/2">{suffix}</span>}
       </div>

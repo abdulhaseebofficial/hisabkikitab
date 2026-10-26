@@ -124,7 +124,7 @@ export default function DebtDetail({
             <div className="sm:col-span-2">
               <dt className="text-slate-500 dark:text-slate-400">{t('udhaar.purpose')}</dt>
               <dd className="font-medium text-slate-800 dark:text-slate-200">
-                {debt.purpose}
+                <span dir="auto">{debt.purpose}</span>
                 {debt.purpose && debt.purposeCategory ? ' - ' : ''}
                 {debt.purposeCategory
                   ? catalogue.lookup('udhaarPurpose', debt.purposeCategory, language)

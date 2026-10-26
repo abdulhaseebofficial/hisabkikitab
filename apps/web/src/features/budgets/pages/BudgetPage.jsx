@@ -19,17 +19,18 @@ import budgetService from '../api/budgetsApi';
 import { advisorApi as aiService } from '../../advisor';
 import { currencySymbol, formatMoney, monthLabel } from '../../../shared/utils/format';
 import useT from '../../../shared/i18n/I18nProvider';
+import useCategoryLabel from '../../../shared/i18n/useCategoryLabel';
 import { trackEvent } from '../../../shared/analytics/analytics';
 
-const now = new Date();
-
 export default function Budget() {
+  const now = new Date();
   const { t } = useT();
+  const categoryLabel = useCategoryLabel();
   const { user, currency } = useAuth();
   const readOnly = Boolean(user?.isDemo);
   const { categories } = useCategories();
 
-  const [period] = useState({ month: now.getMonth() + 1, year: now.getFullYear() });
+  const [period] = useState({ month: now.getUTCMonth() + 1, year: now.getUTCFullYear() });
   const [editing, setEditing] = useState(null);
   const [limitValue, setLimitValue] = useState('');
   const [newCategory, setNewCategory] = useState('');
@@ -52,7 +53,7 @@ export default function Budget() {
     if (!category) return toast.error(t('budget.pickCategory'));
 
     return run(() => budgetService.set({ category, limit, month: period.month, year: period.year }), {
-      success: `Budget set for ${category}`,
+      success: t('budget.budgetFor', { category: categoryLabel(category) }),
       onDone: () => {
         trackEvent(eventName);
         setEditing(null);
@@ -168,7 +169,7 @@ export default function Budget() {
             <Select
               className="flex-1"
               label={t('common.category')}
-              options={unbudgeted}
+              options={unbudgeted.map((id) => ({ value: id, label: categoryLabel(id) }))}
               placeholder={t('budget.pickCategory')}
               value={newCategory}
               onChange={(event) => setNewCategory(event.target.value)}
@@ -194,7 +195,7 @@ export default function Budget() {
       <Modal
         open={Boolean(editing)}
         onClose={() => setEditing(null)}
-        title={editing ? t('budget.budgetFor', { category: editing.category }) : ''}
+        title={editing ? t('budget.budgetFor', { category: categoryLabel(editing.category) }) : ''}
         subtitle={editing ? t('budget.currentlySpent', { amount: formatMoney(editing.spent, currency) }) : ''}
         size="sm"
         footer={
@@ -248,7 +249,7 @@ export default function Budget() {
               {suggestion.categories.map((row) => (
                 <li key={row.category} className="flex items-start gap-3 py-2.5">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{row.category}</p>
+                    <p dir="auto" className="text-sm font-medium text-slate-800 dark:text-slate-200">{categoryLabel(row.category)}</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">{row.reason}</p>
                   </div>
                   <span className="shrink-0 text-sm font-bold tabular-nums text-slate-900 dark:text-slate-100">

@@ -33,6 +33,38 @@ const isLanguage = (value) => LANGUAGES.includes(value);
 const safeMode = (value) => (isMode(value) ? value : DEFAULT_MODE);
 const safeLanguage = (value) => (isLanguage(value) ? value : DEFAULT_LANGUAGE);
 
+/**
+ * What an interface language needs besides its name.
+ *
+ * `bcp47` goes in `<html lang>`; `dir` is the direction of the interface
+ * chrome, never of anything a person typed - user text decides that per
+ * element. Falls back to English's values rather than throwing, for the same
+ * reason `safeLanguage` does: a stored id that no longer exists must not lock
+ * anyone out of their own books.
+ */
+const languageMeta = (id) => {
+  const wanted = safeLanguage(id);
+  const entry = catalogue.languages.find((language) => language.id === wanted)
+    || catalogue.languages.find((language) => language.id === DEFAULT_LANGUAGE);
+  return {
+    id: entry.id,
+    bcp47: entry.bcp47 || entry.id,
+    dir: entry.dir || 'ltr',
+    sample: entry.sample || '',
+    name: entry.en,
+  };
+};
+
+/**
+ * Every language the interface is actually translated into.
+ *
+ * Separate from "scripts a person can type in", which is all of Unicode. A
+ * language appears here only when its catalogue is complete; offering one that
+ * is half-done means each missing key falls back to English on its own, and the
+ * result reads as a bug rather than as work in progress.
+ */
+const uiLanguages = () => catalogue.languages.map((language) => languageMeta(language.id));
+
 /* ------------------------------ categories ------------------------------- */
 
 /** The full entries for one kind ('expense' | 'income') in one mode. */
@@ -155,6 +187,8 @@ module.exports = {
   isLanguage,
   safeMode,
   safeLanguage,
+  languageMeta,
+  uiLanguages,
   categoriesFor,
   categoryIdsFor,
   labelFor,

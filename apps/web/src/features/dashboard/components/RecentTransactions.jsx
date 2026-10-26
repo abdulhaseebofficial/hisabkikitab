@@ -52,10 +52,10 @@ export default function RecentTransactions({ expenses = [], currency = 'INR', on
               </span>
 
               <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 text-sm font-medium leading-snug text-slate-900 dark:text-slate-100">
+                <p dir="auto" className="line-clamp-2 text-sm font-medium leading-snug text-slate-900 dark:text-slate-100">
                   {expense.description || label(expense.category)}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p dir="auto" className="text-xs text-slate-500 dark:text-slate-400">
                   {label(expense.category)} &middot; {formatCalendarDate(expense.date)}
                 </p>
               </div>

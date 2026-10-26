@@ -30,7 +30,7 @@ export default function HouseholderDashboard({ data, currency, onNavigate, onQui
   const { t } = useT();
   const { totals, categoryBreakdown, trend, comparison, budgets, goals, recentExpenses, monthLabel, debts, upcomingBills } = data;
 
-  const overspending = totals.income > 0 && totals.remaining < 0;
+  const overspending = totals.remaining < 0;
   const groups = totalsByGroup(HOUSEHOLDER_GROUPS, categoryBreakdown);
 
   const billsTotal = sumMoney((upcomingBills || []).map((bill) => bill.amount || 0));
@@ -43,7 +43,7 @@ export default function HouseholderDashboard({ data, currency, onNavigate, onQui
           label={t('dashboard.householdLeft')}
           value={totals.remaining}
           currency={currency}
-          decimals={0}
+          decimals={2}
           icon={Wallet}
           tone={overspending ? 'danger' : totals.spentPercent > 80 ? 'caution' : 'safe'}
           progress={Math.min(100, totals.spentPercent)}
@@ -51,7 +51,8 @@ export default function HouseholderDashboard({ data, currency, onNavigate, onQui
           footnote={
             overspending
               ? t('dashboard.overIncome')
-              : t('dashboard.percentUsed', { percent: totals.spentPercent })
+              : totals.income > 0 ? t('dashboard.percentUsed', { percent: totals.spentPercent })
+                : t('dashboard.noIncomeLogged')
           }
           className="col-span-2 lg:col-span-1"
         />
@@ -63,9 +64,9 @@ export default function HouseholderDashboard({ data, currency, onNavigate, onQui
           icon={ArrowUpRight}
           tone="safe"
           footnote={
-            totals.incomeLogged > 0
-              ? t('dashboard.fromLogged')
-              : t('dashboard.expectedHouseholdIncome')
+            totals.plannedIncome > 0
+              ? t('dashboard.plannedIncomeOnly', { amount: formatMoney(totals.plannedIncome, currency) })
+              : totals.income > 0 ? t('dashboard.fromLogged') : t('dashboard.noIncomeLogged')
           }
         />
 
@@ -89,14 +90,14 @@ export default function HouseholderDashboard({ data, currency, onNavigate, onQui
           label={t('dashboard.upcomingBills')}
           value={billsTotal}
           currency={currency}
-          decimals={0}
+          decimals={2}
           icon={Receipt}
           tone={billsTotal > 0 ? 'caution' : 'neutral'}
           footnote={
             upcomingBills && upcomingBills.length
               ? t('dashboard.billsDueSoon', {
                   count: upcomingBills.length,
-                  amount: formatMoney(billsTotal, currency, { decimals: 0 }),
+                  amount: formatMoney(billsTotal, currency, { decimals: 2 }),
                 })
               : t('dashboard.noBillsDue')
           }

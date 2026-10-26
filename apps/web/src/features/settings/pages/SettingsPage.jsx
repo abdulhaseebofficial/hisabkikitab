@@ -63,7 +63,7 @@ const changePasswordSchema = z
 export default function Settings() {
   const navigate = useNavigate();
   const { user, updateUser, logout } = useAuth();
-  const { isBusinessMode, setMode: setBusinessMode, businesses, openOnboarding } = useBusiness();
+  const { setMode: setBusinessMode, businesses, openOnboarding } = useBusiness();
   const { theme, setTheme } = useTheme();
   const { t } = useT();
   const { categories, custom, add, remove } = useCategories();
@@ -155,12 +155,14 @@ export default function Settings() {
         // Invalidate stale caches across all mounted queries
         notifyDataChanged();
 
-        // Synchronize Business Mode context and navigate to the mode's dedicated workspace
+        // Each mode has its own workspace, so land in it rather than leaving
+        // the person on a dashboard that is no longer theirs. Business keeps a
+        // separate context flag because its routes and sidebar are driven by
+        // it; a brand new Business user has nothing to show yet, so the
+        // onboarding modal opens on arrival.
         if (mode === 'business') {
           setBusinessMode('business');
-          if (businesses.length === 0) {
-            openOnboarding();
-          }
+          if (businesses.length === 0) openOnboarding();
           navigate('/business');
         } else {
           setBusinessMode('personal');

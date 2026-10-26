@@ -11,18 +11,21 @@ afterEach(() => {
 
 describe('expense calendar date presets', () => {
   it.each([
-    ['Asia/Karachi', '2026-10-04T20:30:00.000Z', { week: '2026-09-29', month: '2026-10-01', today: '2026-10-05' }],
-    ['America/Los_Angeles', '2026-10-05T06:30:00.000Z', { week: '2026-09-28', month: '2026-10-01', today: '2026-10-04' }],
-    ['Asia/Karachi', '2027-01-01T19:30:00.000Z', { week: '2026-12-27', month: '2027-01-01', today: '2027-01-02' }],
-    ['America/Los_Angeles', '2027-01-01T06:30:00.000Z', { week: '2026-12-25', month: '2026-12-01', today: '2026-12-31' }],
-    ['Asia/Karachi', '2028-02-29T20:30:00.000Z', { week: '2028-02-24', month: '2028-03-01', today: '2028-03-01' }],
-  ])('%s at %s uses the local day', (timezone, instant, dates) => {
+    ['Asia/Karachi', '2026-10-04T20:30:00.000Z', { week: '2026-09-29', month: '2026-10-01', monthEnd: '2026-10-31', today: '2026-10-05' }],
+    ['America/Los_Angeles', '2026-10-05T06:30:00.000Z', { week: '2026-09-28', month: '2026-10-01', monthEnd: '2026-10-31', today: '2026-10-04' }],
+    ['Asia/Karachi', '2027-01-01T19:30:00.000Z', { week: '2026-12-27', month: '2027-01-01', monthEnd: '2027-01-31', today: '2027-01-02' }],
+    ['America/Los_Angeles', '2027-01-01T06:30:00.000Z', { week: '2026-12-25', month: '2026-12-01', monthEnd: '2026-12-31', today: '2026-12-31' }],
+    ['Asia/Karachi', '2028-02-29T20:30:00.000Z', { week: '2028-02-24', month: '2028-03-01', monthEnd: '2028-03-31', today: '2028-03-01' }],
+  ])('%s at %s uses the local day a new expense would be dated with', (timezone, instant, dates) => {
     process.env.TZ = timezone;
     vi.useFakeTimers();
     vi.setSystemTime(new Date(instant));
 
     expect(presetRange('week')).toEqual({ from: dates.week, to: dates.today });
-    expect(presetRange('month')).toEqual({ from: dates.month, to: dates.today });
+    // This month covers the whole month. Ending it at "today" dropped an
+    // expense dated with a local day that is still ahead of the UTC day.
+    expect(presetRange('month')).toEqual({ from: dates.month, to: dates.monthEnd });
+    expect(presetRange('month').to >= dates.today).toBe(true);
     if (dates.today === '2026-10-05') {
       expect(presetRange('prev')).toEqual({ from: '2026-09-01', to: '2026-09-30' });
     }
