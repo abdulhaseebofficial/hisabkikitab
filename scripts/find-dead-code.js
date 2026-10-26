@@ -100,6 +100,10 @@ const EXPECTED_UNUSED_EXPORTS = {
     'shared recurring expense contract enum definition',
   'packages/contracts/business.js :: RECURRING_OCCURRENCE_STATUSES':
     'shared recurring expense contract enum definition',
+  'packages/contracts/catalogue.js :: DEFAULT_MODE':
+    'the counterpart of DEFAULT_LANGUAGE, which is used; both are the contract documenting what falls back to what',
+  'packages/contracts/catalogue.js :: entryOf':
+    'the single-entry counterpart of idsOf and lookup, which are used; removing it would leave the flat-list API asymmetric',
 };
 
 const IMPORT = /(?:from\s+|import\s*\(\s*|require\(\s*)(['"])([^'"]+)\1/g;

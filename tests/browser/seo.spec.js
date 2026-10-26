@@ -1,7 +1,32 @@
+const fs = require('node:fs');
+const path = require('node:path');
 const { test, expect } = require('@playwright/test');
 const { frontendURL } = require('../../scripts/frontend-config');
-const origin = process.env.VITE_SITE_URL || frontendURL;
-const publicUrl = (path) => new URL(path === '/' ? '/' : `${path}/`, origin).href;
+
+/**
+ * The origin the app will actually print in its canonical tags.
+ *
+ * `VITE_SITE_URL` is baked into the bundle at build time from apps/web/.env, so
+ * reading only `process.env` here compares the served page against whatever the
+ * shell happened to export - which is how this suite came to expect
+ * `http://localhost:5173/` from a dev server that had the production origin
+ * compiled in. Resolve it the way vite.config.js does instead: an explicit
+ * environment variable wins, then `.env.local`, then `.env`.
+ */
+const envOrigin = () => {
+  if (process.env.VITE_SITE_URL) return process.env.VITE_SITE_URL;
+  for (const name of ['.env.local', '.env']) {
+    const file = path.resolve(__dirname, '../../apps/web', name);
+    if (!fs.existsSync(file)) continue;
+    const match = fs.readFileSync(file, 'utf8').match(/^\s*VITE_SITE_URL\s*=\s*(.*)$/m);
+    const value = match && match[1].trim().replace(/^["']|["']$/g, '');
+    if (value) return value;
+  }
+  return frontendURL;
+};
+
+const origin = envOrigin();
+const publicUrl = (route) => new URL(route === '/' ? '/' : `${route}/`, origin).href;
 
 test.beforeEach(async ({ page }) => {
   await page.route((url) => url.pathname.startsWith('/api/'), (route) => {

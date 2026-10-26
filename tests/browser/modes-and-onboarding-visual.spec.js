@@ -1,22 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const fs = require('node:fs');
-const path = require('node:path');
-
-const ARTIFACT_DIR = path.resolve('C:/Users/Abdul Haseeb/.gemini/antigravity/brain/9351a8ed-af60-4c9f-a804-f223095bf656/visual-qa');
-const LOCAL_SCREENSHOT_DIR = path.resolve(__dirname, '../../test-results/visual-qa');
-
-[ARTIFACT_DIR, LOCAL_SCREENSHOT_DIR].forEach((dir) => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-});
-
-async function saveScreenshot(page, filename) {
-  const localPath = path.join(LOCAL_SCREENSHOT_DIR, filename);
-  const artifactPath = path.join(ARTIFACT_DIR, filename);
-  await page.screenshot({ path: localPath, fullPage: false });
-  try {
-    fs.copyFileSync(localPath, artifactPath);
-  } catch {}
-}
+const { saveScreenshot } = require('./visual-artifacts');
 
 test.describe('Modes and Onboarding Visual Proof Suite', () => {
   test('Capture Onboarding Modal, Original Modes, and Navigation proofs', async ({ page }) => {

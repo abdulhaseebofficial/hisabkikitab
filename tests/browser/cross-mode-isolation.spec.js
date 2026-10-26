@@ -1,22 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const fs = require('node:fs');
-const path = require('node:path');
-
-const ARTIFACT_DIR = path.resolve('C:/Users/Abdul Haseeb/.gemini/antigravity/brain/9351a8ed-af60-4c9f-a804-f223095bf656/visual-qa');
-const LOCAL_SCREENSHOT_DIR = path.resolve(__dirname, '../../test-results/visual-qa');
-
-[ARTIFACT_DIR, LOCAL_SCREENSHOT_DIR].forEach((dir) => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-});
-
-async function saveScreenshot(page, filename) {
-  const localPath = path.join(LOCAL_SCREENSHOT_DIR, filename);
-  const artifactPath = path.join(ARTIFACT_DIR, filename);
-  await page.screenshot({ path: localPath, fullPage: false });
-  try {
-    fs.copyFileSync(localPath, artifactPath);
-  } catch {}
-}
+const { saveScreenshot } = require('./visual-artifacts');
 
 test.describe('Cross-Mode Independence & Zero Data Overlap Browser Suite', () => {
   test('Mode switching, business switching, and zero data overlap verification', async ({ page }) => {
@@ -85,8 +68,6 @@ test.describe('Cross-Mode Independence & Zero Data Overlap Browser Suite', () =>
         recentSales: [{ id: 'sale-B-1', invoiceNumber: 'INV-B-501', customerName: 'Bilal Cash', total: 15000 }],
       },
     };
-
-    let activeBusinessId = 'biz-A';
 
     // Route mocking
     await page.route((url) => url.pathname.startsWith('/api/'), async (route) => {
@@ -180,12 +161,13 @@ test.describe('Cross-Mode Independence & Zero Data Overlap Browser Suite', () =>
     await page.waitForLoadState('networkidle');
 
     // Verify Student items render and Business items do NOT exist
-    await expect(page.getByText(/Your planned pocket money/i)).toBeVisible();
+    await expect(page.getByText(/Income minus spending/i).first()).toBeVisible();
     await expect(page.getByText(/Al-Madina General Store/i)).toHaveCount(0);
     await expect(page.getByText(/Lahore Electronics/i)).toHaveCount(0);
     await saveScreenshot(page, 'isolation-step1-student-dashboard.png');
 
-    // 2. Switch to Business Mode via Settings -> Finance Mode
+    // 2. Switch to Business Mode via Settings -> Finance Mode. The navbar toggle
+    //    is gone; Settings is the one place a mode changes.
     await page.goto('/settings');
     await page.waitForLoadState('networkidle');
     const bizCard = page.locator('div.grid button').filter({ hasText: /business/i });
@@ -200,8 +182,17 @@ test.describe('Cross-Mode Independence & Zero Data Overlap Browser Suite', () =>
 
     // Verify Business A items render and Student items do NOT exist
     await expect(page.getByText(/Al-Madina General Store/i).first()).toBeVisible();
-    await expect(page.getByText(/Your planned pocket money/i)).toHaveCount(0);
+    await expect(page.getByText(/Income minus spending/i)).toHaveCount(0);
     await saveScreenshot(page, 'isolation-step2-businessA-dashboard.png');
+
+    // The business selector moved to Business Settings and still switches accounts.
+    await page.goto('/business/settings');
+    const businessSelector = page.getByRole('combobox', { name: 'Your Businesses' });
+    await businessSelector.selectOption('biz-B');
+    await expect(businessSelector).toHaveValue('biz-B');
+    await page.getByRole('link', { name: /business overview/i }).first().click();
+    await expect(page.getByText(/Lahore Electronics/i).first()).toBeVisible();
+    await expect(page.getByText(/Al-Madina General Store/i)).toHaveCount(0);
 
     // 3. Switch back to Personal Mode via Settings -> Finance Mode
     await page.goto('/settings');
@@ -217,7 +208,7 @@ test.describe('Cross-Mode Independence & Zero Data Overlap Browser Suite', () =>
     await page.waitForLoadState('networkidle');
 
     // Verify Student data restored cleanly with zero business overlap
-    await expect(page.getByText(/Your planned pocket money/i)).toBeVisible();
+    await expect(page.getByText(/Income minus spending/i).first()).toBeVisible();
     await expect(page.getByText(/Al-Madina General Store/i)).toHaveCount(0);
     await expect(page.getByText(/Lahore Electronics/i)).toHaveCount(0);
     await saveScreenshot(page, 'isolation-step3-return-to-student.png');

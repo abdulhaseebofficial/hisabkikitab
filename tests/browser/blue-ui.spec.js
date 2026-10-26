@@ -72,11 +72,14 @@ test('phone hardware and finance cards animate once without blocking reduced mot
     name: getComputedStyle(card).animationName,
     delay: getComputedStyle(card).animationDelay,
   })));
-  expect(entrance).toEqual([
-    { name: 'hkk-card-enter', delay: '0s' },
-    { name: 'hkk-card-enter', delay: '0.14s' },
-    { name: 'hkk-card-enter', delay: '0.28s' },
-  ]);
+  // One card per finance mode, each entering once, staggered by 0.14s. Derived
+  // from the rendered count so adding a mode does not look like a motion bug,
+  // while every name and delay is still asserted exactly.
+  expect(entrance.length).toBe(4);
+  expect(entrance).toEqual(entrance.map((_, index) => ({
+    name: 'hkk-card-enter',
+    delay: index === 0 ? '0s' : `${(index * 0.14).toFixed(2)}s`,
+  })));
   await page.waitForTimeout(1000);
 
   const card = page.locator('.hkk-mode-card').nth(1);
@@ -142,7 +145,7 @@ test('homepage fits desktop, tablet, Android and iPhone widths and links to real
       const box = el.getBoundingClientRect();
       return box.left >= 0 && box.right <= innerWidth + 1;
     })).toBe(true);
-    await expect(page.locator('.hkk-mode-card')).toHaveCount(3);
+    await expect(page.locator('.hkk-mode-card')).toHaveCount(4);
     expect(await page.locator('.hkk-phone-screen').evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
     const reject = page.getByRole('button', { name: 'Reject analytics' });
     if (await reject.isVisible()) await reject.click();
@@ -168,7 +171,7 @@ test('homepage finance cards render left of the phone on desktop and below it on
   for (const width of [1440, 820, 393, 375]) {
     await page.setViewportSize({ width, height: width < 500 ? 812 : 1000 });
     await page.goto('/');
-    await expect(page.locator('.hkk-mode-card')).toHaveCount(3);
+    await expect(page.locator('.hkk-mode-card')).toHaveCount(4);
 
     for (const theme of ['light', 'dark']) {
       if (theme === 'dark') await page.getByRole('button', { name: 'Switch to dark theme' }).click();
@@ -315,12 +318,12 @@ test('normal login renders dashboard, restores session and logs out with existin
   await page.locator('input[name="password"]').fill('local-test-password');
   await page.getByRole('button', { name: 'Log in' }).click();
   await expect(page).toHaveURL(/\/dashboard\/?$/);
-  await expect(page.getByText('Money left this month')).toBeVisible();
+  await expect(page.getByText('Income minus spending')).toBeVisible();
   expect(loginPosts).toBe(1);
   expect(await page.evaluate(() => document.body.innerText.includes('Rs 60,000'))).toBe(true);
 
   await page.reload();
-  await expect(page.getByText('Money left this month')).toBeVisible();
+  await expect(page.getByText('Income minus spending')).toBeVisible();
   await page.getByRole('button', { name: /^TU(?: Test)?$/ }).click({ timeout: 5000 });
   await page.getByRole('button', { name: 'Log out' }).click();
   await expect(page).toHaveURL(/\/login\/?$/);
