@@ -15,7 +15,7 @@ const EVENT_PARAMETERS = Object.freeze({
   shared_expense_created: ['role'], shared_bill_created: ['role'],
   contribution_added: ['role'], shared_member_added: ['role'], shared_month_changed: ['role'],
   sign_up_completed: ['method'], login_completed: ['method'], logout_completed: [],
-  article_view: ['content_category'], calculator_used: ['calculator_name'], calculator_completed: ['calculator_name'],
+  article_view: ['content_category'], calculator_used: ['calculator_name'], calculator_completed: ['calculator_name'], calculator_cta_clicked: ['calculator_name'],
   core_feature_cta_clicked: ['feature_name'], related_article_clicked: ['content_category'],
 });
 

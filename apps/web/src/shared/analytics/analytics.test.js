@@ -90,12 +90,14 @@ it('supports public content events with only non-sensitive metadata', () => {
   trackEvent('article_view', { content_category: 'saving', amount: 50000 });
   trackEvent('calculator_used', { calculator_name: 'budget-calculator', income: 90000 });
   trackEvent('calculator_completed', { calculator_name: 'budget-calculator', expenses: 45000 });
+  trackEvent('calculator_cta_clicked', { calculator_name: 'budget-calculator', destination: '/register', amount: 50000 });
   trackEvent('core_feature_cta_clicked', { feature_name: 'budget', balance: 25000 });
   trackEvent('related_article_clicked', { content_category: 'budgeting', name: 'Private user input' });
   expect(gtag.mock.calls).toEqual([
     ['event', 'article_view', { content_category: 'saving' }],
     ['event', 'calculator_used', { calculator_name: 'budget-calculator' }],
     ['event', 'calculator_completed', { calculator_name: 'budget-calculator' }],
+    ['event', 'calculator_cta_clicked', { calculator_name: 'budget-calculator' }],
     ['event', 'core_feature_cta_clicked', { feature_name: 'budget' }],
     ['event', 'related_article_clicked', { content_category: 'budgeting' }],
   ]);
