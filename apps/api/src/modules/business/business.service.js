@@ -645,7 +645,7 @@ const BusinessService = {
         });
       }
 
-      await BusinessRepository.logAction(businessId, userId, 'create_purchase', 'biz_purchases', purchase.id, { purchaseNumber, total: grandTotal.toString() });
+      await BusinessRepository.logAction(businessId, userId, 'create_purchase', 'biz_purchases', purchase.id, { purchaseNumber, total: grandTotal.toString() }, client);
       if (managesTransaction) await client.query('COMMIT');
       return purchase;
     } catch (e) {
@@ -746,7 +746,7 @@ const BusinessService = {
         });
       }
 
-      await BusinessRepository.logAction(businessId, userId, 'create_expense', 'biz_expenses', expense.id, { title: payload.title, amount: amountMinor.toString() });
+      await BusinessRepository.logAction(businessId, userId, 'create_expense', 'biz_expenses', expense.id, { title: payload.title, amount: amountMinor.toString() }, client);
       if (managesTransaction) await client.query('COMMIT');
       return expense;
     } catch (e) {
@@ -882,7 +882,7 @@ const BusinessService = {
         });
       }
 
-      await BusinessRepository.logAction(businessId, userId, 'create_payment', 'biz_payments', payment.id, { paymentType, amount: amountMinor.toString() });
+      await BusinessRepository.logAction(businessId, userId, 'create_payment', 'biz_payments', payment.id, { paymentType, amount: amountMinor.toString() }, client);
       if (managesTransaction) await client.query('COMMIT');
       return payment;
     } catch (e) {
@@ -2065,7 +2065,7 @@ const BusinessService = {
         notes: payload.notes,
         items: payload.items || [],
       });
-      await BusinessRepository.logAction(businessId, userId, 'create_purchase_request', 'biz_purchase_requests', pr.id, { reqNumber });
+      await BusinessRepository.logAction(businessId, userId, 'create_purchase_request', 'biz_purchase_requests', pr.id, { reqNumber }, client);
       await client.query('COMMIT');
       return pr;
     } catch (e) {
@@ -2093,7 +2093,7 @@ const BusinessService = {
       if (pr.status !== 'draft') throw new Error(`Cannot submit purchase request in '${pr.status}' status`);
 
       const updated = await BusinessRepository.updatePurchaseRequestStatus(client, businessId, requestId, 'pending_approval');
-      await BusinessRepository.logAction(businessId, userId, 'submit_purchase_request', 'biz_purchase_requests', requestId, {});
+      await BusinessRepository.logAction(businessId, userId, 'submit_purchase_request', 'biz_purchase_requests', requestId, {}, client);
       await client.query('COMMIT');
       return updated;
     } catch (e) {
@@ -2113,7 +2113,7 @@ const BusinessService = {
       if (pr.status !== 'pending_approval') throw new Error(`Cannot approve purchase request in '${pr.status}' status`);
 
       const updated = await BusinessRepository.updatePurchaseRequestStatus(client, businessId, requestId, 'approved', { approvedBy: userId });
-      await BusinessRepository.logAction(businessId, userId, 'approve_purchase_request', 'biz_purchase_requests', requestId, {});
+      await BusinessRepository.logAction(businessId, userId, 'approve_purchase_request', 'biz_purchase_requests', requestId, {}, client);
       await client.query('COMMIT');
       return updated;
     } catch (e) {
@@ -2133,7 +2133,7 @@ const BusinessService = {
       if (pr.status !== 'pending_approval') throw new Error(`Cannot reject purchase request in '${pr.status}' status`);
 
       const updated = await BusinessRepository.updatePurchaseRequestStatus(client, businessId, requestId, 'rejected', { approvedBy: userId, rejectionReason: reason });
-      await BusinessRepository.logAction(businessId, userId, 'reject_purchase_request', 'biz_purchase_requests', requestId, { reason });
+      await BusinessRepository.logAction(businessId, userId, 'reject_purchase_request', 'biz_purchase_requests', requestId, { reason }, client);
       await client.query('COMMIT');
       return updated;
     } catch (e) {
@@ -2215,7 +2215,7 @@ const BusinessService = {
         await BusinessRepository.updatePurchaseRequestStatus(client, businessId, payload.purchaseRequestId, 'converted_to_po');
       }
 
-      await BusinessRepository.logAction(businessId, userId, 'create_purchase_order', 'biz_purchase_orders', po.id, { poNumber, total: totalAmount.toString() });
+      await BusinessRepository.logAction(businessId, userId, 'create_purchase_order', 'biz_purchase_orders', po.id, { poNumber, total: totalAmount.toString() }, client);
       await client.query('COMMIT');
       return po;
     } catch (e) {
@@ -2243,7 +2243,7 @@ const BusinessService = {
       if (po.status !== 'draft') throw new Error(`Cannot submit purchase order in '${po.status}' status`);
 
       const updated = await BusinessRepository.updatePurchaseOrderStatus(client, businessId, poId, 'pending_approval');
-      await BusinessRepository.logAction(businessId, userId, 'submit_purchase_order', 'biz_purchase_orders', poId, {});
+      await BusinessRepository.logAction(businessId, userId, 'submit_purchase_order', 'biz_purchase_orders', poId, {}, client);
       await client.query('COMMIT');
       return updated;
     } catch (e) {
@@ -2263,7 +2263,7 @@ const BusinessService = {
       if (po.status !== 'pending_approval' && po.status !== 'draft') throw new Error(`Cannot approve purchase order in '${po.status}' status`);
 
       const updated = await BusinessRepository.updatePurchaseOrderStatus(client, businessId, poId, 'approved', { approvedBy: userId });
-      await BusinessRepository.logAction(businessId, userId, 'approve_purchase_order', 'biz_purchase_orders', poId, {});
+      await BusinessRepository.logAction(businessId, userId, 'approve_purchase_order', 'biz_purchase_orders', poId, {}, client);
       await client.query('COMMIT');
       return updated;
     } catch (e) {
@@ -2283,7 +2283,7 @@ const BusinessService = {
       if (po.status !== 'pending_approval') throw new Error(`Cannot reject purchase order in '${po.status}' status`);
 
       const updated = await BusinessRepository.updatePurchaseOrderStatus(client, businessId, poId, 'rejected', { approvedBy: userId, rejectionReason: reason });
-      await BusinessRepository.logAction(businessId, userId, 'reject_purchase_order', 'biz_purchase_orders', poId, { reason });
+      await BusinessRepository.logAction(businessId, userId, 'reject_purchase_order', 'biz_purchase_orders', poId, { reason }, client);
       await client.query('COMMIT');
       return updated;
     } catch (e) {
@@ -2303,7 +2303,7 @@ const BusinessService = {
       if (po.status !== 'approved') throw new Error(`Only approved purchase orders can be sent to suppliers`);
 
       const updated = await BusinessRepository.updatePurchaseOrderStatus(client, businessId, poId, 'sent_to_supplier');
-      await BusinessRepository.logAction(businessId, userId, 'send_purchase_order', 'biz_purchase_orders', poId, {});
+      await BusinessRepository.logAction(businessId, userId, 'send_purchase_order', 'biz_purchase_orders', poId, {}, client);
       await client.query('COMMIT');
       return updated;
     } catch (e) {
@@ -2452,7 +2452,7 @@ const BusinessService = {
         });
       }
 
-      await BusinessRepository.logAction(businessId, userId, 'create_grn', 'biz_grns', grn.id, { grnNumber, totalValue: totalReceivedValue.toString() });
+      await BusinessRepository.logAction(businessId, userId, 'create_grn', 'biz_grns', grn.id, { grnNumber, totalValue: totalReceivedValue.toString() }, client);
       if (managesTransaction) await client.query('COMMIT');
       return grn;
     } catch (e) {
@@ -2673,7 +2673,7 @@ const BusinessService = {
         }
       }
 
-      await BusinessRepository.logAction(businessId, userId, 'create_supplier_bill', 'biz_supplier_bills', bill.id, { billNumber, grandTotal: grandTotal.toString() });
+      await BusinessRepository.logAction(businessId, userId, 'create_supplier_bill', 'biz_supplier_bills', bill.id, { billNumber, grandTotal: grandTotal.toString() }, client);
       if (managesTransaction) await client.query('COMMIT');
       return bill;
     } catch (e) {
@@ -2782,7 +2782,7 @@ const BusinessService = {
         });
       }
 
-      await BusinessRepository.logAction(businessId, userId, 'create_supplier_payment', 'biz_payments', payment.id, { amount: amountMinor.toString() });
+      await BusinessRepository.logAction(businessId, userId, 'create_supplier_payment', 'biz_payments', payment.id, { amount: amountMinor.toString() }, client);
       if (managesTransaction) await client.query('COMMIT');
       return payment;
     } catch (e) {
@@ -2917,7 +2917,7 @@ const BusinessService = {
         });
       }
 
-      await BusinessRepository.logAction(businessId, userId, 'create_purchase_return', 'biz_purchase_returns', prn.id, { returnNumber, total: totalReturnAmount.toString() });
+      await BusinessRepository.logAction(businessId, userId, 'create_purchase_return', 'biz_purchase_returns', prn.id, { returnNumber, total: totalReturnAmount.toString() }, client);
       if (managesTransaction) await client.query('COMMIT');
       return prn;
     } catch (e) {
@@ -2996,7 +2996,7 @@ const BusinessService = {
         title: payload.title,
         amount: amountMinor.toString(),
         frequency: payload.frequency,
-      });
+      }, client);
 
       await client.query('COMMIT');
       return recurringExpense;
@@ -3033,7 +3033,7 @@ const BusinessService = {
       }
 
       const updated = await BusinessRepository.updateRecurringExpense(client, businessId, expenseId, updates);
-      await BusinessRepository.logAction(businessId, userId, 'update_recurring_expense', 'biz_recurring_expenses', expenseId, updates);
+      await BusinessRepository.logAction(businessId, userId, 'update_recurring_expense', 'biz_recurring_expenses', expenseId, updates, client);
       await client.query('COMMIT');
       return updated;
     } catch (e) {
@@ -3049,7 +3049,7 @@ const BusinessService = {
     try {
       await client.query('BEGIN');
       const updated = await BusinessRepository.updateRecurringExpenseStatus(client, businessId, expenseId, 'paused');
-      await BusinessRepository.logAction(businessId, userId, 'pause_recurring_expense', 'biz_recurring_expenses', expenseId, {});
+      await BusinessRepository.logAction(businessId, userId, 'pause_recurring_expense', 'biz_recurring_expenses', expenseId, {}, client);
       await client.query('COMMIT');
       return updated;
     } catch (e) {
@@ -3065,7 +3065,7 @@ const BusinessService = {
     try {
       await client.query('BEGIN');
       const updated = await BusinessRepository.updateRecurringExpenseStatus(client, businessId, expenseId, 'active');
-      await BusinessRepository.logAction(businessId, userId, 'resume_recurring_expense', 'biz_recurring_expenses', expenseId, {});
+      await BusinessRepository.logAction(businessId, userId, 'resume_recurring_expense', 'biz_recurring_expenses', expenseId, {}, client);
       await client.query('COMMIT');
       return updated;
     } catch (e) {
@@ -3081,7 +3081,7 @@ const BusinessService = {
     try {
       await client.query('BEGIN');
       const updated = await BusinessRepository.updateRecurringExpenseStatus(client, businessId, expenseId, 'cancelled');
-      await BusinessRepository.logAction(businessId, userId, 'cancel_recurring_expense', 'biz_recurring_expenses', expenseId, {});
+      await BusinessRepository.logAction(businessId, userId, 'cancel_recurring_expense', 'biz_recurring_expenses', expenseId, {}, client);
       await client.query('COMMIT');
       return updated;
     } catch (e) {
