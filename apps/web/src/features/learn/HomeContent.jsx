@@ -186,8 +186,8 @@ export default function HomeContent({ ArticleCard }) {
       <section className="hkk-hero" aria-labelledby="hkk-hero-heading">
         <div className="hkk-hero-copy">
           <p className="hkk-eyebrow">Personal &amp; shared financial management</p>
-          <h1 id="hkk-hero-heading">Make sense of your money.<span>Make room for more.</span></h1>
-          <p className="hkk-hero-description">Your income, expenses, budgets, savings goals and shared costs — finally in one clear place. See where your money goes and plan what comes next.</p>
+          <h1 id="hkk-hero-heading">Smart Personal and Shared Money Management for Everyday Life<span>Make sense of your money. Make room for more.</span></h1>
+          <p className="hkk-hero-description">Track your income and expenses, organize monthly budgets, manage shared household costs, and keep personal lending records in one place.</p>
           <div className="hkk-hero-actions">
             <Link to="/register" className="hkk-button hkk-button-primary">Start Managing Your Money <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
             <Link to="/login" className="hkk-button hkk-button-secondary">Sign In</Link>
@@ -221,6 +221,36 @@ export default function HomeContent({ ArticleCard }) {
               <Link to={to}>{action} <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="hkk-features" aria-labelledby="hkk-tools-preview-heading">
+        <div className="hkk-section-intro">
+          <p className="hkk-eyebrow">Free financial planning calculators</p>
+          <h2 id="hkk-tools-preview-heading">Interactive Calculators to Plan Every Rupee</h2>
+          <p>Model your monthly cash flow, plan savings targets, divide shared flat bills, and project debt payoff before committing real funds.</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Link to="/tools/budget-calculator" className="hw-card hw-discovery-card p-5 hover:border-brand-400">
+            <h3 className="font-semibold text-slate-900 dark:text-slate-100">Monthly Budget Calculator</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">Add income, living costs and savings to see your unallocated cash flow buffer.</p>
+            <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 dark:text-brand-300">Calculate budget <ArrowRight className="h-4 w-4" aria-hidden="true" /></span>
+          </Link>
+          <Link to="/tools/savings-goal-calculator" className="hw-card hw-discovery-card p-5 hover:border-brand-400">
+            <h3 className="font-semibold text-slate-900 dark:text-slate-100">Savings Goal Calculator</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">Estimate how many months it will take to reach your target reserve.</p>
+            <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 dark:text-brand-300">Estimate timeline <ArrowRight className="h-4 w-4" aria-hidden="true" /></span>
+          </Link>
+          <Link to="/tools/expense-split-calculator" className="hw-card hw-discovery-card p-5 hover:border-brand-400">
+            <h3 className="font-semibold text-slate-900 dark:text-slate-100">Expense Split Calculator</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">Divide shared rent, utilities and grocery bills equally across roommates.</p>
+            <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 dark:text-brand-300">Split expenses <ArrowRight className="h-4 w-4" aria-hidden="true" /></span>
+          </Link>
+        </div>
+        <div className="mt-5 text-center">
+          <Link to="/tools" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-700 hover:underline dark:text-brand-300">
+            View all 7 free financial planning calculators <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
         </div>
       </section>
 
