@@ -3,6 +3,15 @@
 Everything verified since commit `ef5fc1a`, what a user will notice, and how to
 get back if it goes wrong.
 
+> **Superseded for the Phase 4 candidate — see `docs/RELEASE_CANDIDATE_PHASE4.md`.**
+> Sections 5 and 6 below measure this release against this branch's own base
+> commit, where the migration set was already 28 files. Measured against what is
+> actually deployed — 21 migration files — the Phase 4 candidate adds **7
+> migrations**, and rollback is therefore **not** a redeploy of the previous
+> build: the older build's own drift gate would refuse to start against the
+> migrated database. The conclusions below remain correct for the release they
+> describe, and nowhere else.
+
 | | |
 | --- | --- |
 | Schema change | **None.** 28 migrations, unchanged. |
