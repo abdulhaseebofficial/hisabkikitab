@@ -9,7 +9,7 @@
     "dev": "node --watch server.js",
     "seed": "node ../../database/seeds/demo.js",
     "migrate": "node -r dotenv/config src/infrastructure/database/migrate.js",
-    "migrate:status": "node -r dotenv/config -e \"require('./src/infrastructure/database/migrate').status().then(s=>{console.log('applied:',s.applied.map(r=>r.name).join(', ')||'none');console.log('pending:',s.pending.join(', ')||'none')}).finally(()=>require('./src/infrastructure/database/pool').closePool())\""
+    "migrate:status": "node -r dotenv/config -e \"require('./src/infrastructure/database/migrate').status().then(s=>{console.log('applied   :',s.applied.length);console.log('pending   :',s.pending.join(', ')||'none');console.log('edited    :',s.changed.join(', ')||'none');console.log('unverified:',s.unverified.length?s.unverified.length+' (run migrate:adopt once the schema is confirmed)':'none')}).finally(()=>require('./src/infrastructure/database/pool').closePool())\""
   },
   "engines": {
     "node": "24.x"
