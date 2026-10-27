@@ -2,9 +2,18 @@
  * The migration runner.  `npm run migrate`
  *
  * Migrations are numbered files in database/migrations/, applied in name order
- * and never edited once they have run anywhere. Each one is applied in its own
- * transaction and recorded in schema_migrations, so a second run is a no-op and
- * a failure leaves the database exactly as it was.
+ * and never edited once they have run anywhere - a checksum is recorded so that
+ * an edit after the fact is detected rather than assumed away.
+ *
+ * The whole run shares ONE transaction, not one per migration. Everything
+ * pending applies together or nothing does, so a failure half way through
+ * leaves the database exactly as it was, with no partially migrated state to
+ * reason about. The cost is that a long run holds its locks for the whole
+ * duration: plan a large migration set as a maintenance operation, not as
+ * something to slip in under traffic.
+ *
+ * Each applied name is recorded in schema_migrations, so a second run is a
+ * no-op.
  *
  * Only the explicit CLI invokes migrate(). Normal API requests check the
  * ledger read-only and reject a mismatched schema.
