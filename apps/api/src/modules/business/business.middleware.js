@@ -11,7 +11,7 @@ const requireBusinessMember = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Business ID is required' });
     }
 
-    const membership = await BusinessRepository.getMembership(businessId, req.user.id);
+    const membership = await BusinessRepository.getMembership(businessId, req.user._id);
     if (!membership) {
       return res.status(403).json({ success: false, message: 'You are not a member of this business' });
     }

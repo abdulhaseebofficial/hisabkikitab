@@ -41,8 +41,11 @@ async function call(method, path, body, token, opts = {}) {
     /^\/expenses\/[^/]+\/mark-paid$/.test(path) ||
     /^\/debts\/[^/]+\/(payments|settle)$/.test(path)
   )) || (method === 'PATCH' && /^\/goals\/[^/]+\/add$/.test(path));
-  if (financialPath && opts.idempotencyKey !== null)
-    headers['Idempotency-Key'] = opts.idempotencyKey || crypto.randomUUID();
+  // A caller that passes a key explicitly gets it sent, whatever the path:
+  // the business routes guard their own writes and are not in the list above.
+  if (opts.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey;
+  else if (financialPath && opts.idempotencyKey !== null)
+    headers['Idempotency-Key'] = crypto.randomUUID();
   // `cookie` replays a specific one - needed to prove a superseded refresh
   // token is dead, since the jar has already moved on to the replacement.
   const jarCookie = opts.cookie !== undefined ? opts.cookie : state.cookie;

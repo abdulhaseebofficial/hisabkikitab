@@ -91,7 +91,11 @@ const BusinessService = {
         }
       }
 
-      await BusinessRepository.logAction(business.id, userId, 'create_business', 'businesses', business.id, { name: business.name });
+      // On the same client as the INSERT above: the business row is still
+      // uncommitted, and biz_audit_logs.business_id references it. Logging on a
+      // pooled connection cannot see it and fails the foreign key, which rolls
+      // the whole creation back.
+      await BusinessRepository.logAction(business.id, userId, 'create_business', 'businesses', business.id, { name: business.name }, client);
       await client.query('COMMIT');
       return business;
     } catch (e) {

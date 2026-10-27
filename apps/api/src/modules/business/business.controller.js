@@ -14,8 +14,8 @@ const BusinessController = {
         return res.status(403).json({ success: false, message: 'Demo Mode is read-only' });
       }
       const business = req.financialRequestKey
-        ? await BusinessService.createBusinessIdempotent(req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.createBusiness(req.user.id, req.body);
+        ? await BusinessService.createBusinessIdempotent(req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.createBusiness(req.user._id, req.body);
       res.status(201).json({ success: true, data: unwrap(business) });
     } catch (e) {
       next(e);
@@ -24,7 +24,7 @@ const BusinessController = {
 
   async listUserBusinesses(req, res, next) {
     try {
-      const businesses = await BusinessService.listUserBusinesses(req.user.id);
+      const businesses = await BusinessService.listUserBusinesses(req.user._id);
       res.json({ success: true, data: businesses });
     } catch (e) {
       next(e);
@@ -43,7 +43,7 @@ const BusinessController = {
 
   async updateBusiness(req, res, next) {
     try {
-      const updated = await BusinessService.updateBusiness(req.businessId, req.user.id, req.body);
+      const updated = await BusinessService.updateBusiness(req.businessId, req.user._id, req.body);
       res.json({ success: true, data: updated });
     } catch (e) {
       next(e);
@@ -79,7 +79,7 @@ const BusinessController = {
 
   async createProduct(req, res, next) {
     try {
-      const product = await BusinessService.createProduct(req.businessId, req.user.id, req.body);
+      const product = await BusinessService.createProduct(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: product });
     } catch (e) {
       next(e);
@@ -88,7 +88,7 @@ const BusinessController = {
 
   async updateProduct(req, res, next) {
     try {
-      const product = await BusinessService.updateProduct(req.businessId, req.params.productId, req.user.id, req.body);
+      const product = await BusinessService.updateProduct(req.businessId, req.params.productId, req.user._id, req.body);
       res.json({ success: true, data: product });
     } catch (e) {
       next(e);
@@ -98,8 +98,8 @@ const BusinessController = {
   async adjustStock(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.adjustStockIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.adjustStock(req.businessId, req.user.id, req.body);
+        ? await BusinessService.adjustStockIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.adjustStock(req.businessId, req.user._id, req.body);
       res.json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -117,7 +117,7 @@ const BusinessController = {
 
   async createCategory(req, res, next) {
     try {
-      const category = await BusinessService.createCategory(req.businessId, req.user.id, req.body);
+      const category = await BusinessService.createCategory(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: category });
     } catch (e) {
       next(e);
@@ -145,7 +145,7 @@ const BusinessController = {
 
   async createCustomer(req, res, next) {
     try {
-      const customer = await BusinessService.createCustomer(req.businessId, req.user.id, req.body);
+      const customer = await BusinessService.createCustomer(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: customer });
     } catch (e) {
       next(e);
@@ -173,7 +173,7 @@ const BusinessController = {
 
   async createSupplier(req, res, next) {
     try {
-      const supplier = await BusinessService.createSupplier(req.businessId, req.user.id, req.body);
+      const supplier = await BusinessService.createSupplier(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: supplier });
     } catch (e) {
       next(e);
@@ -202,8 +202,8 @@ const BusinessController = {
   async createSale(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.createSaleIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.createSale(req.businessId, req.user.id, req.body);
+        ? await BusinessService.createSaleIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.createSale(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -232,8 +232,8 @@ const BusinessController = {
   async createPurchase(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.createPurchaseIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.createPurchase(req.businessId, req.user.id, req.body);
+        ? await BusinessService.createPurchaseIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.createPurchase(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -252,8 +252,8 @@ const BusinessController = {
   async createExpense(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.createExpenseIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.createExpense(req.businessId, req.user.id, req.body);
+        ? await BusinessService.createExpenseIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.createExpense(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -272,8 +272,8 @@ const BusinessController = {
   async createPayment(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.createPaymentIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.createPayment(req.businessId, req.user.id, req.body);
+        ? await BusinessService.createPaymentIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.createPayment(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -291,7 +291,7 @@ const BusinessController = {
 
   async createEmployee(req, res, next) {
     try {
-      const employee = await BusinessService.createEmployee(req.businessId, req.user.id, req.body);
+      const employee = await BusinessService.createEmployee(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: employee });
     } catch (e) {
       next(e);
@@ -310,8 +310,8 @@ const BusinessController = {
   async runPayroll(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.runPayrollIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.runPayroll(req.businessId, req.user.id, req.body);
+        ? await BusinessService.runPayrollIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.runPayroll(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -366,8 +366,8 @@ const BusinessController = {
   async createSalesReturn(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.createSalesReturnIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.createSalesReturn(req.businessId, req.user.id, req.body);
+        ? await BusinessService.createSalesReturnIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.createSalesReturn(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -394,7 +394,7 @@ const BusinessController = {
 
   async createWarehouse(req, res, next) {
     try {
-      const wh = await BusinessService.createWarehouse(req.businessId, req.user.id, req.body);
+      const wh = await BusinessService.createWarehouse(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: wh });
     } catch (e) {
       next(e);
@@ -404,8 +404,8 @@ const BusinessController = {
   async createStockTransfer(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.createStockTransferIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.createStockTransfer(req.businessId, req.user.id, req.body);
+        ? await BusinessService.createStockTransferIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.createStockTransfer(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -434,8 +434,8 @@ const BusinessController = {
   async receiveStockTransfer(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.receiveStockTransferIdempotent(req.businessId, req.user.id, req.params.transferId, req.financialRequestKey)
-        : await BusinessService.receiveStockTransfer(req.businessId, req.user.id, req.params.transferId);
+        ? await BusinessService.receiveStockTransferIdempotent(req.businessId, req.user._id, req.params.transferId, req.financialRequestKey)
+        : await BusinessService.receiveStockTransfer(req.businessId, req.user._id, req.params.transferId);
       res.json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -445,8 +445,8 @@ const BusinessController = {
   async createStockCount(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.createStockCountIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.createStockCount(req.businessId, req.user.id, req.body);
+        ? await BusinessService.createStockCountIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.createStockCount(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -475,8 +475,8 @@ const BusinessController = {
   async reconcileStockCount(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.reconcileStockCountIdempotent(req.businessId, req.user.id, req.params.countId, req.financialRequestKey)
-        : await BusinessService.reconcileStockCount(req.businessId, req.user.id, req.params.countId);
+        ? await BusinessService.reconcileStockCountIdempotent(req.businessId, req.user._id, req.params.countId, req.financialRequestKey)
+        : await BusinessService.reconcileStockCount(req.businessId, req.user._id, req.params.countId);
       res.json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -485,7 +485,7 @@ const BusinessController = {
 
   async getActiveShift(req, res, next) {
     try {
-      const shift = await BusinessService.getActiveShift(req.businessId, req.user.id);
+      const shift = await BusinessService.getActiveShift(req.businessId, req.user._id);
       res.json({ success: true, data: shift });
     } catch (e) {
       next(e);
@@ -495,8 +495,8 @@ const BusinessController = {
   async openShift(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.openShiftIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.openShift(req.businessId, req.user.id, req.body);
+        ? await BusinessService.openShiftIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.openShift(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -506,8 +506,8 @@ const BusinessController = {
   async closeShift(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.closeShiftIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.closeShift(req.businessId, req.user.id, req.body);
+        ? await BusinessService.closeShiftIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.closeShift(req.businessId, req.user._id, req.body);
       res.json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -543,7 +543,7 @@ const BusinessController = {
 
   async logAttendance(req, res, next) {
     try {
-      const att = await BusinessService.logAttendance(req.businessId, req.user.id, req.body);
+      const att = await BusinessService.logAttendance(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: att });
     } catch (e) {
       next(e);
@@ -562,8 +562,8 @@ const BusinessController = {
   async runItemizedPayroll(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.runItemizedPayrollIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.runItemizedPayroll(req.businessId, req.user.id, req.body);
+        ? await BusinessService.runItemizedPayrollIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.runItemizedPayroll(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -573,8 +573,8 @@ const BusinessController = {
   async createBudget(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.createBudgetIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.createBudget(req.businessId, req.user.id, req.body);
+        ? await BusinessService.createBudgetIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.createBudget(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -634,7 +634,7 @@ const BusinessController = {
 
   async createPurchaseRequest(req, res, next) {
     try {
-      const pr = await BusinessService.createPurchaseRequest(req.businessId, req.user.id, req.body);
+      const pr = await BusinessService.createPurchaseRequest(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: pr });
     } catch (e) {
       next(e);
@@ -643,7 +643,7 @@ const BusinessController = {
 
   async submitPurchaseRequest(req, res, next) {
     try {
-      const pr = await BusinessService.submitPurchaseRequest(req.businessId, req.user.id, req.params.requestId);
+      const pr = await BusinessService.submitPurchaseRequest(req.businessId, req.user._id, req.params.requestId);
       res.json({ success: true, data: pr });
     } catch (e) {
       next(e);
@@ -652,7 +652,7 @@ const BusinessController = {
 
   async approvePurchaseRequest(req, res, next) {
     try {
-      const pr = await BusinessService.approvePurchaseRequest(req.businessId, req.user.id, req.params.requestId);
+      const pr = await BusinessService.approvePurchaseRequest(req.businessId, req.user._id, req.params.requestId);
       res.json({ success: true, data: pr });
     } catch (e) {
       next(e);
@@ -661,7 +661,7 @@ const BusinessController = {
 
   async rejectPurchaseRequest(req, res, next) {
     try {
-      const pr = await BusinessService.rejectPurchaseRequest(req.businessId, req.user.id, req.params.requestId, req.body?.reason || '');
+      const pr = await BusinessService.rejectPurchaseRequest(req.businessId, req.user._id, req.params.requestId, req.body?.reason || '');
       res.json({ success: true, data: pr });
     } catch (e) {
       next(e);
@@ -690,7 +690,7 @@ const BusinessController = {
 
   async createPurchaseOrder(req, res, next) {
     try {
-      const po = await BusinessService.createPurchaseOrder(req.businessId, req.user.id, req.body);
+      const po = await BusinessService.createPurchaseOrder(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: po });
     } catch (e) {
       next(e);
@@ -699,7 +699,7 @@ const BusinessController = {
 
   async submitPurchaseOrder(req, res, next) {
     try {
-      const po = await BusinessService.submitPurchaseOrder(req.businessId, req.user.id, req.params.poId);
+      const po = await BusinessService.submitPurchaseOrder(req.businessId, req.user._id, req.params.poId);
       res.json({ success: true, data: po });
     } catch (e) {
       next(e);
@@ -708,7 +708,7 @@ const BusinessController = {
 
   async approvePurchaseOrder(req, res, next) {
     try {
-      const po = await BusinessService.approvePurchaseOrder(req.businessId, req.user.id, req.params.poId);
+      const po = await BusinessService.approvePurchaseOrder(req.businessId, req.user._id, req.params.poId);
       res.json({ success: true, data: po });
     } catch (e) {
       next(e);
@@ -717,7 +717,7 @@ const BusinessController = {
 
   async rejectPurchaseOrder(req, res, next) {
     try {
-      const po = await BusinessService.rejectPurchaseOrder(req.businessId, req.user.id, req.params.poId, req.body?.reason || '');
+      const po = await BusinessService.rejectPurchaseOrder(req.businessId, req.user._id, req.params.poId, req.body?.reason || '');
       res.json({ success: true, data: po });
     } catch (e) {
       next(e);
@@ -726,7 +726,7 @@ const BusinessController = {
 
   async sendPurchaseOrder(req, res, next) {
     try {
-      const po = await BusinessService.sendPurchaseOrder(req.businessId, req.user.id, req.params.poId);
+      const po = await BusinessService.sendPurchaseOrder(req.businessId, req.user._id, req.params.poId);
       res.json({ success: true, data: po });
     } catch (e) {
       next(e);
@@ -756,8 +756,8 @@ const BusinessController = {
   async createGrn(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.createGrnIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.createGrn(req.businessId, req.user.id, req.body);
+        ? await BusinessService.createGrnIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.createGrn(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -787,8 +787,8 @@ const BusinessController = {
   async createSupplierBill(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.createSupplierBillIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.createSupplierBill(req.businessId, req.user.id, req.body);
+        ? await BusinessService.createSupplierBillIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.createSupplierBill(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -799,8 +799,8 @@ const BusinessController = {
   async createSupplierPayment(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.createSupplierPaymentIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.createSupplierPayment(req.businessId, req.user.id, req.body);
+        ? await BusinessService.createSupplierPaymentIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.createSupplierPayment(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -830,8 +830,8 @@ const BusinessController = {
   async createPurchaseReturn(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.createPurchaseReturnIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.createPurchaseReturn(req.businessId, req.user.id, req.body);
+        ? await BusinessService.createPurchaseReturnIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.createPurchaseReturn(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -862,7 +862,7 @@ const BusinessController = {
 
   async createRecurringExpense(req, res, next) {
     try {
-      const created = await BusinessService.createRecurringExpense(req.businessId, req.user.id, req.body);
+      const created = await BusinessService.createRecurringExpense(req.businessId, req.user._id, req.body);
       res.status(201).json({ success: true, data: created });
     } catch (e) {
       next(e);
@@ -871,7 +871,7 @@ const BusinessController = {
 
   async updateRecurringExpense(req, res, next) {
     try {
-      const updated = await BusinessService.updateRecurringExpense(req.businessId, req.user.id, req.params.recurringId, req.body);
+      const updated = await BusinessService.updateRecurringExpense(req.businessId, req.user._id, req.params.recurringId, req.body);
       res.json({ success: true, data: updated });
     } catch (e) {
       next(e);
@@ -880,7 +880,7 @@ const BusinessController = {
 
   async pauseRecurringExpense(req, res, next) {
     try {
-      const paused = await BusinessService.pauseRecurringExpense(req.businessId, req.user.id, req.params.recurringId);
+      const paused = await BusinessService.pauseRecurringExpense(req.businessId, req.user._id, req.params.recurringId);
       res.json({ success: true, data: paused });
     } catch (e) {
       next(e);
@@ -889,7 +889,7 @@ const BusinessController = {
 
   async resumeRecurringExpense(req, res, next) {
     try {
-      const resumed = await BusinessService.resumeRecurringExpense(req.businessId, req.user.id, req.params.recurringId);
+      const resumed = await BusinessService.resumeRecurringExpense(req.businessId, req.user._id, req.params.recurringId);
       res.json({ success: true, data: resumed });
     } catch (e) {
       next(e);
@@ -898,7 +898,7 @@ const BusinessController = {
 
   async cancelRecurringExpense(req, res, next) {
     try {
-      const cancelled = await BusinessService.cancelRecurringExpense(req.businessId, req.user.id, req.params.recurringId);
+      const cancelled = await BusinessService.cancelRecurringExpense(req.businessId, req.user._id, req.params.recurringId);
       res.json({ success: true, data: cancelled });
     } catch (e) {
       next(e);
@@ -936,8 +936,8 @@ const BusinessController = {
   async generateRecurringOccurrences(req, res, next) {
     try {
       const result = req.financialRequestKey
-        ? await BusinessService.generateRecurringExpenseOccurrencesIdempotent(req.businessId, req.user.id, req.financialRequestKey, req.body)
-        : await BusinessService.generateRecurringExpenseOccurrences(req.businessId, req.user.id, req.body);
+        ? await BusinessService.generateRecurringExpenseOccurrencesIdempotent(req.businessId, req.user._id, req.financialRequestKey, req.body)
+        : await BusinessService.generateRecurringExpenseOccurrences(req.businessId, req.user._id, req.body);
       res.status(200).json({ success: true, data: unwrap(result) });
     } catch (e) {
       next(e);
@@ -982,7 +982,7 @@ const BusinessController = {
   // ---------------------------------------------------------------------------
   async syncOfflineSale(req, res, next) {
     try {
-      const rawResult = await BusinessService.syncOfflineSale(req.businessId, req.user.id, req.body);
+      const rawResult = await BusinessService.syncOfflineSale(req.businessId, req.user._id, req.body);
       const result = unwrap(rawResult);
       if (result.status === 'conflict') {
         return res.status(409).json({
