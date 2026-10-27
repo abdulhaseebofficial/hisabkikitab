@@ -1999,7 +1999,7 @@ const BusinessRepository = {
 
   async listOfflineSyncHistory(businessId, limit = 50) {
     const { rows } = await getPool().query(
-      `SELECT osl.*, u.full_name AS cashier_name, s.sale_number, s.total_amount_minor
+      `SELECT osl.*, u.name AS cashier_name, s.sale_number, s.total_amount_minor
        FROM biz_offline_sync_log osl
        LEFT JOIN users u ON u.id = osl.user_id
        LEFT JOIN biz_sales s ON s.id = osl.sale_id
