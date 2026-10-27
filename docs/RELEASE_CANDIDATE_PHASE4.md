@@ -50,7 +50,7 @@ prove it.
 | | |
 | --- | --- |
 | Candidate HEAD | `fix/v3-desktop-mode-isolation-repairs` |
-| Commits ahead of `origin/main` | 32 |
+| Commits ahead of `origin/main` | 36 |
 | Commits behind | 0 — `origin/main` is an ancestor of HEAD |
 | **Migrations added** | **7** (`0022` … `0028`) |
 | Migrations modified | 1 (`0021`, benign — see below) |
@@ -149,6 +149,22 @@ unpredictably.
 
 ## 6. Status
 
-**NOT AUTHORISED FOR PRODUCTION.** Prepared and verified locally only. No tag
-was pushed, no deployment was made, no production data was read or written
-beyond the public read-only endpoints quoted in section 1.
+**NOT AUTHORISED FOR PRODUCTION.** Prepared and verified locally only.
+
+Tagged locally as `release/phase4-rc-20261027`. The regression below was run
+at `b2a04eb`; the tag adds only documentation on top, no code or test changes.
+**Not pushed**, no
+deployment was made, and no production data was read or written beyond the
+public read-only endpoints quoted in section 1.
+
+Full regression on the tagged commit, against a disposable PostgreSQL 17.6:
+
+| suite | result |
+| --- | --- |
+| Browser (Playwright, 2 projects) | 146 passed, 0 failed, 2 skipped |
+| Unit | 344 / 344 |
+| Web (Vitest, 41 files) | 355 / 355 |
+| Database integration | 87 / 87 |
+| E2E API | 548 / 548 |
+| Migrations, security, SEO, 4 architecture checks | exit 0 |
+| Production build | exit 0 |
