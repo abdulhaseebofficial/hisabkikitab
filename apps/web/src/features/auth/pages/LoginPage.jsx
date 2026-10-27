@@ -31,13 +31,13 @@ export default function Login() {
   // so the button cannot appear on an install that has not configured it.
   const { data: config } = useAsync(() => authService.config(), []);
 
-  /** Where the student was heading before they were sent to log in. */
-  const target = location.state && location.state.from ? location.state.from.pathname : '/dashboard';
+  const targetFromState = location.state && location.state.from ? location.state.from.pathname : null;
 
   const onGoogle = async (idToken) => {
     try {
       const result = await loginWithGoogle(idToken);
-      navigate(result.created ? '/onboarding' : target, { replace: true });
+      const destination = targetFromState || (result.user?.financeMode === 'business' ? '/business' : '/dashboard');
+      navigate(result.created ? '/onboarding' : destination, { replace: true });
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
@@ -46,25 +46,17 @@ export default function Login() {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm({ resolver: zodResolver(schema), defaultValues: { email: '', password: '' } });
 
   const onSubmit = async (values) => {
     try {
-      await login(values);
-      // Send the student back to wherever they were headed before the redirect.
-      navigate(target, { replace: true });
+      const loggedIn = await login(values);
+      const destination = targetFromState || (loggedIn?.financeMode === 'business' ? '/business' : '/dashboard');
+      navigate(destination, { replace: true });
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
-  };
-
-  /** One-tap login for the seeded demo account. */
-  const fillDemo = () => {
-    setValue('email', 'demo@hisabkikitab.app');
-    setValue('password', 'demo1234');
-    toast('Demo details filled in. Hit Log in.', { icon: '\uD83D\uDC4B' });
   };
 
   return (
@@ -118,13 +110,12 @@ export default function Login() {
           {t('auth.login')}
         </Button>
 
-        <button
-          type="button"
-          onClick={fillDemo}
-          className="w-full rounded-xl border border-dashed border-slate-300 py-2.5 text-xs font-medium text-slate-500 transition hover:border-brand-400 hover:text-brand-600 dark:border-slate-700 dark:text-slate-400"
+        <Link
+          to="/?demo=preview#finance-preview"
+          className="flex min-h-11 w-full items-center justify-center rounded-xl border border-dashed border-slate-300 px-3 py-2.5 text-xs font-medium text-slate-600 transition hover:border-brand-400 hover:text-brand-600 dark:border-slate-700 dark:text-slate-300"
         >
-          {t('auth.tryDemo')}
-        </button>
+          Explore Demo Preview
+        </Link>
       </form>
     </AuthShell>
   );

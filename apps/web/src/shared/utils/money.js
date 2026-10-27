@@ -26,3 +26,21 @@ export const isSupportedMoney = (value, { minimumMinor = 0n } = {}) => {
     return cents >= minimumMinor && cents <= 99999999999999n;
   } catch { return false; }
 };
+
+export const formatRs = (minorUnits, currency = 'PKR') => {
+  if (minorUnits === null || minorUnits === undefined || minorUnits === '') return 'Rs 0';
+  try {
+    const val = typeof minorUnits === 'bigint' ? minorUnits : BigInt(Math.round(Number(minorUnits) || 0));
+    const negative = val < 0n;
+    const abs = negative ? -val : val;
+    const whole = abs / 100n;
+    const cents = abs % 100n;
+    const wholeStr = whole.toLocaleString('en-PK');
+    const fractionStr = cents > 0n ? `.${cents.toString().padStart(2, '0')}` : '';
+    const prefix = currency === 'PKR' ? 'Rs ' : `${currency} `;
+    return `${negative ? '-' : ''}${prefix}${wholeStr}${fractionStr}`;
+  } catch {
+    return 'Rs 0';
+  }
+};
+

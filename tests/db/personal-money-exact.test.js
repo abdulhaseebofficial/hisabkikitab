@@ -67,6 +67,44 @@ test('exact personal ledger, aggregates, budgets, goals, recurring and legacy mi
   } finally { await query('DELETE FROM users WHERE id=$1', [user.id]); }
 });
 
+test('planned income stays separate from received income across student and household reports', async () => {
+  const owner = await queryOne('INSERT INTO users(name,email,password,monthly_income) VALUES($1,$2,$3,0) RETURNING id',
+    ['Planned income test', `${crypto.randomUUID()}@test.local`, 'test-only']);
+  const other = await queryOne('INSERT INTO users(name,email,password,monthly_income) VALUES($1,$2,$3,0) RETURNING id',
+    ['Other income test', `${crypto.randomUUID()}@test.local`, 'test-only']);
+  const date = new Date('2032-02-29T00:00:00Z');
+  try {
+    await expense.create(owner.id, { financeMode: 'student', category: 'Food', amount: '10.01', date });
+    await expense.create(owner.id, { financeMode: 'householder', category: 'groceries', amount: '5.01', date });
+    await income.create(owner.id, { financeMode: 'householder', amount: '20.01', date });
+    await income.create(other.id, { financeMode: 'student', amount: '999.99', date });
+    const period = { month: 2, year: 2032 };
+    const user = { _id: owner.id, financeMode: 'student', monthlyIncomeMinor: '6000000', currency: 'PKR' };
+    const student = await analytics.buildSnapshot(user, period);
+    const studentReport = await reports.monthly(user, period);
+    assert.equal(student.income, 0);
+    assert.equal(student.plannedIncome, 60000);
+    assert.equal(student.totalSpent, 10.01);
+    assert.equal(student.remaining, -10.01);
+    assert.equal(studentReport.totals.income, 0);
+    assert.equal(studentReport.totals.plannedIncome, 60000);
+    assert.equal(studentReport.totals.netCashFlow, -10.01);
+    assert.equal(studentReport.totals.netCashFlowRate, null);
+    assert.equal(studentReport.incomeBySource.length, 0);
+
+    const householder = await analytics.buildSnapshot({ ...user, financeMode: 'householder' }, period);
+    const householdReport = await reports.monthly({ ...user, financeMode: 'householder' }, period);
+    assert.equal(householder.income, 20.01);
+    assert.equal(householder.totalSpent, 5.01);
+    assert.equal(householder.remaining, 15);
+    assert.equal(householdReport.totals.netCashFlow, 15);
+    assert.equal(householdReport.totals.netCashFlowRate, 75);
+    assert.equal(householdReport.incomeBySource[0].amount, 20.01);
+  } finally {
+    await query('DELETE FROM users WHERE id = ANY($1::uuid[])', [[owner.id, other.id]]);
+  }
+});
+
 test('input range, sub-cent precision, zero/negative rules and JSON boundary', () => {
   assert.equal(money.decimalToMinor('0.1') + money.decimalToMinor('0.2'), 30n);
   assert.equal(money.minorToApi(30n), 0.3);

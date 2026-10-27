@@ -50,6 +50,14 @@ const SCHEMA = 'migration_smoke_test_' + process.pid + '_' + Date.now().toString
     await client.query(`CREATE SCHEMA ${SCHEMA}`);
     await client.query(`SET search_path TO ${SCHEMA}, public`);
 
+    // The production runner creates its ledger before applying 0001. Mirror
+    // that prerequisite here: 0004 deliberately hardens schema_migrations and
+    // a raw-file harness must not omit the runner-owned table it protects.
+    await client.query(`CREATE TABLE schema_migrations (
+      name text PRIMARY KEY,
+      applied_at timestamptz NOT NULL DEFAULT now()
+    )`);
+
     const files = migrationFiles();
     console.log('  migrations found: ' + files.join(', '));
 
@@ -150,6 +158,48 @@ const SCHEMA = 'migration_smoke_test_' + process.pid + '_' + Date.now().toString
     } else {
       console.log('  ok: ambiguous historical recurring bills remain separate and unmarked');
     }
+
+    // 0022 must block direct SQL as well as HTTP middleware. Create the row
+    // before marking the identity as demo, exactly as the seed does.
+    await client.query('BEGIN');
+    const { rows: demoUsers } = await client.query(
+      `INSERT INTO users (name,email,password) VALUES
+        ('Migration demo','migration-demo@example.test','test-hash'),
+        ('Migration normal','migration-normal@example.test','test-hash')
+       RETURNING id,email`);
+    const demoId = demoUsers.find((row) => row.email === 'migration-demo@example.test').id;
+    const normalId = demoUsers.find((row) => row.email === 'migration-normal@example.test').id;
+    const { rows: protectedExpenses } = await client.query(
+      `INSERT INTO expenses (user_id,amount,category) VALUES ($1,1.00,'Other') RETURNING id`,
+      [demoId]);
+    await client.query('UPDATE users SET is_demo=true WHERE id=$1', [demoId]);
+    const mustRejectDemoWrite = async (sql, params) => {
+      await client.query('SAVEPOINT demo_write');
+      try {
+        await client.query(sql, params);
+        await client.query('ROLLBACK TO SAVEPOINT demo_write');
+        return false;
+      } catch (error) {
+        await client.query('ROLLBACK TO SAVEPOINT demo_write');
+        return error.code === '42501' && /Demo Mode is read-only/.test(error.message);
+      }
+    };
+    const demoInsertRejected = await mustRejectDemoWrite(
+      `INSERT INTO expenses (user_id,amount,category) VALUES ($1,2.00,'Other')`, [demoId]);
+    const demoUpdateRejected = await mustRejectDemoWrite(
+      'UPDATE expenses SET amount=2.00 WHERE id=$1', [protectedExpenses[0].id]);
+    const demoReparentRejected = await mustRejectDemoWrite(
+      'UPDATE expenses SET user_id=$1 WHERE id=$2', [normalId, protectedExpenses[0].id]);
+    if (!demoInsertRejected || !demoUpdateRejected || !demoReparentRejected) {
+      console.log('  FAIL demo-owned rows were writable or could be reparented');
+      failed = true;
+    } else {
+      console.log('  ok: demo direct inserts, updates and ownership escape are rejected');
+    }
+    await client.query(
+      `INSERT INTO expenses (user_id,amount,category) VALUES ($1,2.00,'Other')`, [normalId]);
+    console.log('  ok: normal users remain writable after the demo triggers');
+    await client.query('ROLLBACK');
 
     // Constraints, not just tables. A migration whose "does this already
     // exist?" guard is not schema-aware will find the copy in public, decide

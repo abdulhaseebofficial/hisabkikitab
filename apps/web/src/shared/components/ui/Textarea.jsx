@@ -13,12 +13,19 @@ const Textarea = forwardRef(function Textarea({ label, error, hint, className = 
           {label}
         </label>
       )}
+      {/*
+        A textarea is always prose, so direction follows the text itself: an
+        Urdu note right-aligns and reads right-to-left, an English one does
+        not, and neither disturbs the page around it. A caller that needs a
+        fixed direction can still pass `dir`.
+      */}
       <textarea
         id={textareaId}
         ref={ref}
         rows={rows}
         className={cn('hw-input resize-none', error && 'border-danger focus:border-danger focus:ring-danger')}
         aria-invalid={Boolean(error)}
+        dir="auto"
         {...props}
       />
       {hint && !error && <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{hint}</p>}

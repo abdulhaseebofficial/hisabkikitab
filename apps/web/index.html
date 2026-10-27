@@ -6,26 +6,40 @@
     <meta name="theme-color" content="#f4f8ff" />
     <meta
       name="description"
-      content="Track expenses and income, plan budgets and goals, and organize household or shared costs with HisabKi Kitab."
+      content="Track your income and expenses, organize monthly budgets, manage shared household costs, and keep personal lending records in one place with HisabKi Kitab."
     />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <title>HisabKi Kitab | Personal and Shared Money Management</title>
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="HisabKi Kitab" />
+    <title>HisabKi Kitab | Smart Personal &amp; Shared Money Management</title>
     <script>
-      // Apply the saved theme before first paint so the page never flashes white.
+      // Early PWA install prompt capture to ensure beforeinstallprompt is never lost
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.__deferredPwaPrompt = e;
+      });
+    </script>
+    <script>
+      // Match ThemeProvider before first paint to prevent a palette flash.
       (function () {
+        var theme = 'light';
         try {
-          var stored = localStorage.getItem('hw-theme');
-          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          var dark = stored === 'dark' || (stored !== 'light' && prefersDark);
-          if (dark) document.documentElement.classList.add('dark');
-          // Paint the paper colour before React mounts so there is no flash.
-          document.documentElement.style.backgroundColor = dark ? '#081b4b' : '#f4f8ff';
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#081b4b' : '#f4f8ff');
+          var saved = localStorage.getItem('hkk-theme');
+          theme = saved === 'light' || saved === 'dark'
+            ? saved
+            : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         } catch (e) {
-          /* private mode, ignore */
+          theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.backgroundColor = theme === 'dark' ? '#081b4b' : '#f4f8ff';
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', theme === 'dark' ? '#081b4b' : '#f4f8ff');
       })();
     </script>
   </head>

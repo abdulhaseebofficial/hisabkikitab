@@ -20,6 +20,17 @@ const { verifyAccessToken, ACCESS_COOKIE } = require('./auth.tokens');
  * ambient one: a script passing a token must not silently act as whoever the
  * browser happens to be signed in as.
  */
+const applyDemoPolicy = (req) => {
+  if (!req.user?.isDemo) return;
+  const requestedMode = req.get('X-Demo-Finance-Mode');
+  if (requestedMode && ['student', 'householder', 'shared_living', 'business'].includes(requestedMode)) {
+    req.user = { ...req.user, financeMode: requestedMode };
+  }
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    throw ApiError.forbidden('Demo Mode is read-only');
+  }
+};
+
 const protect = asyncHandler(async (req, _res, next) => {
   const header = req.headers.authorization || '';
   const fromHeader = header.startsWith('Bearer ') ? header.slice(7).trim() : null;
@@ -49,7 +60,9 @@ const protect = asyncHandler(async (req, _res, next) => {
     throw ApiError.unauthorized('Session is no longer valid, please log in again');
 
   req.user = user;
+
+  applyDemoPolicy(req);
   next();
 });
 
-module.exports = { protect };
+module.exports = { protect, applyDemoPolicy };

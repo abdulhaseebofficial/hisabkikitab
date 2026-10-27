@@ -3,9 +3,16 @@ const { ok, section, call, report, requireApi } = require('./helpers');
 (async () => {
   await requireApi();
   section('PERSONAL MONEY API PRECISION');
-  const login = await call('POST', '/auth/login', { email: 'demo@hisabkikitab.app', password: 'demo1234' });
-  const token = login.data?.data?.accessToken;
-  ok('disposable demo account authenticates', login.status === 200 && !!token);
+  const password = 'TestPass123!';
+  const registration = await call('POST', '/auth/register', {
+    acceptTerms: true,
+    name: 'Money Precision',
+    email: `money-${Date.now()}@example.test`,
+    password,
+    confirmPassword: password,
+  });
+  const token = registration.data?.data?.accessToken;
+  ok('disposable normal account authenticates', registration.status === 201 && !!token);
   const created = [];
   try {
     for (const amount of [0.1, 0.2]) {
@@ -23,6 +30,7 @@ const { ok, section, call, report, requireApi } = require('./helpers');
     ok('goal below DB minimum is a client error', invalidGoal.status === 400);
   } finally {
     for (const id of created) await call('DELETE', `/expenses/${id}`, undefined, token);
+    await call('DELETE', '/profile', { password }, token);
   }
   report();
 })().catch((error) => { console.error(error); process.exitCode = 1; });

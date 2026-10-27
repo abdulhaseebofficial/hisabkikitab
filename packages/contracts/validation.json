@@ -2,8 +2,8 @@
   "_comment": "Rules the API enforces and the web app previews. Data, not code, for the reason given in index.js: the API requires CommonJS and the web app is bundled as ESM, and JSON is the one thing both read natively. Each side builds its own validator from these values, so the rule is written once even though it runs twice. Patterns are regex SOURCE strings; every one needs the 'u' flag.",
   "name": {
     "maxLength": 60,
-    "pattern": "^\\p{L}(?:[\\p{L}\\p{M}'’ -]*\\p{L})?$",
-    "patternComment": "A name starts and ends with a letter. In between it may also carry combining marks (Devanagari, Arabic and Vietnamese all need them), spaces, hyphens and apostrophes - straight or curly, because phone keyboards produce the curly one. \\p{L} covers every script, so this accepts محمد, Владимир and José as readily as it accepts Ali. It rejects digits, @, <, /, emoji and anything else that is not part of a human name.",
+    "pattern": "^\\p{L}(?:[\\p{L}\\p{M}'’ -]*[\\p{L}\\p{M}])?$",
+    "patternComment": "A name starts with a letter and ends with a letter or a combining mark. In between it may also carry spaces, hyphens and apostrophes - straight or curly, because phone keyboards produce the curly one. \\p{L} covers every script, so this accepts محمد, Владимир and José as readily as it accepts Ali. It rejects digits, @, <, /, emoji, a NUL byte, and anything else that is not part of a human name. The final character was once required to be \\p{L}, which quietly rejected most Indic names: Devanagari, Bengali, Tamil and Telugu words routinely end in a dependent vowel sign, and that sign is \\p{M}. किराया, বাড়ি, வாடகை and ఇంటి అద్దె were all refused. A name may still not END in a space, hyphen or apostrophe.",
     "messages": {
       "required": "What should we call you?",
       "pattern": "Name can only contain letters, spaces, hyphens, and apostrophes.",

@@ -25,7 +25,7 @@ const data = {
 };
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('hw-theme', 'dark'));
+  await page.addInitScript(() => localStorage.setItem('hkk-theme', 'purple'));
   await page.route((url) => url.pathname.startsWith('/api/'), (route) => {
     const path = new URL(route.request().url()).pathname;
     let payload = {};

@@ -36,6 +36,7 @@ const schema = z.object({
 export default function Income() {
   const { t, language } = useT();
   const { user, currency } = useAuth();
+  const readOnly = Boolean(user?.isDemo);
   const mode = user && user.financeMode === 'householder' ? 'householder' : 'student';
   const sources = catalogue.categoryIdsFor('income', mode);
   const [formOpen, setFormOpen] = useState(false);
@@ -82,9 +83,9 @@ export default function Income() {
         title={t('income.title')}
         subtitle={t(mode === 'householder' ? 'income.subtitleHouseholder' : 'income.subtitleStudent')}
       >
-        <Button icon={Plus} onClick={() => setFormOpen(true)}>
+        {!readOnly && <Button icon={Plus} onClick={() => setFormOpen(true)}>
           {t('income.add')}
-        </Button>
+        </Button>}
       </PageHeader>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -118,9 +119,9 @@ export default function Income() {
             icon={Wallet}
             title={t('income.empty')}
             message={t('income.emptyMessage')}
-            actionLabel={t('income.add')}
-            actionIcon={Plus}
-            onAction={() => setFormOpen(true)}
+            actionLabel={readOnly ? undefined : t('income.add')}
+            actionIcon={readOnly ? undefined : Plus}
+            onAction={readOnly ? undefined : () => setFormOpen(true)}
           />
         ) : (
           <ul className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -142,14 +143,14 @@ export default function Income() {
                   +{formatMoney(entry.amount, currency)}
                 </span>
 
-                <button
+                {!readOnly && <button
                   type="button"
                   onClick={() => setDeleting(entry)}
                   aria-label={`Delete ${entry.source} income`}
                   className="rounded-lg p-2 text-slate-400 transition hover:bg-danger/10 hover:text-danger dark:hover:bg-danger/15"
                 >
                   <Trash2 className="h-4 w-4" />
-                </button>
+                </button>}
               </li>
             ))}
           </ul>

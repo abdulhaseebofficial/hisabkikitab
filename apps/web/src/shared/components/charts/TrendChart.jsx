@@ -9,7 +9,7 @@ import {
   YAxis,
 } from 'recharts';
 import { useTheme } from '../../../app/providers/ThemeProvider';
-import { CATEGORIES, CHART_INK } from '../../utils/constants';
+import { CHART_INK } from '../../utils/constants';
 import { formatMoney } from '../../utils/format';
 import ChartTooltip from './ChartTooltip';
 import EmptyState from '../ui/EmptyState';
@@ -23,9 +23,9 @@ import useT from '../../i18n/I18nProvider';
  */
 export default function TrendChart({ data = [], currency = 'INR', average = 0, height = 240 }) {
   const { t } = useT();
-  const { isDark } = useTheme();
-  const ink = isDark ? CHART_INK.dark : CHART_INK.light;
-  const seriesColor = isDark ? CATEGORIES[0].dark : CATEGORIES[0].light;
+  const { theme } = useTheme();
+  const ink = CHART_INK[theme] || CHART_INK.light;
+  const seriesColor = ink.primary;
 
   const hasSpending = data.some((point) => point.amount > 0);
   if (!data.length || !hasSpending) {

@@ -18,11 +18,12 @@ const API = path.join(__dirname, '..', '..', 'apps', 'api');
 const { createMemoryStore } = require(path.join(API, 'src/infrastructure/rateLimit/stores'));
 
 // NODE_ENV=test makes every limiter a pass-through, which is right for the
-// suites and wrong for testing the limiter itself.
-const previousEnv = process.env.NODE_ENV;
-process.env.NODE_ENV = 'development';
+// suites and wrong for testing the limiter itself. The check happens when the
+// middleware runs, not when it is required, so `run` below is where the
+// environment has to be pinned - otherwise these tests pass or fail depending
+// on whether the shell that started them had NODE_ENV=test exported for the
+// database suites.
 const rateLimiter = require(path.join(API, 'src/shared/middleware/rateLimiter'));
-process.env.NODE_ENV = previousEnv;
 
 const { limiter, keyFor, setStore } = rateLimiter;
 
@@ -47,12 +48,25 @@ const exchange = (req = {}) => {
   return { req: { ip: '203.0.113.9', ...req }, res, headers };
 };
 
-/** Runs the middleware once and reports whether it called next(). */
-const run = async (middleware, context) => {
+/**
+ * Runs the middleware once and reports whether it called next().
+ *
+ * `nodeEnv` is explicit because the limiter consults it on every call: the
+ * default pins it away from "test" so limiting is actually exercised, and the
+ * pass-through test asks for "test" by name.
+ */
+const run = async (middleware, context, nodeEnv = 'development') => {
+  const previous = process.env.NODE_ENV;
+  process.env.NODE_ENV = nodeEnv;
   let passed = false;
-  await middleware(context.req, context.res, () => {
-    passed = true;
-  });
+  try {
+    await middleware(context.req, context.res, () => {
+      passed = true;
+    });
+  } finally {
+    if (previous === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previous;
+  }
   return passed;
 };
 
@@ -241,8 +255,6 @@ test('the suites are not rate limited', async () => {
   // Hundreds of calls per run; a limit there fails runs rather than finding
   // bugs. Production is unaffected because NODE_ENV is never "test" there.
   const restore = setStore(brokenStore());
-  const previous = process.env.NODE_ENV;
-  process.env.NODE_ENV = 'test';
 
   try {
     const middleware = limiter({
@@ -252,9 +264,8 @@ test('the suites are not rate limited', async () => {
       text: 'no',
       failClosed: true,
     });
-    assert.strictEqual(await run(middleware, exchange()), true);
+    assert.strictEqual(await run(middleware, exchange(), 'test'), true);
   } finally {
-    process.env.NODE_ENV = previous;
     restore();
   }
 });

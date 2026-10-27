@@ -2,7 +2,7 @@ import { canonicalPagePath } from '../../shared/seo/urls';
 
 export function trustMetadata(page, origin) {
   const canonical = new URL(canonicalPagePath(page.path), origin).href;
-  const title = `${page.title} | Hisab Ki Kitab`;
+  const title = `${page.title} | HisabKi Kitab`;
   const breadcrumbs = [
     { name: 'Home', item: `${origin}/` },
     { name: page.title, item: canonical },
@@ -12,7 +12,7 @@ export function trustMetadata(page, origin) {
     canonical,
     schema: [
       { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: breadcrumbs.map((item, index) => ({ '@type': 'ListItem', position: index + 1, ...item })) },
-      { '@context': 'https://schema.org', '@type': 'WebPage', name: title, description: page.description, url: canonical, inLanguage: 'en', isPartOf: { '@type': 'WebSite', name: 'Hisab Ki Kitab', url: `${origin}/` } },
+      { '@context': 'https://schema.org', '@type': 'WebPage', name: title, description: page.description, url: canonical, inLanguage: 'en', isPartOf: { '@type': 'WebSite', name: 'HisabKi Kitab', url: `${origin}/` } },
     ],
     tags: [
       ['name', 'description', page.description],
@@ -21,10 +21,12 @@ export function trustMetadata(page, origin) {
       ['property', 'og:description', page.description],
       ['property', 'og:url', canonical],
       ['property', 'og:type', 'website'],
-      ['property', 'og:site_name', 'Hisab Ki Kitab'],
+      ['property', 'og:site_name', 'HisabKi Kitab'],
+      ['property', 'og:image', `${origin}/logo-512.png`],
       ['name', 'twitter:card', 'summary'],
       ['name', 'twitter:title', title],
       ['name', 'twitter:description', page.description],
+      ['name', 'twitter:image', `${origin}/logo-512.png`],
     ],
   };
 }

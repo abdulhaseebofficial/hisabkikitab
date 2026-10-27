@@ -26,11 +26,11 @@ import { sumMoney } from '../../../shared/utils/money';
  * months, because a household that has not recorded a bill yet needs to see
  * that plainly rather than read a confident estimate of it.
  */
-export default function HouseholderDashboard({ data, currency, onNavigate, onQuickAdd }) {
+export default function HouseholderDashboard({ data, currency, onNavigate, onQuickAdd, readOnly = false }) {
   const { t } = useT();
   const { totals, categoryBreakdown, trend, comparison, budgets, goals, recentExpenses, monthLabel, debts, upcomingBills } = data;
 
-  const overspending = totals.income > 0 && totals.remaining < 0;
+  const overspending = totals.remaining < 0;
   const groups = totalsByGroup(HOUSEHOLDER_GROUPS, categoryBreakdown);
 
   const billsTotal = sumMoney((upcomingBills || []).map((bill) => bill.amount || 0));
@@ -43,7 +43,7 @@ export default function HouseholderDashboard({ data, currency, onNavigate, onQui
           label={t('dashboard.householdLeft')}
           value={totals.remaining}
           currency={currency}
-          decimals={0}
+          decimals={2}
           icon={Wallet}
           tone={overspending ? 'danger' : totals.spentPercent > 80 ? 'caution' : 'safe'}
           progress={Math.min(100, totals.spentPercent)}
@@ -51,7 +51,8 @@ export default function HouseholderDashboard({ data, currency, onNavigate, onQui
           footnote={
             overspending
               ? t('dashboard.overIncome')
-              : t('dashboard.percentUsed', { percent: totals.spentPercent })
+              : totals.income > 0 ? t('dashboard.percentUsed', { percent: totals.spentPercent })
+                : t('dashboard.noIncomeLogged')
           }
           className="col-span-2 lg:col-span-1"
         />
@@ -63,9 +64,9 @@ export default function HouseholderDashboard({ data, currency, onNavigate, onQui
           icon={ArrowUpRight}
           tone="safe"
           footnote={
-            totals.incomeLogged > 0
-              ? t('dashboard.fromLogged')
-              : t('dashboard.expectedHouseholdIncome')
+            totals.plannedIncome > 0
+              ? t('dashboard.plannedIncomeOnly', { amount: formatMoney(totals.plannedIncome, currency) })
+              : totals.income > 0 ? t('dashboard.fromLogged') : t('dashboard.noIncomeLogged')
           }
         />
 
@@ -89,14 +90,14 @@ export default function HouseholderDashboard({ data, currency, onNavigate, onQui
           label={t('dashboard.upcomingBills')}
           value={billsTotal}
           currency={currency}
-          decimals={0}
+          decimals={2}
           icon={Receipt}
           tone={billsTotal > 0 ? 'caution' : 'neutral'}
           footnote={
             upcomingBills && upcomingBills.length
               ? t('dashboard.billsDueSoon', {
                   count: upcomingBills.length,
-                  amount: formatMoney(billsTotal, currency, { decimals: 0 }),
+                  amount: formatMoney(billsTotal, currency, { decimals: 2 }),
                 })
               : t('dashboard.noBillsDue')
           }
@@ -120,7 +121,7 @@ export default function HouseholderDashboard({ data, currency, onNavigate, onQui
         <div className="space-y-5">
           {/* First in the column, unlike the student view: this is the part of
               the month a household cannot choose. */}
-          <UpcomingBills bills={upcomingBills} currency={currency} />
+          <UpcomingBills bills={upcomingBills} currency={currency} readOnly={readOnly} />
 
           <CategoryGroups
             title={t('dashboard.whereItGoesHouseholder')}

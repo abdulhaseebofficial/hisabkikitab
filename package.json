@@ -15,13 +15,16 @@
     "start": "npm start -w @hisabkikitab/api",
     "migrate": "npm run migrate -w @hisabkikitab/api",
     "migrate:deployed": "node -r dotenv/config apps/api/src/infrastructure/database/migrate.js dotenv_config_path=.env.production.local",
+    "migrate:adopt": "node -r dotenv/config apps/api/src/infrastructure/database/migrate.js adopt dotenv_config_path=.env.production.local",
+    "restore:drill": "node scripts/restore-drill.mjs",
     "migrate:status": "npm run migrate:status -w @hisabkikitab/api",
     "test:migrations": "node tests/migrations/fresh-schema.test.js",
-    "test:db": "node tests/db/constraints.test.js && node tests/db/debt-transaction.test.js && node --test tests/db/debt-contacts.test.js && node --test tests/db/shared-living.test.js && node --test tests/db/shared-living-ownership.test.js && node --test tests/db/shared-bill-occurrence.test.js && node --test tests/db/phase1.test.js && node --test tests/db/personal-money-shadow.test.js && node --test tests/db/personal-money-exact.test.js && node --test tests/db/date-boundaries.test.js && node --test tests/db/scheduler.test.js && node --test tests/db/financial-requests.test.js && node --test tests/db/access-token-revocation.test.js",
+    "test:db": "node tests/db/constraints.test.js && node tests/db/debt-transaction.test.js && node --test tests/db/debt-contacts.test.js && node --test tests/db/shared-living.test.js && node --test tests/db/shared-living-ownership.test.js && node --test tests/db/shared-bill-occurrence.test.js && node --test tests/db/phase1.test.js && node --test tests/db/personal-money-shadow.test.js && node --test tests/db/personal-money-exact.test.js && node --test tests/db/date-boundaries.test.js && node --test tests/db/scheduler.test.js && node --test tests/db/financial-requests.test.js && node --test tests/db/access-token-revocation.test.js && node --test tests/db/account-deletion-ownership.test.js && node --test tests/db/recurring-cron-comprehensive.test.js && node --test tests/db/audit-read-only.test.js && node --test tests/db/unicode-storage.test.js && node --test tests/db/migration-checksum.test.js && node --test tests/db/business-audit-atomicity.test.js",
     "test:security": "node -r dotenv/config tests/security/pentest.js dotenv_config_path=apps/api/.env && node -r dotenv/config tests/security/surface.test.js dotenv_config_path=apps/api/.env && node -r dotenv/config tests/security/auth-storage.test.js dotenv_config_path=apps/api/.env",
     "seed": "npm run seed -w @hisabkikitab/api",
     "test": "node --test tests/unit/*.test.js",
-    "test:e2e": "node tests/e2e/api.test.js && node tests/e2e/settings.test.js && node tests/e2e/debts.test.js && node tests/e2e/refresh.test.js && node --test tests/e2e/shared-living.test.js && node tests/e2e/shared-living-ownership.test.js && npm run test:browser",
+    "test:e2e:api": "node tests/e2e/api.test.js && node tests/e2e/settings.test.js && node tests/e2e/debts.test.js && node tests/e2e/refresh.test.js && node tests/e2e/personal-money.test.js && node tests/e2e/payment-methods.test.js && node tests/e2e/business-isolation.test.js && node tests/e2e/unicode.test.js && node --test tests/e2e/shared-living.test.js && node tests/e2e/shared-living-ownership.test.js",
+    "test:e2e": "node tests/e2e/api.test.js && node tests/e2e/settings.test.js && node tests/e2e/debts.test.js && node tests/e2e/refresh.test.js && node tests/e2e/payment-methods.test.js && node tests/e2e/business-isolation.test.js && node tests/e2e/unicode.test.js && node --test tests/e2e/shared-living.test.js && node tests/e2e/shared-living-ownership.test.js && npm run test:browser",
     "test:browser": "node node_modules/@playwright/test/cli.js test --config tests/browser/config.js",
     "qa": "npm run test:e2e",
     "qa:api": "node tests/e2e/api.test.js",
@@ -31,6 +34,7 @@
     "test:unit": "node --test tests/unit/*.test.js",
     "test:web": "npm run test -w @hisabkikitab/web",
     "test:seo": "node --test tests/seo/*.test.mjs",
+    "check:test-db-guard": "node --test tests/unit/test-db-guard.test.js",
     "check:boundaries": "node scripts/check-boundaries.js",
     "check:shadowing": "node scripts/check-shadowing.js",
     "check:dead": "node scripts/find-dead-code.js",
@@ -39,7 +43,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
-    "concurrently": "^9.0.1"
+    "concurrently": "^10.0.6"
   },
   "engines": {
     "node": "24.x"

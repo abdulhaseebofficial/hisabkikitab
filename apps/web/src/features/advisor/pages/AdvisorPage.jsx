@@ -12,6 +12,7 @@ import useMutation from '../../../shared/hooks/useMutation';
 import aiService from '../api/advisorApi';
 import { cn } from '../../../shared/utils/format';
 import useT from '../../../shared/i18n/I18nProvider';
+import useCategoryLabel from '../../../shared/i18n/useCategoryLabel';
 
 const TABS = [
   { key: 'chat', labelKey: 'advisor.tabChat', icon: MessageSquare },
@@ -21,7 +22,9 @@ const TABS = [
 
 export default function AIAdvisor() {
   const { t } = useT();
+  const categoryLabel = useCategoryLabel();
   const { user, currency } = useAuth();
+  const readOnly = Boolean(user?.isDemo);
   const [tab, setTab] = useState('chat');
   const [status, setStatus] = useState(null);
 
@@ -48,9 +51,10 @@ export default function AIAdvisor() {
 
   // Fetch a tab's data the first time it is opened, not before.
   useEffect(() => {
+    if (readOnly) return;
     if (tab === 'advice' && !advice && !adviceLoading) loadAdvice();
     if (tab === 'weekly' && !weekly && !weeklyLoading) loadWeekly();
-  }, [tab, advice, weekly, adviceLoading, weeklyLoading, loadAdvice, loadWeekly]);
+  }, [tab, advice, weekly, adviceLoading, weeklyLoading, loadAdvice, loadWeekly, readOnly]);
 
   return (
     <div className="space-y-5">
@@ -70,6 +74,12 @@ export default function AIAdvisor() {
         }
       />
 
+      {readOnly ? (
+        <Card>
+          <p className="text-sm font-semibold text-slate-100">Demo Mode — Read Only</p>
+          <p className="mt-2 text-sm leading-6 text-slate-400">Advisor requests and chat changes are disabled in the demo. Explore the dashboard, reports, and existing financial records instead.</p>
+        </Card>
+      ) : <>
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         {TABS.map((option) => (
           <button
@@ -136,7 +146,7 @@ export default function AIAdvisor() {
                 <ul className="divide-y divide-slate-100 text-sm dark:divide-slate-800">
                   {weekly.breakdown.map((row) => (
                     <li key={row.category} className="flex justify-between py-2">
-                      <span className="text-slate-600 dark:text-slate-400">{row.category}</span>
+                      <span dir="auto" className="text-slate-600 dark:text-slate-400">{categoryLabel(row.category)}</span>
                       <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                         {row.percent}%
                       </span>
@@ -148,6 +158,7 @@ export default function AIAdvisor() {
           ) : null}
         </Card>
       )}
+      </>}
     </div>
   );
 }

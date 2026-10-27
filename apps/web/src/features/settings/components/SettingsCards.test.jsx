@@ -17,19 +17,19 @@ import LanguageCard from './LanguageCard';
 import CategoriesCard from './CategoriesCard';
 import SecurityCard from './SecurityCard';
 import DeleteAccountModal from './DeleteAccountModal';
+import InstallAppCard from './InstallAppCard';
 
 describe('AppearanceCard', () => {
-  it('offers all three theme choices', () => {
-    render(<AppearanceCard theme="system" onChange={() => {}} />);
+  it('offers both premium theme choices', () => {
+    render(<AppearanceCard theme="light" onChange={() => {}} />);
 
     expect(screen.getByRole('button', { name: /light/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /dark/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /system/i })).toBeInTheDocument();
   });
 
   it('reports which theme was picked', async () => {
     const onChange = vi.fn();
-    render(<AppearanceCard theme="system" onChange={onChange} />);
+    render(<AppearanceCard theme="light" onChange={onChange} />);
 
     await userEvent.click(screen.getByRole('button', { name: /dark/i }));
 
@@ -50,8 +50,29 @@ describe('CategoriesCard', () => {
   it('shows the custom categories alongside the built-in ones', () => {
     render(<CategoriesCard {...props} />);
 
-    expect(screen.getByText('Mess/Food')).toBeInTheDocument();
+    // A built-in shows its translated label, not the id that is stored.
+    // "Mess/Food" is the id; "Food" is what the catalogue calls it in English.
+    expect(screen.getByText('Food')).toBeInTheDocument();
+    expect(screen.queryByText('Mess/Food')).not.toBeInTheDocument();
+    // Same again, and a good illustration that an id is not a label: the id
+    // "Travel" is called "Transport" on screen.
+    expect(screen.getByText('Transport')).toBeInTheDocument();
+    expect(screen.queryByText('Travel')).not.toBeInTheDocument();
+    // A category the person invented has no catalogue entry, so it has to come
+    // back exactly as they typed it.
     expect(screen.getByText('Gym')).toBeInTheDocument();
+  });
+
+  it('renders a category the person typed in Urdu unchanged', () => {
+    const urdu = 'گھر کا کرایہ';
+    render(<CategoriesCard {...props} categories={['Mess/Food', urdu]} custom={[urdu]} />);
+
+    const rendered = screen.getByText(urdu);
+    expect(rendered).toBeInTheDocument();
+    // dir="auto" lets the browser decide direction per string, so an Urdu
+    // category reads right-to-left without the surrounding page flipping.
+    expect(rendered.closest('[dir="auto"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: `Remove ${urdu}` })).toBeInTheDocument();
   });
 
   it('says how many are available and what removal costs', () => {
@@ -175,11 +196,20 @@ describe('DeleteAccountModal', () => {
 });
 
 describe('FinanceModeCard', () => {
-  it('offers both ways of keeping the books', () => {
+  it('offers all four finance modes, so none of them is a one-way door', () => {
     render(<FinanceModeCard mode="student" onSelect={() => {}} />);
 
     expect(screen.getByRole('button', { name: /student/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /householder/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /shared living/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /business/i })).toBeInTheDocument();
+  });
+
+  it('marks Business as the mode in use, so a Business user can find their way back', () => {
+    render(<FinanceModeCard mode="business" onSelect={() => {}} />);
+
+    expect(screen.getByRole('button', { name: /business/i })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /student/i })).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('marks the mode currently in use', () => {
@@ -237,5 +267,14 @@ describe('LanguageCard', () => {
     await userEvent.click(screen.getByRole('button', { name: /english/i }));
 
     expect(onChange).not.toHaveBeenCalled();
+  });
+});
+
+describe('InstallAppCard', () => {
+  it('renders InstallAppCard on Settings screen', () => {
+    render(<InstallAppCard />);
+    expect(screen.getByText('App & Installation')).toBeInTheDocument();
+    expect(screen.getByText('HisabKi Kitab App')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /install app/i })).toBeInTheDocument();
   });
 });

@@ -8,7 +8,7 @@ const COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#a855f7', '#ef4444', '#14b8a6'
 export default function SharedDashboard({ space, month, data, writable, format, categoryLabel, onAddExpense, onAddPayment, onOpenBills, onOpenMembers, onDownload }) {
   const { t } = useT();
   const summary = data.summary;
-  const categories = summary.categories
+  const categories = (summary.categories || [])
     .map((category) => ({ name: categoryLabel(category.category_id), value: Number(category.amount) }))
     .filter((category) => category.value > 0);
   const metrics = [
@@ -22,7 +22,7 @@ export default function SharedDashboard({ space, month, data, writable, format, 
     <Card className="!p-4 sm:!p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{space.name}</h2>
+          <h2 dir="auto" className="text-lg font-semibold text-slate-900 dark:text-slate-100">{space.name}</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">{month} · {summary.activeMembers} {t('shared.activeMembers').toLowerCase()}</p>
         </div>
         <div className="flex flex-wrap gap-2">

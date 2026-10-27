@@ -24,6 +24,14 @@
           "destination": "/tools/index.html"
         },
         {
+          "source": "/features/:feature/",
+          "destination": "/features/:feature/index.html"
+        },
+        {
+          "source": "/features/",
+          "destination": "/features/index.html"
+        },
+        {
           "source": "/learn/:category/:slug/",
           "destination": "/learn/:category/:slug/index.html"
         },
@@ -64,7 +72,11 @@
           "destination": "/app.html"
         },
         {
-          "source": "/(login|register|forgot-password|onboarding|dashboard|expenses|income|goals|debts|budget|advisor|reports|settings)",
+          "source": "/(login|register|forgot-password|onboarding|dashboard|expenses|income|goals|debts|budget|advisor|reports|settings|business)",
+          "destination": "/app.html"
+        },
+        {
+          "source": "/business/(.*)",
           "destination": "/app.html"
         }
       ]
@@ -116,6 +128,16 @@
       "statusCode": 301
     },
     {
+      "source": "/features",
+      "destination": "/features/",
+      "statusCode": 301
+    },
+    {
+      "source": "/features/:feature([a-z0-9-]+)",
+      "destination": "/features/:feature/",
+      "statusCode": 301
+    },
+    {
       "source": "/about",
       "destination": "/about/",
       "statusCode": 301
@@ -154,6 +176,16 @@
       "source": "/forgot-password",
       "destination": "/forgot-password/",
       "statusCode": 301
+    },
+    {
+      "source": "/signup",
+      "destination": "/register/",
+      "statusCode": 301
+    },
+    {
+      "source": "/signup/",
+      "destination": "/register/",
+      "statusCode": 301
     }
   ],
   "headers": [
@@ -176,6 +208,18 @@
         {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), browsing-topics=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
         }
       ]
     }

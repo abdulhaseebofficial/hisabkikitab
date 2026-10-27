@@ -7,5 +7,5 @@
  * features import from this file, never from a path inside it.
  */
 
-export { AuthProvider, useAuth } from './AuthContext';
+export { AuthProvider, useAuth, useOptionalAuth } from './AuthContext';
 export { default as authApi } from './api/authApi';

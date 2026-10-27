@@ -3,8 +3,9 @@ require('../../scripts/require-test-database');
 const crypto = require('node:crypto');
 const en = require('../../apps/web/src/shared/i18n/locales/en.json');
 const ur = require('../../apps/web/src/shared/i18n/locales/roman-ur.json');
+const { dismissAnalyticsConsent } = require('./normal-user');
 
-const apiBase = () => `${process.env.BROWSER_API_URL || 'http://localhost:5000'}/api`;
+const apiBase = () => `${(process.env.BROWSER_API_URL || 'http://localhost:5000').replace(/\/api\/?$/, '')}/api`;
 const api = async (method, path, body, token) => {
   const response = await fetch(`${apiBase()}${path}`, {
     method,
@@ -47,7 +48,7 @@ test('owner can transfer, leave and retry account deletion on desktop and mobile
   expect((await api('POST', '/shared-living/join', { code: space.invite.code }, successor.token)).status).toBe(200);
 
   await page.goto('/login');
-  await page.getByRole('button', { name: en.consent.reject, exact: true }).click();
+  await dismissAnalyticsConsent(page);
   await page.locator('input[name="email"]').fill(owner.email);
   await page.locator('input[name="password"]').fill(password);
   await page.getByRole('button', { name: en.auth.login, exact: true }).click();
@@ -94,5 +95,5 @@ test('owner can transfer, leave and retry account deletion on desktop and mobile
   const retry = page.getByRole('dialog');
   await retry.getByLabel(words.settings.typePasswordToConfirm, { exact: true }).fill(password);
   await retry.getByRole('button', { name: 'Delete forever', exact: true }).click();
-  await expect(page).toHaveURL(new URL('/login/', baseURL).href);
+  await expect(page).toHaveURL(/\/login\/?(?:$|\?)/);
 });

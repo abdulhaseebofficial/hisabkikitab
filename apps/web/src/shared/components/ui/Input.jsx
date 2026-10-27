@@ -1,5 +1,6 @@
 import { forwardRef, useId } from 'react';
 import { cn } from '../../utils/format';
+import { allowOnlyNumbers } from '../../utils/inputs';
 
 /**
  * Text/number/date input with a label, an optional prefix (currency symbol),
@@ -10,7 +11,7 @@ import { cn } from '../../utils/format';
  * centred on the field whatever the label, hint or error underneath is doing.
  */
 const Input = forwardRef(function Input(
-  { label, error, hint, prefix, suffix, className = '', id, ...props },
+  { label, error, hint, prefix, suffix, className = '', id, onKeyDown, ...props },
   ref
 ) {
   // A label is only a label if it points at something. `id` and `name` are
@@ -19,6 +20,32 @@ const Input = forwardRef(function Input(
   // field unlabelled for anyone using a screen reader.
   const generatedId = useId();
   const inputId = id || props.name || generatedId;
+
+  /**
+   * Which way the text in this field runs.
+   *
+   * `auto` lets the browser decide from the first strong character the person
+   * types, so "گھر کا کرایہ" right-aligns and reads right-to-left while
+   * "Dhaba lunch" stays left-to-right, in the same box, without the page
+   * flipping around it.
+   *
+   * Only for the types a person writes prose into. A number, date, email or
+   * password is a structured value: `auto` would start right-aligning an
+   * amount the moment it began with an Urdu digit, and a currency column that
+   * changes side per row is harder to read, not easier. An explicit `dir` from
+   * the caller always wins.
+   */
+  const FREE_TEXT_TYPES = ['text', 'search', undefined];
+  const direction = props.dir || (FREE_TEXT_TYPES.includes(props.type) ? 'auto' : undefined);
+
+  const handleKeyDown = (e) => {
+    if (props.type === 'number') {
+      const isNegativeAllowed = props.min !== undefined && Number(props.min) < 0;
+      const isDecimalAllowed = props.step !== '1';
+      allowOnlyNumbers(e, { allowDecimal: isDecimalAllowed, allowNegative: isNegativeAllowed });
+    }
+    if (onKeyDown) onKeyDown(e);
+  };
 
   return (
     <div className={className}>
@@ -45,7 +72,9 @@ const Input = forwardRef(function Input(
           )}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${inputId}-error` : undefined}
+          onKeyDown={handleKeyDown}
           {...props}
+          dir={direction}
         />
         {suffix && <span className="absolute right-2.5 top-1/2 -translate-y-1/2">{suffix}</span>}
       </div>

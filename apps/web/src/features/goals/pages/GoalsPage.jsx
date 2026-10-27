@@ -28,7 +28,8 @@ const TABS = [
 
 export default function Goals() {
   const { t } = useT();
-  const { currency } = useAuth();
+  const { user, currency } = useAuth();
+  const readOnly = Boolean(user?.isDemo);
   const [tab, setTab] = useState('all');
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -90,7 +91,7 @@ export default function Goals() {
         title={t('goals.title')}
         subtitle={t('goals.subtitle')}
       >
-        <Button
+        {!readOnly && <Button
           icon={Plus}
           onClick={() => {
             setEditing(null);
@@ -98,7 +99,7 @@ export default function Goals() {
           }}
         >
           {t('goals.newGoal')}
-        </Button>
+        </Button>}
       </PageHeader>
 
       {summary && summary.count > 0 && (
@@ -158,9 +159,9 @@ export default function Goals() {
               ? t('goals.emptyCompletedMessage')
               : t('goals.emptyMessage')
           }
-          actionLabel={t('goals.createFirst')}
-          actionIcon={Plus}
-          onAction={() => {
+          actionLabel={readOnly ? undefined : t('goals.createFirst')}
+          actionIcon={readOnly ? undefined : Plus}
+          onAction={readOnly ? undefined : () => {
             setEditing(null);
             setFormOpen(true);
           }}
@@ -172,12 +173,12 @@ export default function Goals() {
               key={goal._id}
               goal={goal}
               currency={currency}
-              onContribute={setContributing}
-              onEdit={(item) => {
+              onContribute={readOnly ? undefined : setContributing}
+              onEdit={readOnly ? undefined : (item) => {
                 setEditing(item);
                 setFormOpen(true);
               }}
-              onDelete={setDeleting}
+              onDelete={readOnly ? undefined : setDeleting}
             />
           ))}
         </div>

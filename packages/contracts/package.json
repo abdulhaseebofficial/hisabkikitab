@@ -12,7 +12,8 @@
     "./catalogue": "./catalogue.js",
     "./catalogue.json": "./catalogue.json",
     "./notifications": "./notifications.js",
-    "./notifications.json": "./notifications.json"
+    "./notifications.json": "./notifications.json",
+    "./business": "./business.js"
   },
   "license": "MIT"
 }

@@ -45,18 +45,18 @@ for (const article of articles) {
 }
 
 export const learnTitle = 'Learn to Save, Earn & Manage Money Better';
-export const learnDescription = 'Practical guides from Hisab Ki Kitab about saving, earning, budgeting, household finances, and managing money.';
+export const learnDescription = 'Practical guides from HisabKi Kitab about saving, earning, budgeting, household finances, and managing money.';
 export const disclaimer = 'This content is for educational and informational purposes only and should not be considered personalized financial, investment, tax, or legal advice.';
 
 export function resolvePage(pathname) {
   const path = pathname.replace(/\/$/, '') || '/';
-  if (path === '/') return { type: 'home', path, title: 'Hisab Ki Kitab | Personal and Shared Money Management', description: 'Track expenses and income, plan budgets and goals, and organize household or shared costs with Hisab Ki Kitab.' };
+  if (path === '/') return { type: 'home', path, title: 'HisabKi Kitab | Smart Personal & Shared Money Management', description: 'Track your income and expenses, organize monthly budgets, manage shared household costs, and keep personal lending records in one place with HisabKi Kitab.' };
   if (path === '/learn') return { type: 'index', path, title: learnTitle, description: learnDescription };
   const category = categories.find((item) => path === `/learn/${item.slug}`);
   if (category) return { type: 'category', path, category, hasArticles: articles.some((article) => article.category === category.slug), title: `${category.name} Guides`, description: category.description };
   const article = articles.find((item) => articlePath(item) === path);
   if (article) return { type: 'article', path, article, category: categories.find((item) => item.slug === article.category), title: article.title, description: article.excerpt };
-  return { type: 'not-found', path, title: 'Guide not found', description: 'Explore practical money guides in the Hisab Ki Kitab learning library.' };
+  return { type: 'not-found', path, title: 'Guide not found', description: 'Explore practical money guides in the HisabKi Kitab learning library.' };
 }
 
 export const indexableCategories = categories.filter((category) => articles.some((article) => article.category === category.slug));

@@ -104,9 +104,8 @@ const budgetProgress = async (userId, financeMode, month, year) => {
  * The canonical monthly picture of one student's money.
  *
  * Income rule: `monthlyIncome` on the profile is the *planned* pocket money.
- * The income table holds what actually arrived. If anything was logged this
- * month we trust the logged figure, otherwise we fall back to the plan. Both
- * values are returned so the UI can show either.
+ * The income table holds what actually arrived. The plan is returned
+ * separately and must never contribute to received income or cash flow.
  */
 const buildSnapshot = async (user, period = currentPeriod()) => {
   const { month, year } = period;
@@ -134,7 +133,7 @@ const buildSnapshot = async (user, period = currentPeriod()) => {
   const spentMinor = minor(spent);
   const loggedIncomeMinor = minor(loggedIncome);
   const plannedIncomeMinor = user.monthlyIncomeMinor != null ? minor(user.monthlyIncomeMinor) : decimalToMinor(user.monthlyIncome || 0);
-  const incomeMinor = loggedIncomeMinor > 0n ? loggedIncomeMinor : plannedIncomeMinor;
+  const incomeMinor = loggedIncomeMinor;
 
   const now = new Date();
   const isCurrentMonth = now >= from && now <= to;
@@ -188,17 +187,20 @@ const buildWeeklySnapshot = async (user) => {
   from.setUTCHours(0, 0, 0, 0);
 
   const mode = modeOf(user);
-  const [spent, cats, trend] = await Promise.all([
+  const [spent, loggedIncome, cats, trend] = await Promise.all([
     analytics.totalSpent(user._id, mode, from, to),
+    analytics.totalIncome(user._id, mode, from, to),
     categoryTotals(user._id, mode, from, to),
     dailyTrend(user._id, mode, from, to),
   ]);
 
   return {
     monthLabel: `the last 7 days (${from.toISOString().slice(0, 10)} to ${to.toISOString().slice(0, 10)})`,
-    income: minorToApi(user.monthlyIncomeMinor || '0'),
+    income: minorToApi(loggedIncome),
+    plannedIncome: minorToApi(user.monthlyIncomeMinor != null
+      ? minor(user.monthlyIncomeMinor) : decimalToMinor(user.monthlyIncome || 0)),
     totalSpent: minorToApi(spent),
-    remaining: minorToApi(minor(user.monthlyIncomeMinor || '0') - minor(spent)),
+    remaining: minorToApi(minor(loggedIncome) - minor(spent)),
     breakdown: cats.breakdown,
     byCategory: cats.byCategory,
     topCategory: cats.breakdown.length ? cats.breakdown[0].category : null,

@@ -1,6 +1,40 @@
 # Backup and restore verification (owner runbook)
 
-Status: **blocked, not verified**. On 5 October 2026, the linked Supabase production project showed a Free organization plan. Its dashboard stated that Free projects have no managed backups, PITR is a Pro add-on, and restoring to a new project requires Pro or above with physical backups enabled. No independent dump was available in this workspace. The owner must provide a usable backup and an isolated restore destination before this drill can run. This repository still does not prove retention or recovery time. Never restore over production.
+> **Update, 28 October 2026 (Phase 4A).** The *mechanism* is now verified and
+> automated: `npm run restore:drill` takes a logical backup, restores it into a
+> brand-new isolated database, and proves the copy is usable rather than merely
+> present. On the full 28-migration schema it reported an exact match -- 77
+> tables, 507 constraints, 230 indexes, 96 triggers, 28 ledger rows with
+> checksums, and every money column compared as exact integers in minor units --
+> with all double-entry and ownership invariants holding, in 0.6s backup and
+> 2.8s restore. The API's own startup gate then accepted the restored database.
+>
+> What remains unverified is **production's own backup provision**: whether the
+> Supabase project has managed backups or PITR at all, with what retention. That
+> is a dashboard and billing fact this workspace cannot read, and it is the one
+> open item below. The drill deliberately refuses any non-local source, so it
+> cannot be pointed at production without separate authorisation and an approved
+> secure handling procedure for customer data.
+
+## Measured limitations of the verified drill
+
+The drill proves the *mechanism*. Read its numbers with these limits in mind.
+
+| | |
+| --- | --- |
+| Dataset measured | 0.54 MB dump, 4,263 rows, 77 tables, synthetic data across all four modes |
+| Backup time | 0.6s |
+| Restore time | 2.8s |
+| **Predicts production RTO?** | **No.** Production's volume is not known from here. Backup and restore time scale with data size; the structure is already covered because the schema is identical. Re-measure against a production-sized copy before quoting any recovery-time objective. |
+| Data-loss window (RPO) | **Undetermined.** A logical dump is a point-in-time snapshot, so the exposure is the age of the newest backup. Without knowing whether the project has scheduled backups or PITR, the RPO cannot be stated at all -- it could be minutes or it could be everything. |
+| Downtime during a real restore | Not rehearsed. The drill restores into a *new* database; it never cuts over. Cutover, connection-string switching and reversing a cutover remain untested. |
+| Production data | Never used. The drill refuses non-local sources by design. |
+
+So: the recovery *procedure* is verified and repeatable; the recovery
+*objectives* (RTO and RPO) are still unknown, and both depend on the open
+backup-provision question below.
+
+Status (original): **blocked, not verified**. On 5 October 2026, the linked Supabase production project showed a Free organization plan. Its dashboard stated that Free projects have no managed backups, PITR is a Pro add-on, and restoring to a new project requires Pro or above with physical backups enabled. No independent dump was available in this workspace. The owner must provide a usable backup and an isolated restore destination before this drill can run. This repository still does not prove retention or recovery time. Never restore over production.
 
 1. In the actual database provider console, record the provider, project, region, backup schedule, retention period, PITR availability and limits, and responsible operator. Save evidence in a private operations location, not Git. Confirm the plan includes these features; do not infer them from application code.
 2. Record a maintenance timestamp and production migration status (`schema_migrations` names/count). Capture **aggregate only** counts of `users`, `expenses`, `income`, `goals`, `budgets`, `sl_spaces`, `sl_expenses`, `sl_bills`, `sl_shares`, `sl_payments`, `debts`, and `debt_payments`. Capture exact aggregate sums for `*_minor` columns and debt `numeric` columns; avoid logging row descriptions or user identities.

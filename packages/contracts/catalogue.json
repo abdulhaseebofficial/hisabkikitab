@@ -389,18 +389,32 @@
       "roman_ur": "Mushtarka Rehaish",
       "descriptionEn": "Manage shared spaces, residents, food, bills and contributions.",
       "descriptionRomanUr": "Mushtarka jagah, rehne walay, khana, bills aur jama raqam ka hisab."
+    },
+    {
+      "id": "business",
+      "en": "Business",
+      "roman_ur": "Karobar",
+      "descriptionEn": "Manage sales, POS, inventory, customer khata, suppliers and double-entry books.",
+      "descriptionRomanUr": "Sales, POS, inventory, customer khata, suppliers aur accounting manage karein."
     }
   ],
+  "_languagesComment": "An INTERFACE language, which is not the same thing as a script a person can type in. Text entry works in every script Unicode covers - Urdu, Hindi, Tamil, Chinese - because storage and validation are script-neutral. A language only belongs on this list once a complete translation catalogue exists and has been checked, because a half-translated interface silently falls back to English key by key and looks broken rather than unfinished. `bcp47` is what goes in <html lang>, for screen readers and for the browser's own hyphenation and font choices. `dir` is the direction of the INTERFACE, not of anything a person typed: user text carries dir=\"auto\" per element, so an Urdu note reads right-to-left inside an English page without the page turning around it. Adding Urdu script here means adding locales/ur.json, setting dir to rtl, and checking every screen - at which point this is the only data that has to change.",
   "languages": [
     {
       "id": "en",
       "en": "English",
-      "roman_ur": "English"
+      "roman_ur": "English",
+      "bcp47": "en",
+      "dir": "ltr",
+      "sample": "You have to pay"
     },
     {
       "id": "roman_ur",
       "en": "Roman Urdu",
-      "roman_ur": "Roman Urdu"
+      "roman_ur": "Roman Urdu",
+      "bcp47": "ur-Latn",
+      "dir": "ltr",
+      "sample": "Mujhe paise dene hain"
     }
   ],
   "_udhaarComment": "kind and status are the values the database has always stored. The labels are what a person reads, and they are never stored anywhere.",

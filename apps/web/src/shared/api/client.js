@@ -1,6 +1,11 @@
 import axios from 'axios';
+import generateUuidV4 from '../utils/uuid';
 
 const BASE_URL = import.meta.env.VITE_API_URL || '/api';
+export const DEMO_MODE_KEY = 'hkk-demo-finance-mode';
+export const readDemoMode = () => {
+  try { return localStorage.getItem(DEMO_MODE_KEY); } catch { return null; }
+};
 
 /* --------------------------- token storage -------------------------- */
 
@@ -48,13 +53,15 @@ const api = axios.create({
 // cannot create another financial effect. A completed submit releases the key.
 const pendingFinancial = new Map();
 const financialRoute = (method, url) => {
-  const path = String(url || '').split('?')[0];
+  let path = String(url || '').split('?')[0];
+  if (path.startsWith('/api')) path = path.slice(4);
   return (method === 'post' && [
     /^\/(expenses|income|debts|goals)\/?$/,
     /^\/profile\/onboarding$/,
     /^\/profile\/onboarding$/,
     /^\/expenses\/[^/]+\/mark-paid$/,
     /^\/debts\/[^/]+\/(payments|settle)$/,
+    /^\/business(\/.*)?$/,
   ].some(pattern => pattern.test(path))) ||
     (method === 'patch' && /^\/goals\/[^/]+\/add$/.test(path));
 };
@@ -63,13 +70,31 @@ api.interceptors.request.use((config) => {
   if (config._sessionEpoch === undefined) config._sessionEpoch = sessionEpoch;
   if (financialRoute(String(config.method || '').toLowerCase(), config.url)) {
     const fingerprint = `${config.method}:${config.url}:${typeof config.data === 'string' ? config.data : JSON.stringify(config.data || {})}`;
-    if (!pendingFinancial.has(fingerprint)) pendingFinancial.set(fingerprint, crypto.randomUUID());
-    config.headers['Idempotency-Key'] = pendingFinancial.get(fingerprint);
+    if (!pendingFinancial.has(fingerprint)) {
+      pendingFinancial.set(fingerprint, generateUuidV4());
+    }
+    const existingKey = config.headers?.get
+      ? config.headers.get('Idempotency-Key') || config.headers.get('idempotency-key')
+      : (config.headers?.['Idempotency-Key'] || config.headers?.['idempotency-key']);
+
+    if (!existingKey) {
+      const key = pendingFinancial.get(fingerprint);
+      if (config.headers?.set) {
+        config.headers.set('Idempotency-Key', key);
+      } else {
+        config.headers = config.headers || {};
+        config.headers['Idempotency-Key'] = key;
+      }
+    }
     config._financialFingerprint = fingerprint;
   }
   // No header on a fresh page load, and that is correct: the httpOnly cookie
   // carries the session until the first response hands a token back.
   if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
+  const demoMode = readDemoMode();
+  if (['student', 'householder', 'shared_living'].includes(demoMode)) {
+    config.headers['X-Demo-Finance-Mode'] = demoMode;
+  }
   return config;
 });
 

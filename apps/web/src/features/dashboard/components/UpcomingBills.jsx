@@ -30,7 +30,7 @@ import { sumMoney } from '../../../shared/utils/money';
  * the date that was SCHEDULED rather than from today, so a household that pays
  * a few days early every month does not watch its billing date drift.
  */
-export default function UpcomingBills({ bills = [], currency = 'PKR' }) {
+export default function UpcomingBills({ bills = [], currency = 'PKR', readOnly = false }) {
   const { t } = useT();
   const label = useCategoryLabel();
 
@@ -92,7 +92,7 @@ export default function UpcomingBills({ bills = [], currency = 'PKR' }) {
                 key={bill._id}
                 className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2.5 dark:border-slate-800"
               >
-                <button
+                {!readOnly && <button
                   type="button"
                   onClick={() => markPaid(bill)}
                   disabled={busy}
@@ -106,7 +106,7 @@ export default function UpcomingBills({ bills = [], currency = 'PKR' }) {
                   )}
                 >
                   <Check className="h-4 w-4" aria-hidden="true" />
-                </button>
+                </button>}
 
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-200">

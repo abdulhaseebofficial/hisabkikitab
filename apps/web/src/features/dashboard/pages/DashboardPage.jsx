@@ -30,7 +30,11 @@ import HouseholderDashboard from '../components/HouseholderDashboard';
  */
 export default function Dashboard() {
   const { user } = useAuth();
-  return user?.financeMode === 'shared_living' ? <SharedLivingPage key={user._id} userId={user._id} /> : <PersonalDashboard />;
+  return user?.financeMode === 'shared_living' ? (
+    <SharedLivingPage key={user._id} userId={user._id} readOnly={Boolean(user?.isDemo)} />
+  ) : (
+    <PersonalDashboard key={user?.financeMode || 'student'} />
+  );
 }
 
 function PersonalDashboard() {
@@ -44,9 +48,9 @@ function PersonalDashboard() {
 
   const load = useCallback(() => {
     const now = new Date();
-    return dashboardService.summary(now.getMonth() + 1, now.getFullYear());
+    return dashboardService.summary(now.getUTCMonth() + 1, now.getUTCFullYear());
   }, []);
-  const { data, loading, error, reload } = useAsync(load, []);
+  const { data, loading, error, reload } = useAsync(load, [user?.financeMode]);
 
   if (loading && !data) {
     return (
@@ -95,7 +99,13 @@ function PersonalDashboard() {
         )}
       </PageHeader>
 
-      <Body data={data} currency={currency} onNavigate={navigate} onQuickAdd={openQuickAdd} />
+      <Body
+        data={data}
+        currency={currency}
+        onNavigate={navigate}
+        onQuickAdd={openQuickAdd}
+        readOnly={Boolean(user?.isDemo)}
+      />
     </div>
   );
 }

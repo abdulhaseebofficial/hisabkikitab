@@ -1,12 +1,13 @@
-import { Suspense, useCallback, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Eye, Plus, Store } from 'lucide-react';
 import Navbar from './Navbar';
-import Sidebar, { MOBILE_NAV_ITEMS } from './Sidebar';
+import Sidebar, { MOBILE_NAV_ITEMS, MOBILE_BUSINESS_NAV_ITEMS } from './Sidebar';
 import Footer from './Footer';
 import Modal from '../../shared/components/ui/Modal';
 import { ExpenseForm } from '../../features/expenses';
 import { FeedbackModal } from '../../features/feedback';
+import { useBusiness, BusinessOnboardingModal } from '../../features/business';
 import useCategories from '../../shared/hooks/useCategories';
 import useT from '../../shared/i18n/I18nProvider';
 import useMutation from '../../shared/hooks/useMutation';
@@ -53,18 +54,24 @@ function QuickAddForm({ onDone, onCancel }) {
  * tab bar on phones (which is where a student actually logs an expense).
  */
 export default function AppLayout() {
-  const { user } = useAuth();
-  const shared = user?.financeMode === 'shared_living';
+  const { user, setDemoFinanceMode } = useAuth();
+  const { isBusinessMode, setMode: setBusinessMode, onboardingOpen, closeOnboarding } = useBusiness();
   const location = useLocation();
-  const mobileItems = shared ? MOBILE_NAV_ITEMS.filter((item) => item.to === '/dashboard') : MOBILE_NAV_ITEMS;
+  const inBusinessMode = isBusinessMode || location.pathname.startsWith('/business');
+
+
+  const shared = user?.financeMode === 'shared_living' && !inBusinessMode;
+  const mobileItems = inBusinessMode
+    ? MOBILE_BUSINESS_NAV_ITEMS
+    : (shared ? MOBILE_NAV_ITEMS.filter((item) => item.to === '/dashboard') : MOBILE_NAV_ITEMS);
   const [menuOpen, setMenuOpen] = useState(false);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { t } = useT();
 
-  const openQuickAdd = useCallback(() => { if (!shared) setQuickAddOpen(true); }, [shared]);
+  const openQuickAdd = useCallback(() => { if (!shared && !user?.isDemo && !inBusinessMode) setQuickAddOpen(true); }, [shared, user?.isDemo, inBusinessMode]);
   const closeQuickAdd = useCallback(() => setQuickAddOpen(false), []);
-  const openFeedback = useCallback(() => setFeedbackOpen(true), []);
+  const openFeedback = useCallback(() => { if (!user?.isDemo) setFeedbackOpen(true); }, [user?.isDemo]);
   const closeFeedback = useCallback(() => setFeedbackOpen(false), []);
 
   // "N" logs an expense from anywhere it could not have meant something else.
@@ -80,7 +87,7 @@ export default function AppLayout() {
    * is positioned against.
    */
   return (
-    <QuickAddProvider open={shared ? undefined : openQuickAdd}>
+    <QuickAddProvider open={shared || user?.isDemo || inBusinessMode ? undefined : openQuickAdd}>
       <div className="flex min-h-full flex-col bg-canvas-light lg:h-full lg:min-h-0 lg:overflow-hidden dark:bg-canvas-dark">
       <a href="#main-content" className="hw-skip-link">
         {t('nav.skipToContent')}
@@ -94,12 +101,60 @@ export default function AppLayout() {
         <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 lg:h-full lg:overflow-y-auto">
           {/* pb-28 leaves room for the mobile tab bar and its raised button */}
           <div className="mx-auto w-full max-w-6xl px-4 pb-28 pt-4 sm:px-6 lg:px-8 lg:pb-8">
+            {user?.isDemo && (
+              <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-brand-400/50 bg-brand-500/10 p-3 shadow-brand sm:flex-row sm:items-center sm:justify-between" role="status">
+                <div className="flex items-center gap-2 text-sm font-semibold text-brand-700 dark:text-brand-200">
+                  <Eye className="h-4 w-4" aria-hidden="true" />
+                  Demo Mode — Read Only
+                </div>
+                <div className="grid grid-cols-3 gap-1 rounded-xl bg-canvas-dark p-1" aria-label="Demo finance view">
+                  {[
+                    ['student', 'Individual'],
+                    ['householder', 'Household'],
+                    ['shared_living', 'Shared Living'],
+                  ].map(([mode, label]) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => { setDemoFinanceMode(mode); notifyDataChanged(); }}
+                      aria-pressed={user.financeMode === mode}
+                      className={cn(
+                        'min-h-9 rounded-lg px-2 text-[11px] font-semibold transition sm:px-3 sm:text-xs',
+                        user.financeMode === mode
+                          ? 'bg-brand-600 text-white shadow-brand'
+                          : 'text-slate-400 hover:bg-canvas-darkCard hover:text-slate-100'
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <Suspense fallback={<PageSpinner label={t('common.loading')} />}>
-              {shared && !['/dashboard', '/settings'].includes(location.pathname) ? <Navigate to="/dashboard" replace /> : <Outlet />}
+              {(() => {
+                // Strict four-mode route isolation:
+                // 1. In Business Mode: personal financial routes redirect to /business.
+                // 2. In Personal Mode: business routes redirect to /dashboard.
+                // 3. In Shared Living: non-shared routes redirect to /dashboard.
+                const isPersonalRoute = ['/dashboard', '/expenses', '/income', '/goals', '/debts', '/budget', '/advisor', '/reports'].includes(location.pathname);
+                const isBusinessRoute = location.pathname.startsWith('/business');
+
+                if (user?.isDemo && isBusinessRoute) {
+                  return <Navigate to="/dashboard" replace />;
+                }
+                if (isBusinessMode && isPersonalRoute) {
+                  return <Navigate to="/business" replace />;
+                }
+                if (shared && !['/dashboard', '/settings'].includes(location.pathname)) {
+                  return <Navigate to="/dashboard" replace />;
+                }
+                return <Outlet key={`${user?.financeMode}-${isBusinessMode ? 'biz' : 'pers'}`} />;
+              })()}
             </Suspense>
           </div>
           <div className="hidden lg:block">
-            <Footer onOpenFeedback={openFeedback} />
+            <Footer onOpenFeedback={user?.isDemo ? undefined : openFeedback} />
           </div>
         </main>
       </div>
@@ -114,17 +169,31 @@ export default function AppLayout() {
             <MobileTab key={item.to} item={item} shared={shared} />
           ))}
 
-          {!shared && <li className="flex flex-1 justify-center">
-            {/* -mt-6 lifts it out of the bar so it reads as the primary action. */}
-            <button
-              type="button"
-              onClick={openQuickAdd}
-              aria-label={t('nav.addAnExpense')}
-              className="hw-fab -mt-6 mb-1.5"
-            >
-              <Plus className="h-6 w-6" aria-hidden="true" />
-            </button>
-          </li>}
+          {inBusinessMode ? (
+            <li className="flex flex-1 min-w-0 justify-center">
+              <Link
+                to="/business/pos"
+                aria-label="POS Checkout"
+                className="hw-fab -mt-6 mb-1.5 flex items-center justify-center bg-brand-600 text-white shadow-brand hover:bg-brand-700"
+              >
+                <Store className="h-6 w-6" aria-hidden="true" />
+              </Link>
+            </li>
+          ) : (
+            !shared && !user?.isDemo && (
+              <li className="flex flex-1 justify-center">
+                {/* -mt-6 lifts it out of the bar so it reads as the primary action. */}
+                <button
+                  type="button"
+                  onClick={openQuickAdd}
+                  aria-label={t('nav.addAnExpense')}
+                  className="hw-fab -mt-6 mb-1.5"
+                >
+                  <Plus className="h-6 w-6" aria-hidden="true" />
+                </button>
+              </li>
+            )
+          )}
 
           {mobileItems.slice(2).map((item) => (
             <MobileTab key={item.to} item={item} />
@@ -133,7 +202,7 @@ export default function AppLayout() {
       </nav>
 
       <Modal
-        open={quickAddOpen && !shared}
+        open={quickAddOpen && !shared && !user?.isDemo}
         onClose={closeQuickAdd}
         title={t('nav.addAnExpense')}
         subtitle={t('nav.loggedAgainstToday')}
@@ -143,18 +212,25 @@ export default function AppLayout() {
       </Modal>
 
       {/* One instance for the whole shell, opened from the navbar or the footer. */}
-      <FeedbackModal open={feedbackOpen} onClose={closeFeedback} />
+      <FeedbackModal open={feedbackOpen && !user?.isDemo} onClose={closeFeedback} />
+
+      {/* Business Setup Wizard */}
+      <BusinessOnboardingModal open={onboardingOpen} onClose={closeOnboarding} />
       </div>
     </QuickAddProvider>
   );
 }
 
-function MobileTab({ item: { to, key, icon: Icon }, shared = false }) {
+function MobileTab({ item: { to, key, label, icon: Icon }, shared = false }) {
   const { t } = useT();
   const location = useLocation();
-  const isActive = location.pathname === to && (!shared || sharedSection(location.search) === 'dashboard');
+  const isActive = (to === '/business' ? location.pathname === '/business' : location.pathname === to) && (!shared || sharedSection(location.search) === 'dashboard');
+  const itemKey = `nav.${key}`;
+  const translated = t(itemKey);
+  const displayLabel = translated !== itemKey ? translated : (label || key);
+
   return (
-    <li className="flex-1">
+    <li className="flex-1 min-w-0">
       <Link
         to={to}
         aria-current={isActive ? 'page' : undefined}
@@ -166,11 +242,9 @@ function MobileTab({ item: { to, key, icon: Icon }, shared = false }) {
           )
         }
       >
-          <>
-            <Icon className="h-5 w-5" aria-hidden="true" />
-            {t(`nav.${key}`)}
-            {isActive && <span className="sr-only">(current page)</span>}
-          </>
+        <Icon className="h-5 w-5" aria-hidden="true" />
+        <span className="truncate max-w-[64px]">{displayLabel}</span>
+        {isActive && <span className="sr-only">(current page)</span>}
       </Link>
     </li>
   );

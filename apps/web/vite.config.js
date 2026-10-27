@@ -1,13 +1,15 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import frontendConfig from '../../scripts/frontend-config.js';
+import { canonicalSiteOrigin } from '../../scripts/site-origin.mjs';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ isSsrBuild, mode }) => {
   const buildEnv = loadEnv(mode, process.cwd(), '');
-  const siteOrigin = buildEnv.VITE_SITE_URL || (buildEnv.VERCEL_PROJECT_PRODUCTION_URL ? `https://${buildEnv.VERCEL_PROJECT_PRODUCTION_URL}` : '');
+  const siteOrigin = canonicalSiteOrigin(buildEnv.VITE_SITE_URL || (buildEnv.VERCEL_PROJECT_PRODUCTION_URL ? `https://${buildEnv.VERCEL_PROJECT_PRODUCTION_URL}` : ''));
   return ({
-  // Vite 6 is shared by the build and Vitest, so both need the React JSX transform.
+  // Keep the automatic JSX runtime identical in builds, development and
+  // Vitest. Vite 6 no longer supplies that transform to tests on its own.
   plugins: [react()],
   define: { 'import.meta.env.VITE_SITE_URL': JSON.stringify(siteOrigin) },
   server: {
@@ -29,6 +31,7 @@ export default defineConfig(({ isSsrBuild, mode }) => {
     setupFiles: ['./vitest.setup.js'],
     include: ['src/**/*.test.jsx', 'src/**/*.test.js'],
     globals: true,
+    testTimeout: 15000,
   },
 
   // The workspace contract is CommonJS while the web app is ESM. Prebundle it
@@ -38,6 +41,7 @@ export default defineConfig(({ isSsrBuild, mode }) => {
     include: [
       '@hisabkikitab/contracts/catalogue',
       '@hisabkikitab/contracts/validation',
+      '@hisabkikitab/contracts/business',
     ],
   },
 

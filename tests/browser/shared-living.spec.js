@@ -3,8 +3,9 @@ require('../../scripts/require-test-database');
 const crypto = require('crypto');
 const en = require('../../apps/web/src/shared/i18n/locales/en.json');
 const ur = require('../../apps/web/src/shared/i18n/locales/roman-ur.json');
+const { dismissAnalyticsConsent } = require('./normal-user');
 
-const apiBase = () => `${process.env.BROWSER_API_URL || 'http://localhost:5000'}/api`;
+const apiBase = () => `${(process.env.BROWSER_API_URL || 'http://localhost:5000').replace(/\/api\/?$/, '')}/api`;
 const registerAccount = async (account) => {
   const result = await fetch(`${apiBase()}/auth/register`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
@@ -29,7 +30,7 @@ test('create a space, record shared costs, start a new month and join read-only'
   expect(await registerAccount({ name: 'Browser Owner', email, password,
     confirmPassword: password, acceptTerms: true })).toBe(201);
   await page.goto('/login');
-  await page.getByRole('button', { name: en.consent.reject, exact: true }).click();
+  await dismissAnalyticsConsent(page);
   await page.locator('input[name="email"]').fill(email);
   await page.locator('input[name="password"]').fill(password);
   await page.getByRole('button', { name: en.auth.login, exact: true }).click();
@@ -114,7 +115,7 @@ test('create a space, record shared costs, start a new month and join read-only'
     expect(await registerAccount({ name: 'Browser Viewer', email: viewerEmail, password,
       confirmPassword: password, acceptTerms: true })).toBe(201);
     await reader.goto('/login');
-    await reader.getByRole('button', { name: en.consent.reject, exact: true }).click();
+    await dismissAnalyticsConsent(reader);
     await reader.locator('input[name="email"]').fill(viewerEmail);
     await reader.locator('input[name="password"]').fill(password);
     await reader.getByRole('button', { name: en.auth.login, exact: true }).click();
@@ -157,7 +158,7 @@ test('create a space, record shared costs, start a new month and join read-only'
     deleteDialog = page.getByRole('dialog');
     await deleteDialog.getByLabel(words.settings.typePasswordToConfirm, { exact: true }).fill(password);
     await deleteDialog.getByRole('button', { name: 'Delete forever', exact: true }).click();
-    await expect(page).toHaveURL(new URL('/login/', baseURL).href);
+    await expect(page).toHaveURL(/\/login\/?(?:$|\?)/);
   } finally {
     await viewer.close();
   }

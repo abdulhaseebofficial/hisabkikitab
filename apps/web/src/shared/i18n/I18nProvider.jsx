@@ -5,10 +5,26 @@ import catalogue from '@hisabkikitab/contracts/catalogue';
 import en from './locales/en.json';
 import romanUr from './locales/roman-ur.json';
 
-const { safeLanguage, DEFAULT_LANGUAGE } = catalogue;
+const { safeLanguage, languageMeta, uiLanguages, DEFAULT_LANGUAGE } = catalogue;
 
 const BUNDLES = { en, roman_ur: romanUr };
 const STORAGE_KEY = 'hkk-language';
+
+/**
+ * A language is only usable here if its bundle actually shipped.
+ *
+ * The catalogue says which languages the interface claims to speak; this says
+ * which ones are really present in the build. Without the check, adding an id
+ * to the catalogue before writing its locale file would leave every lookup
+ * falling back to English one key at a time - an interface that looks broken
+ * rather than untranslated, and no error anywhere to say why.
+ *
+ * Text ENTRY is unaffected by any of this. Urdu, Hindi, Tamil and the rest can
+ * be typed into any free-text field whatever the interface language is.
+ */
+const TRANSLATED = uiLanguages().filter((language) => BUNDLES[language.id]);
+const isTranslated = (id) => Boolean(BUNDLES[id]);
+const usable = (id) => (isTranslated(safeLanguage(id)) ? safeLanguage(id) : DEFAULT_LANGUAGE);
 
 /**
  * The app in two languages, without a library.
@@ -53,7 +69,7 @@ const fill = (template, values) =>
 
 const readStored = () => {
   try {
-    return safeLanguage(window.localStorage.getItem(STORAGE_KEY));
+    return usable(window.localStorage.getItem(STORAGE_KEY));
   } catch {
     // Private browsing, or storage blocked. Not a reason to fail.
     return DEFAULT_LANGUAGE;
@@ -65,7 +81,7 @@ export function I18nProvider({ language, children }) {
 
   // The profile is the authority once it has loaded; before that, the stored
   // preference keeps the first paint in the right language.
-  const active = safeLanguage(language || stored);
+  const active = usable(language || stored);
 
   useEffect(() => {
     if (!language) return;
@@ -78,8 +94,17 @@ export function I18nProvider({ language, children }) {
   }, [language]);
 
   useEffect(() => {
-    // Tells a screen reader and the browser which language the page is in.
-    document.documentElement.lang = active === 'roman_ur' ? 'ur-Latn' : 'en';
+    // Tells a screen reader and the browser which language the page is in, and
+    // which way the interface runs. Both come from the language catalogue, so
+    // adding a right-to-left interface language is a data change rather than an
+    // edit here.
+    //
+    // `dir` is the direction of the CHROME only. Text a person typed carries
+    // dir="auto" on its own element, which is why an Urdu description reads
+    // right-to-left today without the surrounding page flipping.
+    const meta = languageMeta(active);
+    document.documentElement.lang = meta.bcp47;
+    document.documentElement.dir = meta.dir;
   }, [active]);
 
   /**
@@ -110,7 +135,7 @@ export function I18nProvider({ language, children }) {
   );
 
   const value = useMemo(
-    () => ({ t, language: active, setStoredLanguage: setStored }),
+    () => ({ t, language: active, setStoredLanguage: setStored, languages: TRANSLATED }),
     [t, active]
   );
 
@@ -129,6 +154,7 @@ export default function useT() {
 
 const FALLBACK = {
   language: DEFAULT_LANGUAGE,
+  languages: TRANSLATED,
   setStoredLanguage: () => {},
   t: (key, values) => {
     const english = read(en, key);
@@ -136,4 +162,4 @@ const FALLBACK = {
   },
 };
 
-export { STORAGE_KEY };
+export { STORAGE_KEY, TRANSLATED, isTranslated };

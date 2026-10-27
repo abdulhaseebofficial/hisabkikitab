@@ -15,7 +15,7 @@ const authService = {
   },
 
   /**
-   * Exchanges a Google ID token for a Hisabki Kitab session.
+   * Exchanges a Google ID token for a HisabKi Kitab session.
    *
    * The token is not inspected here. It is opaque to the browser and only
    * means anything once the server has checked Google's signature on it.

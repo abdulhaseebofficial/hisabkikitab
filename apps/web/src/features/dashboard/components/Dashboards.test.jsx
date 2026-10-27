@@ -73,13 +73,13 @@ const show = (Component, language = 'en', overrides = {}) =>
 describe('the two dashboards ask different questions', () => {
   it('the student one leads with what is left and what is safe today', () => {
     show(StudentDashboard);
-    expect(screen.getByText('Money left this month')).toBeInTheDocument();
+    expect(screen.getByText('Income minus spending')).toBeInTheDocument();
     expect(screen.getByText('Safe to spend per day')).toBeInTheDocument();
   });
 
   it('the householder one leads with what is already committed', () => {
     show(HouseholderDashboard);
-    expect(screen.getByText('Left for the household')).toBeInTheDocument();
+    expect(screen.getByText('Household income minus spending')).toBeInTheDocument();
     // Where the student view puts a per-day allowance.
     expect(screen.queryByText('Safe to spend per day')).not.toBeInTheDocument();
     expect(screen.getAllByText('Upcoming and unpaid bills').length).toBeGreaterThan(0);
@@ -87,10 +87,10 @@ describe('the two dashboards ask different questions', () => {
 
   it('and they name income differently', () => {
     show(StudentDashboard);
-    expect(screen.getByText('Income')).toBeInTheDocument();
+    expect(screen.getByText('Received income')).toBeInTheDocument();
 
     show(HouseholderDashboard);
-    expect(screen.getByText('Household income')).toBeInTheDocument();
+    expect(screen.getByText('Received household income')).toBeInTheDocument();
   });
 });
 
@@ -157,9 +157,31 @@ describe('when the data will not support a figure', () => {
     expect(screen.getByText('Add your income to see this')).toBeInTheDocument();
   });
 
+  it.each([
+    [StudentDashboard, 'Income minus spending'],
+    [HouseholderDashboard, 'Household income minus spending'],
+  ])('shows a plan separately and preserves a one-cent deficit', (Component, label) => {
+    show(Component, 'en', {
+      totals: { ...data.totals, income: 0, incomeLogged: 0, plannedIncome: 100000,
+        spent: 0.01, remaining: -0.01, spentPercent: 0 },
+    });
+    const hero = screen.getByText(label).closest('div.hw-card-hero');
+    expect(hero).toHaveTextContent('-0.01');
+    expect(screen.getByText('Plan: Rs 100,000 (not received)')).toBeInTheDocument();
+    expect(screen.getByText('You are over your income for this month')).toBeInTheDocument();
+  });
+
   it('says plainly when nothing is due rather than showing an empty card', () => {
     show(HouseholderDashboard, 'en', { upcomingBills: [] });
     expect(screen.getAllByText('Nothing due in the coming weeks').length).toBeGreaterThan(0);
+  });
+
+  it('keeps cents visible in the household bill total', () => {
+    show(HouseholderDashboard, 'en', {
+      upcomingBills: [{ _id: 'bill', amount: 0.01, category: 'electricity_bill', nextRunAt: '2099-01-01' }],
+    });
+    const bills = screen.getAllByText('Upcoming and unpaid bills')[0].closest('div.hw-card');
+    expect(bills).toHaveTextContent('0.01');
   });
 
   it('survives a month with no spending at all', () => {
@@ -174,14 +196,14 @@ describe('when the data will not support a figure', () => {
 describe('both dashboards in Roman Urdu', () => {
   it('the student one', () => {
     show(StudentDashboard, 'roman_ur');
-    expect(screen.getByText('Is mahine bacha hua')).toBeInTheDocument();
+    expect(screen.getByText('Aamdani minus kharch')).toBeInTheDocument();
     expect(screen.getByText('Rozana mehfooz kharcha')).toBeInTheDocument();
   });
 
   it('the householder one', () => {
     show(HouseholderDashboard, 'roman_ur');
-    expect(screen.getByText('Ghar ke liye bacha hua')).toBeInTheDocument();
-    expect(screen.getByText('Ghar ki aamdani')).toBeInTheDocument();
+    expect(screen.getByText('Ghar ki aamdani minus kharch')).toBeInTheDocument();
+    expect(screen.getByText('Ghar ki wasool shuda aamdani')).toBeInTheDocument();
   });
 
   it('names the household groups in Roman Urdu, not as stored ids', () => {

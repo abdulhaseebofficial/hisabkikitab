@@ -1,6 +1,7 @@
 const { test, expect } = require('@playwright/test');
 require('../../scripts/require-test-database');
 const en = require('../../apps/web/src/shared/i18n/locales/en.json');
+const { createNormalUser, deleteNormalUser, dismissAnalyticsConsent } = require('./normal-user');
 
 for (const { timezoneId, instant, localDay } of [
   { timezoneId: 'Asia/Karachi', instant: '2026-10-04T20:30:00.000Z', localDay: '2026-10-05' },
@@ -11,20 +12,16 @@ for (const { timezoneId, instant, localDay } of [
 
     test('a saved local-calendar expense is returned by the API and included by This month', async ({ page }, testInfo) => {
       await page.clock.setFixedTime(new Date(instant));
-      await page.goto('/login');
-      await page.getByRole('button', { name: en.consent.reject, exact: true }).click();
-      await page.locator('input[name="email"]').fill('demo@hisabkikitab.app');
-      await page.locator('input[name="password"]').fill('demo1234');
-      await page.getByRole('button', { name: en.auth.login, exact: true }).click();
-      await page.waitForURL('**/dashboard');
+      const account = await createNormalUser(page, 'date-browser');
       await page.goto('/expenses');
+      await dismissAnalyticsConsent(page);
 
       const description = `Local date ${timezoneId} ${testInfo.project.name}`;
       try {
         if (page.viewportSize().width < 640) {
           await page.getByRole('button', { name: en.nav.addAnExpense }).click();
         } else {
-          await page.getByRole('button', { name: /^Add expense/ }).click();
+          await page.getByRole('button', { name: /^Add expense/ }).first().click();
         }
         const dialog = page.getByRole('dialog');
         await expect(dialog.getByLabel('Date', { exact: true })).toHaveValue(localDay);
@@ -55,6 +52,7 @@ for (const { timezoneId, instant, localDay } of [
           await page.getByRole('button', { name: en.common.delete, exact: true }).click();
           await expect(row).toHaveCount(0);
         }
+        await deleteNormalUser(page, account);
       }
     });
   });

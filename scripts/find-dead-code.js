@@ -19,10 +19,11 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..').split(path.sep).join('/');
-// Generated output only: shared by entry discovery, reachability and empty-dir checks.
+// Generated output and saved release snapshots, not application entry points.
+// Shared by entry discovery, reachability and empty-dir checks.
 const SKIP = new Set([
   'node_modules', '.git', 'dist', 'dist-ssr', 'build', '.vercel', 'coverage', '.nyc_output',
-  'test-results', 'playwright-report', 'blob-report',
+  'test-results', 'playwright-report', 'blob-report', 'release-artifacts',
   '.cache', '.vite', '.vite-temp', '.vitest', '.turbo',
 ]);
 const CODE = ['.js', '.jsx', '.mjs', '.cjs'];
@@ -66,6 +67,9 @@ const EXPECTED_UNREACHABLE = {
     "imported as '@hisabkikitab/contracts/catalogue' by both apps, not by path",
   'packages/contracts/notifications.js':
     "imported as '@hisabkikitab/contracts/notifications' by the API, not by path",
+  'packages/contracts/business.js':
+    "imported as '@hisabkikitab/contracts/business' by both apps, not by path",
+  'apps/web/public/sw.js': 'Service worker registered by browser at runtime',
 };
 
 /** Exported on purpose, even though nothing calls them yet. */
@@ -76,6 +80,30 @@ const EXPECTED_UNUSED_EXPORTS = {
     'the handler an external scheduler is meant to call',
   'apps/api/src/infrastructure/database/migrate.js :: tableNames':
     'printed by the migrate CLI',
+  'packages/contracts/business.js :: BUSINESS_ROLES':
+    'shared business contract enum definition',
+  'packages/contracts/business.js :: GRN_STATUSES':
+    'shared procurement contract enum definition',
+  'packages/contracts/business.js :: SUPPLIER_BILL_STATUSES':
+    'shared procurement contract enum definition',
+  'packages/contracts/business.js :: PURCHASE_RETURN_REFUND_METHODS':
+    'shared procurement contract enum definition',
+  'packages/contracts/business.js :: SALES_RETURN_CONDITIONS':
+    'shared inventory contract enum definition',
+  'packages/contracts/business.js :: SHIFT_STATUSES':
+    'shared pos contract enum definition',
+  'packages/contracts/business.js :: ATTENDANCE_STATUSES':
+    'shared payroll contract enum definition',
+  'packages/contracts/business.js :: RECURRING_EXPENSE_FREQUENCIES':
+    'shared recurring expense contract enum definition',
+  'packages/contracts/business.js :: RECURRING_EXPENSE_STATUSES':
+    'shared recurring expense contract enum definition',
+  'packages/contracts/business.js :: RECURRING_OCCURRENCE_STATUSES':
+    'shared recurring expense contract enum definition',
+  'packages/contracts/catalogue.js :: DEFAULT_MODE':
+    'the counterpart of DEFAULT_LANGUAGE, which is used; both are the contract documenting what falls back to what',
+  'packages/contracts/catalogue.js :: entryOf':
+    'the single-entry counterpart of idsOf and lookup, which are used; removing it would leave the flat-list API asymmetric',
 };
 
 const IMPORT = /(?:from\s+|import\s*\(\s*|require\(\s*)(['"])([^'"]+)\1/g;

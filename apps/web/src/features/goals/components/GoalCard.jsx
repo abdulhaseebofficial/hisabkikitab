@@ -32,13 +32,14 @@ export default function GoalCard({ goal, currency = 'INR', onContribute, onEdit,
         </span>
 
         <div className="min-w-0 flex-1">
-          <h3 className="line-clamp-2 text-sm font-bold leading-snug text-slate-900 dark:text-slate-100">{goal.title}</h3>
+          <h3 dir="auto" className="line-clamp-2 text-sm font-bold leading-snug text-slate-900 dark:text-slate-100">{goal.title}</h3>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             {formatMoney(goal.savedAmount, currency)} of {formatMoney(goal.targetAmount, currency)}
           </p>
         </div>
 
-        <div className="flex shrink-0 gap-0.5">
+        {(onEdit || onDelete) && <div className="flex shrink-0 gap-0.5">
+          {onEdit &&
           <button
             type="button"
             onClick={() => onEdit(goal)}
@@ -46,7 +47,8 @@ export default function GoalCard({ goal, currency = 'INR', onContribute, onEdit,
             className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-brand-600 dark:hover:bg-slate-800"
           >
             <Pencil className="h-4 w-4" />
-          </button>
+          </button>}
+          {onDelete &&
           <button
             type="button"
             onClick={() => onDelete(goal)}
@@ -54,8 +56,8 @@ export default function GoalCard({ goal, currency = 'INR', onContribute, onEdit,
             className="rounded-lg p-1.5 text-slate-400 hover:bg-danger/10 hover:text-danger dark:hover:bg-danger/15"
           >
             <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
+          </button>}
+        </div>}
       </header>
 
       <div>
@@ -117,14 +119,14 @@ export default function GoalCard({ goal, currency = 'INR', onContribute, onEdit,
         </div>
       )}
 
-      <Button
+      {onContribute && <Button
         variant={isCompleted ? 'outline' : 'primary'}
         icon={PiggyBank}
         onClick={() => onContribute(goal)}
         className="mt-auto w-full"
       >
         {isCompleted ? 'Add or withdraw' : 'Add money'}
-      </Button>
+      </Button>}
     </article>
   );
 }

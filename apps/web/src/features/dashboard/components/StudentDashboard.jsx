@@ -23,11 +23,11 @@ import { STUDENT_GROUPS, totalsByGroup } from '../dashboardGroups';
  * because a student pays them once and then lives on what is left. That is the
  * opposite of the householder view, where the fixed costs are the story.
  */
-export default function StudentDashboard({ data, currency, onNavigate, onQuickAdd }) {
+export default function StudentDashboard({ data, currency, onNavigate, onQuickAdd, readOnly = false }) {
   const { t } = useT();
   const { totals, categoryBreakdown, trend, comparison, budgets, goals, recentExpenses, monthLabel, debts, upcomingBills } = data;
 
-  const overspending = totals.income > 0 && totals.remaining < 0;
+  const overspending = totals.remaining < 0;
   const groups = totalsByGroup(STUDENT_GROUPS, categoryBreakdown);
 
   // With no income recorded there is nothing to divide by, and a "safe to
@@ -43,7 +43,7 @@ export default function StudentDashboard({ data, currency, onNavigate, onQuickAd
           label={t('dashboard.moneyLeft')}
           value={totals.remaining}
           currency={currency}
-          decimals={0}
+          decimals={2}
           icon={Wallet}
           tone={overspending ? 'danger' : totals.spentPercent > 80 ? 'caution' : 'safe'}
           progress={Math.min(100, totals.spentPercent)}
@@ -51,7 +51,8 @@ export default function StudentDashboard({ data, currency, onNavigate, onQuickAd
           footnote={
             overspending
               ? t('dashboard.overIncome')
-              : t('dashboard.percentUsed', { percent: totals.spentPercent })
+              : hasIncome ? t('dashboard.percentUsed', { percent: totals.spentPercent })
+                : t('dashboard.noIncomeLogged')
           }
           className="col-span-2 lg:col-span-1"
         />
@@ -76,7 +77,9 @@ export default function StudentDashboard({ data, currency, onNavigate, onQuickAd
           icon={ArrowUpRight}
           tone="safe"
           footnote={
-            totals.incomeLogged > 0 ? t('dashboard.fromLogged') : t('dashboard.plannedPocketMoney')
+            totals.plannedIncome > 0
+              ? t('dashboard.plannedIncomeOnly', { amount: formatMoney(totals.plannedIncome, currency) })
+              : totals.income > 0 ? t('dashboard.fromLogged') : t('dashboard.noIncomeLogged')
           }
         />
 
@@ -84,13 +87,13 @@ export default function StudentDashboard({ data, currency, onNavigate, onQuickAd
           label={t('dashboard.safePerDay')}
           value={hasIncome ? totals.safeDailySpend : 0}
           currency={currency}
-          decimals={0}
+          decimals={2}
           icon={CalendarDays}
           tone="brand"
           footnote={
             hasIncome
               ? t('dashboard.dailyAverage', {
-                  amount: formatMoney(totals.dailyAverage, currency, { decimals: 0 }),
+                  amount: formatMoney(totals.dailyAverage, currency, { decimals: 2 }),
                 })
               : t('dashboard.noIncomeYet')
           }
@@ -126,7 +129,7 @@ export default function StudentDashboard({ data, currency, onNavigate, onQuickAd
 
           {/* A hostel fee behaves like a bill, so this is useful here too - it
               just does not lead the way it does for a household. */}
-          <UpcomingBills bills={upcomingBills} currency={currency} />
+          <UpcomingBills bills={upcomingBills} currency={currency} readOnly={readOnly} />
 
           <BudgetHealth budgets={budgets} currency={currency} onCreate={() => onNavigate('/budget')} />
         </div>

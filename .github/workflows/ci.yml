@@ -1,4 +1,15 @@
-name: Frontend release gates
+name: CI
+
+# Every suite that can run without a real deployment runs here, on every push to
+# main and every pull request. Until this file existed the only automated check
+# was a dependency audit, so the database suite had been failing since Business
+# Mode shipped and nobody was told. The rule now is: if a suite can run in CI,
+# it runs in CI, and a failure fails the job.
+#
+# The jobs are split by what they need rather than by speed. `checks` needs
+# nothing, `build` needs a site origin, and the three integration jobs each get
+# their own throwaway PostgreSQL 17 service container. Separate containers mean
+# one job can never see another job's rows.
 
 on:
   push:
@@ -8,15 +19,23 @@ on:
 permissions:
   contents: read
 
+# A new push supersedes the previous run on the same ref. Pushing twice should
+# not queue two 15-minute browser runs.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Runners are UTC already; stating it keeps a runner image change from
+  # quietly moving the accounting-month boundaries the suites assert on.
+  TZ: UTC
+
 jobs:
-  frontend:
-    name: Build, tests, SEO, and browser routes
+  # ---------------------------------------------------------------------------
+  checks:
+    name: Architecture, unit and frontend tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      CI: 'true'
-      VITE_SITE_URL: https://hisabkikitab.com
-      VITE_API_URL: /api
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,21 +44,328 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Install locked dependencies
-        run: npm ci --no-audit --no-fund
-      - name: Production build and prerender
-        run: npm run build
+      - run: npm ci
+
+      - name: Module boundaries
+        run: npm run check:boundaries
+      - name: Shadowed bindings
+        run: npm run check:shadowing
+      - name: Dead code
+        run: npm run check:dead
+
+      # Deliberately run without the database guard variables set. These suites
+      # must not depend on them: the rate limiter turns itself off when
+      # NODE_ENV=test, so a unit suite that inherited it from the shell used to
+      # report six passes that had asserted nothing.
       - name: Unit tests
         run: npm run test:unit
-      - name: Web tests
+      - name: Frontend tests
         run: npm run test:web
-      - name: SEO tests
-        run: npm run test:seo
-      - name: Install Chromium for browser regression
-        run: npx playwright install --with-deps chromium
-      - name: Public, auth-entry, SEO, and finance-mode browser regression
-        run: npm run test:browser -- tests/browser/seo.spec.js tests/browser/learn.spec.js tests/browser/auth-availability.spec.js tests/browser/homepage-blue-ui.spec.js tests/browser/finance-mode-viewport.spec.js tests/browser/shared-living-viewport.spec.js tests/browser/debt-ledger-viewport.spec.js
 
+  # ---------------------------------------------------------------------------
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # The prerender step refuses to guess an origin, because a wrong one ends
+      # up in canonical tags and the sitemap. CI builds the production origin so
+      # the SEO assertions check the real thing.
+      VITE_SITE_URL: https://hisabkikitab.com
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Build web app, prerender and verify public SEO
+        run: npm run build
+      - name: SEO assertions
+        run: npm run test:seo
+
+      - name: Upload build output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: apps/web/dist
+          retention-days: 7
+          # A build that failed before emitting anything should report the
+          # build error, not an artifact-upload error on top of it.
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------------
+  database:
+    name: Migrations and database integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          # The integration guard only accepts a database named test_* or
+          # *_test, so the service container is created with the right name
+          # rather than renamed afterwards.
+          POSTGRES_DB: hisabkikitab_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hisabkikitab_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      NODE_ENV: test
+      ALLOW_DESTRUCTIVE_TEST_DB: 'true'
+      TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/hisabkikitab_test
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/hisabkikitab_test
+      POSTGRES_URL: postgresql://postgres:postgres@127.0.0.1:5432/hisabkikitab_test
+      DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/hisabkikitab_test
+      POSTGRES_URL_NON_POOLING: postgresql://postgres:postgres@127.0.0.1:5432/hisabkikitab_test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      # Proves the guard is still armed before anything destructive runs. A
+      # guard that had been loosened to accept a remote host would be caught
+      # here rather than by whatever it then connected to.
+      - name: Confirm the database guard rejects remote and production targets
+        run: npm run check:test-db-guard
+
+      - name: Apply migrations
+        run: npm run migrate
+      - name: Migration status
+        run: npm run migrate:status
+      - name: Fresh-schema migration tests
+        run: npm run test:migrations
+      - name: Database integration tests
+        run: npm run test:db
+
+  # ---------------------------------------------------------------------------
+  api:
+    name: API end-to-end and security
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hisabkikitab_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hisabkikitab_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      NODE_ENV: test
+      ALLOW_DESTRUCTIVE_TEST_DB: 'true'
+      TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/hisabkikitab_test
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/hisabkikitab_test
+      POSTGRES_URL: postgresql://postgres:postgres@127.0.0.1:5432/hisabkikitab_test
+      DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/hisabkikitab_test
+      POSTGRES_URL_NON_POOLING: postgresql://postgres:postgres@127.0.0.1:5432/hisabkikitab_test
+      PORT: '5000'
+      CLIENT_URL: http://localhost:5173
+      # The guard refuses a target that is not localhost. The /api suffix is
+      # part of the value the suites expect; without it every request 404s.
+      HW_API: http://localhost:5000/api
+      API_URL: http://localhost:5000
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Confirm the database guard rejects remote and production targets
+        run: npm run check:test-db-guard
+
+      # Generated per run rather than committed. Nothing signed with these ever
+      # leaves the runner, and there is no fixed secret in the repository to
+      # mistake for a real one.
+      - name: Generate throwaway signing secrets
+        run: |
+          echo "JWT_ACCESS_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('hex'))")" >> "$GITHUB_ENV"
+          echo "JWT_REFRESH_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('hex'))")" >> "$GITHUB_ENV"
+          echo "CRON_SECRET=$(node -e "console.log(require('crypto').randomBytes(24).toString('hex'))")" >> "$GITHUB_ENV"
+
+      - name: Apply migrations
+        run: npm run migrate
+      - name: Seed the read-only demo account
+        run: |
+          set -o pipefail
+          if npm run seed 2>&1 | tee "$RUNNER_TEMP/seed.log"; then
+            exit 0
+          fi
+          # The seeder refuses to touch an existing demo account rather than
+          # overwrite rows the demo triggers protect. A fresh service container
+          # cannot hit that, but a re-run of this step would, and refusing is
+          # the right answer there - not a failure. Any other seed error still
+          # fails the job.
+          if grep -q 'Read-only demo already exists' "$RUNNER_TEMP/seed.log"; then
+            echo "Demo account already present; left untouched."
+            exit 0
+          fi
+          echo "::error::Seeding the read-only demo account failed"
+          exit 1
+
+      - name: Start the API
+        run: |
+          node apps/api/server.js > "$RUNNER_TEMP/api.log" 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:5000/api/health > /dev/null; then
+              echo "API healthy"
+              curl -sS http://127.0.0.1:5000/api/health
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::API did not become healthy within 60s"
+          cat "$RUNNER_TEMP/api.log"
+          exit 1
+
+      - name: API end-to-end tests
+        run: npm run test:e2e:api
+      - name: Security tests
+        run: npm run test:security
+
+      - name: API log
+        if: always()
+        run: cat "$RUNNER_TEMP/api.log" || true
+
+  # ---------------------------------------------------------------------------
+  browser:
+    name: Browser tests (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      # One project per runner. The whole suite is about 15 minutes in one
+      # process, and a failure in the mobile project should not hide the
+      # desktop result.
+      fail-fast: false
+      matrix:
+        project: [desktop-en, mobile-roman-ur]
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hisabkikitab_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hisabkikitab_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      NODE_ENV: test
+      ALLOW_DESTRUCTIVE_TEST_DB: 'true'
+      TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/hisabkikitab_test
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/hisabkikitab_test
+      POSTGRES_URL: postgresql://postgres:postgres@127.0.0.1:5432/hisabkikitab_test
+      DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/hisabkikitab_test
+      POSTGRES_URL_NON_POOLING: postgresql://postgres:postgres@127.0.0.1:5432/hisabkikitab_test
+      PORT: '5000'
+      CLIENT_URL: http://localhost:5173
+      HW_API: http://localhost:5000/api
+      # VITE_SITE_URL is deliberately unset. The dev server then falls back to
+      # window.location.origin, and the SEO spec resolves the same localhost
+      # origin, so canonical assertions compare like with like.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Confirm the database guard rejects remote and production targets
+        run: npm run check:test-db-guard
+
+      - name: Generate throwaway signing secrets
+        run: |
+          echo "JWT_ACCESS_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('hex'))")" >> "$GITHUB_ENV"
+          echo "JWT_REFRESH_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('hex'))")" >> "$GITHUB_ENV"
+
+      # Both Playwright projects drive Chromium, so only Chromium is fetched.
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Apply migrations
+        run: npm run migrate
+      - name: Seed the read-only demo account
+        run: |
+          set -o pipefail
+          if npm run seed 2>&1 | tee "$RUNNER_TEMP/seed.log"; then
+            exit 0
+          fi
+          # The seeder refuses to touch an existing demo account rather than
+          # overwrite rows the demo triggers protect. A fresh service container
+          # cannot hit that, but a re-run of this step would, and refusing is
+          # the right answer there - not a failure. Any other seed error still
+          # fails the job.
+          if grep -q 'Read-only demo already exists' "$RUNNER_TEMP/seed.log"; then
+            echo "Demo account already present; left untouched."
+            exit 0
+          fi
+          echo "::error::Seeding the read-only demo account failed"
+          exit 1
+
+      - name: Start the API
+        run: |
+          node apps/api/server.js > "$RUNNER_TEMP/api.log" 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:5000/api/health > /dev/null; then
+              echo "API healthy"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::API did not become healthy within 60s"
+          cat "$RUNNER_TEMP/api.log"
+          exit 1
+
+      # Playwright starts and stops the Vite dev server itself: CI is set, so
+      # reuseExistingServer is off and it owns the process including teardown.
+      - name: Browser tests
+        run: npm run test:browser -- --project=${{ matrix.project }}
+
+      - name: Upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-${{ matrix.project }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: API log
+        if: always()
+        run: cat "$RUNNER_TEMP/api.log" || true
+
+  # ---------------------------------------------------------------------------
   dependency-security:
     name: Production and build dependency audit
     runs-on: ubuntu-latest
@@ -52,9 +378,37 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      # --ignore-scripts on purpose: the audit must not run package lifecycle
+      # code to decide whether that code is safe to run.
       - name: Verify clean locked installation
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Verify patched build-tool dependency resolution
         run: node scripts/check-build-tool-dependencies.mjs
       - name: Enforce production and full-tree advisory policy
         run: node scripts/check-dependency-security.mjs
+
+  # ---------------------------------------------------------------------------
+  audit:
+    name: Dependency security audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: 'true'
+      VITE_SITE_URL: https://hisabkikitab.com
+      VITE_API_URL: /api
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      # Advisory on purpose. A new upstream advisory with no fix available
+      # should show up in the run without blocking every open pull request.
+      # The test jobs above are the ones that gate a merge.
+      - name: Dependency audit
+        run: npm audit --package-lock-only --audit-level=high
+        continue-on-error: true

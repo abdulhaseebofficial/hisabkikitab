@@ -1,5 +1,5 @@
 const { body } = require('express-validator');
-const { idParam, amount, moneyValue } = require('../../shared/validation/rules');
+const { idParam, amount, moneyValue, unicodeText } = require('../../shared/validation/rules');
 const catalogue = require('@hisabkikitab/contracts/catalogue');
 const { modeOf } = require('../../shared/categories');
 
@@ -37,7 +37,7 @@ const incomeValidators = {
   create: [
     amount(),
     source(body('source').optional({ checkFalsy: true })),
-    body('note').optional().trim().isLength({ max: 200 }),
+    unicodeText(body('note').optional(), { max: 200 }),
     body('date').optional().isISO8601().toDate(),
   ],
 
@@ -45,7 +45,7 @@ const incomeValidators = {
     idParam('id'),
     moneyValue(body('amount').optional(), { allowZero: false }),
     source(body('source').optional({ checkFalsy: true })),
-    body('note').optional().trim().isLength({ max: 200 }),
+    unicodeText(body('note').optional(), { max: 200 }),
     body('date').optional().isISO8601().toDate(),
   ],
 

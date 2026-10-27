@@ -13,13 +13,17 @@ beforeAll(() => vi.stubGlobal('matchMedia', () => ({
 afterAll(() => vi.unstubAllGlobals());
 
 describe('homepage finance preview', () => {
-  it('renders the approved hero, official logo, and three selectable modes', () => {
+  it('renders the approved hero, official logo, and all four selectable modes', () => {
     render(<MemoryRouter><HomeContent ArticleCard={ArticleCard} /></MemoryRouter>);
 
     expect(screen.getByRole('heading', { name: /Make sense of your money/ })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Start Managing Your Money/ })).toHaveAttribute('href', '/register/');
     expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute('href', '/login/');
-    expect(screen.getAllByRole('button', { name: /Individual|Household|Shared Living/ })).toHaveLength(3);
+    // Four finance modes ship, so the homepage offers four. This asserted
+    // three with a regex that happened to exclude Business, so it kept
+    // passing after the fourth mode was added without covering it.
+    expect(screen.getAllByRole('button', { name: /Individual|Household|Shared Living|Business/ })).toHaveLength(4);
+    expect(screen.getByRole('button', { name: /Business/ })).toBeInTheDocument();
     expect(screen.getByLabelText('Individual sample finance preview')).toContainHTML('/logo-512.png');
     expect(screen.getByText('Illustrative PKR figures')).toBeInTheDocument();
   });

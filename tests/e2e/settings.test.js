@@ -61,7 +61,7 @@ const { ok, section, heading, call, report, requireApi, bailIfRateLimited, curre
   ok('a 101-character university is rejected', r.status === 400, `-> ${r.status}`);
 
   heading('CARD 2 — APPEARANCE (theme)');
-  for (const theme of ['light', 'dark', 'system']) {
+  for (const theme of ['purple', 'orange']) {
     r = await call('PUT', '/profile', { theme }, token);
     ok(`theme "${theme}" saves`, r.status === 200 && r.data?.data?.user?.theme === theme, r.data?.data?.user?.theme);
   }

@@ -99,8 +99,14 @@ export const inCategoryOrder = (rows = []) => {
 
 /** Chart chrome. Axis, grid and ink never wear a series colour. */
 export const CHART_INK = {
-  light: { grid: '#e1ddd2', axis: '#d6d1c4', muted: '#726c5d', surface: '#fdfcfa', text: '#262421' },
-  dark: { grid: '#332f2a', axis: '#47423a', muted: '#b0aa9c', surface: '#262421', text: '#f3f1ec' },
+  light: {
+    grid: '#dce8ff', axis: '#bfcfe8', muted: '#64748b', surface: '#ffffff', text: '#0b1742',
+    primary: '#1468ff', accent: '#63adff',
+  },
+  dark: {
+    grid: '#315080', axis: '#446497', muted: '#adc5e8', surface: '#102558', text: '#f5f9ff',
+    primary: '#63adff', accent: '#9bcaff',
+  },
 };
 
 /**

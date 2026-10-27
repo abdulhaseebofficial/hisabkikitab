@@ -9,23 +9,54 @@
 
 const expensesRepo = require('../../modules/expenses/expenses.repository');
 
-/** Next occurrence after `date` for a given frequency. */
-const advance = (date, frequency) => {
+const daysInMonthOf = (date) =>
+  new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
+
+/**
+ * Whether `anchor` can be the day this series was scheduled on.
+ *
+ * A monthly series anchored on day D sits on `min(D, days in that month)`, so
+ * the pointer either still shows D or was clamped to the last day of a shorter
+ * month. Anything else means the anchor belongs to a different schedule - a
+ * template whose `date` was edited before rescheduling existed, or a row where
+ * `date` and `next_run_at` never agreed. Relocating a live bill to a different
+ * day of the month on the strength of that would also change the generated
+ * date, and the (generated_from, date) idempotency index would stop
+ * recognising occurrences it had already created. The pointer's own day is the
+ * safe reading in that case.
+ */
+const anchorFitsPointer = (anchor, pointer) => {
+  const anchorDay = anchor.getUTCDate();
+  const pointerDay = pointer.getUTCDate();
+  return anchorDay === pointerDay
+    || (anchorDay > pointerDay && pointerDay === daysInMonthOf(pointer));
+};
+
+/** Next occurrence; monthly dates keep the series' original day. */
+const advance = (date, frequency, anchorDate = date) => {
   const next = new Date(date);
   if (frequency === 'daily') next.setUTCDate(next.getUTCDate() + 1);
   else if (frequency === 'weekly') next.setUTCDate(next.getUTCDate() + 7);
   else {
-    const day = next.getUTCDate();
+    const anchor = new Date(anchorDate);
+    const day = Number.isNaN(anchor.getTime()) || !anchorFitsPointer(anchor, next)
+      ? next.getUTCDate() : anchor.getUTCDate();
     next.setUTCDate(1);
     next.setUTCMonth(next.getUTCMonth() + 1);
-    const daysInMonth = new Date(Date.UTC(next.getUTCFullYear(), next.getUTCMonth() + 1, 0)).getUTCDate();
-    next.setUTCDate(Math.min(day, daysInMonth));
+    next.setUTCDate(Math.min(day, daysInMonthOf(next)));
   }
   return next;
 };
 
 /** First run date for a brand new recurring template. */
 const firstRunAfter = (date, frequency) => advance(date, frequency);
+
+/** A changed schedule starts at its next future occurrence, without backfill. */
+const nextRunAfter = (date, frequency, now = new Date()) => {
+  let next = firstRunAfter(date, frequency);
+  while (next <= now) next = advance(next, frequency, date);
+  return next;
+};
 
 /**
  * Materialise every due occurrence for one user.
@@ -53,7 +84,7 @@ const materializeForUser = async (userId, now = new Date()) => {
           date: new Date(pointer),
           generatedFrom: locked._id,
         });
-        pointer = advance(pointer, locked.recurringFrequency);
+        pointer = advance(pointer, locked.recurringFrequency, locked.date || pointer);
         guard += 1;
       }
       const count = await expensesRepo.createMany(clones, tx);
@@ -86,4 +117,4 @@ const materializeAll = async ({ strict = false } = {}) => {
   return total;
 };
 
-module.exports = { advance, firstRunAfter, materializeForUser, materializeAll };
+module.exports = { advance, firstRunAfter, nextRunAfter, materializeForUser, materializeAll };

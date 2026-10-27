@@ -9,6 +9,7 @@
 
 const registerRoutes = (app) => {
   app.use('/api/shared-living', require('./modules/sharedLiving/sharedLiving.routes'));
+  app.use('/api/business', require('./modules/business').routes);
   const { protect } = require('./modules/auth/auth.middleware');
   const personalPaths = ['/api/expenses','/api/income','/api/goals','/api/debts','/api/budget','/api/dashboard','/api/ai','/api/reports'];
   app.use(personalPaths, protect, (req, res, next) => {

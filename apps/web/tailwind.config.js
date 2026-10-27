@@ -12,6 +12,9 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
+      screens: {
+        xs: '380px',
+      },
       colors: {
         slate: {
           50: 'rgb(var(--slate-50) / <alpha-value>)',
@@ -86,11 +89,16 @@ export default {
           from: { opacity: '0', transform: 'translateY(10px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
+        'soft-float': {
+          '0%, 100%': { transform: 'translateY(0) rotate(-1deg)' },
+          '50%': { transform: 'translateY(-10px) rotate(1deg)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 180ms ease-out',
         'slide-up': 'slide-up 220ms cubic-bezier(0.22, 1, 0.36, 1)',
         'rise-in': 'rise-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both',
+        'soft-float': 'soft-float 5s ease-in-out infinite',
       },
     },
   },

@@ -7,12 +7,6 @@ ALTER TABLE sl_bills ADD COLUMN IF NOT EXISTS recurring_origin_id uuid;
 -- bill must stop for explicit historical review instead of guessing.
 ALTER TABLE sl_bills ADD COLUMN IF NOT EXISTS recurrence_identity_known boolean;
 ALTER TABLE sl_bills ALTER COLUMN recurrence_identity_known SET DEFAULT true;
--- NULL identifies a pre-cutover bill whose copy provenance cannot be inferred.
--- Adding the column without a default leaves old rows untouched; new rows get
--- TRUE after this statement. A copy into a period containing an unknown old
--- bill must stop for explicit historical review instead of guessing.
-ALTER TABLE sl_bills ADD COLUMN IF NOT EXISTS recurrence_identity_known boolean;
-ALTER TABLE sl_bills ALTER COLUMN recurrence_identity_known SET DEFAULT true;
 
 DO $$ BEGIN
   IF NOT EXISTS (

@@ -11,7 +11,12 @@ const asyncHandler = require('../../shared/http/asyncHandler');
  * so the UI can show "total for this filter" without a second round trip.
  */
 const listExpenses = asyncHandler(async (req, res) => {
-  const { items, pagination, filteredTotal } = await expenses.list(req.user._id, req.user.financeMode, req.query);
+  const { items, pagination, filteredTotal } = await expenses.list(
+    req.user._id,
+    req.user.financeMode,
+    req.query,
+    { readOnly: Boolean(req.user.isDemo) }
+  );
   res.json({ success: true, data: { items, pagination, filteredTotal } });
 });
 

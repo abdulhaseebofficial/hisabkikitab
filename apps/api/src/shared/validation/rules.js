@@ -93,6 +93,60 @@ const accepted = (field, message) =>
     .custom((value) => value === true || value === 'true' || value === 'on')
     .withMessage(message);
 
+/**
+ * Characters that cannot be stored, as opposed to characters we dislike.
+ *
+ * Postgres `text` holds any Unicode scalar except NUL: a NUL in a parameter is
+ * rejected by the server with 22021, which arrived as a 500 and an error-log
+ * entry for what is really a malformed request. The rest of the C0 block is
+ * included because a line feed or tab is the only control character a person
+ * ever means to type in a description, and the others only arrive from a
+ * broken client or someone probing.
+ *
+ * Deliberately NOT in here: `<`, `>`, quotes, ampersands, bidi controls, or
+ * anything else that merely looks dangerous. Those are legitimate in a note -
+ * "rent > 20000", "Ali's shop" - and they are made safe at the two places that
+ * matter: parameterised SQL, and React escaping every string it renders. A
+ * validator that strips them instead would store something the person did not
+ * type, which is the one thing a financial record must never do.
+ */
+const UNSTORABLE_TEXT = /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/u;
+
+/**
+ * A free-text field a person writes in their own language.
+ *
+ * Three things happen, in this order:
+ *
+ *   NFC normalisation. Urdu, Hindi and Tamil can each encode the same word
+ *   two ways - precomposed, or a base letter plus combining marks - and
+ *   Postgres compares bytes. Without this, a description saved from one
+ *   keyboard is not found by a search typed on another, even though both
+ *   render identically. NFC is canonical equivalence: it is the same text by
+ *   Unicode's own definition, not a rewrite of what was typed.
+ *
+ *   Trim. Surrounding whitespace only.
+ *
+ *   Reject the unstorable. With a named field and a 400, instead of a 500 from
+ *   the database.
+ *
+ * Length is counted in characters, not bytes, so a 200-character limit is 200
+ * Urdu characters and not the 67 that a byte limit would allow.
+ */
+const unicodeText = (chain, { max, min = 0, message } = {}) =>
+  chain
+    .isString()
+    .withMessage(message || 'This field must be text')
+    .bail()
+    .customSanitizer((value) => String(value).normalize('NFC').trim())
+    .custom((value) => {
+      if (UNSTORABLE_TEXT.test(value)) {
+        throw new Error('Remove the control characters from this text');
+      }
+      return true;
+    })
+    .isLength({ min, max })
+    .withMessage(message || `Keep this under ${max} characters`);
+
 const moneyValue = (chain, options = {}) => chain.custom((value) => {
   try {
     const cents = decimalToMinor(value, options);
@@ -114,5 +168,7 @@ module.exports = {
   accepted,
   amount,
   moneyValue,
+  unicodeText,
+  UNSTORABLE_TEXT,
   CURRENCY_CODES,
 };

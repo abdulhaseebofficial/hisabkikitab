@@ -2,11 +2,15 @@ import { Pencil, Trash2, Repeat } from 'lucide-react';
 import { useTheme } from '../../../app/providers/ThemeProvider';
 import { categoryColor, categoryEmoji } from '../../../shared/utils/constants';
 import { formatCalendarDate, formatMoney } from '../../../shared/utils/format';
+import useCategoryLabel from '../../../shared/i18n/useCategoryLabel';
 
 /** One row in the expense list. */
 export default function ExpenseItem({ expense, currency = 'INR', onEdit, onDelete }) {
   const { isDark } = useTheme();
   const color = categoryColor(expense.category, isDark);
+  // The colour and emoji key off the stored id; only the words are localised.
+  const categoryLabel = useCategoryLabel();
+  const label = categoryLabel(expense.category);
 
   return (
     <li className="hw-card flex items-start gap-3 p-4 transition hover:shadow-lift">
@@ -19,13 +23,13 @@ export default function ExpenseItem({ expense, currency = 'INR', onEdit, onDelet
       </span>
 
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900 dark:text-slate-100">
-          {expense.description || expense.category}
+        <p dir="auto" className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900 dark:text-slate-100">
+          {expense.description || label}
         </p>
         <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-500 dark:text-slate-400">
           <span className="inline-flex items-center gap-1">
             <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: color }} aria-hidden="true" />
-            {expense.category}
+            <span dir="auto">{label}</span>
           </span>
           <span aria-hidden="true">&middot;</span>
           <span>{formatCalendarDate(expense.date)}</span>
@@ -44,24 +48,24 @@ export default function ExpenseItem({ expense, currency = 'INR', onEdit, onDelet
         {formatMoney(expense.amount, currency)}
       </span>
 
-      <div className="flex shrink-0 gap-0.5">
-        <button
+      {(onEdit || onDelete) && <div className="flex shrink-0 gap-0.5">
+        {onEdit && <button
           type="button"
           onClick={() => onEdit(expense)}
-          aria-label={`Edit ${expense.description || expense.category}`}
+          aria-label={`Edit ${expense.description || label}`}
           className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-brand-600 dark:hover:bg-slate-800 dark:hover:text-brand-400"
         >
           <Pencil className="h-4 w-4" />
-        </button>
-        <button
+        </button>}
+        {onDelete && <button
           type="button"
           onClick={() => onDelete(expense)}
-          aria-label={`Delete ${expense.description || expense.category}`}
+          aria-label={`Delete ${expense.description || label}`}
           className="rounded-lg p-2 text-slate-400 transition hover:bg-danger/10 hover:text-danger dark:hover:bg-danger/15"
         >
           <Trash2 className="h-4 w-4" />
-        </button>
-      </div>
+        </button>}
+      </div>}
     </li>
   );
 }

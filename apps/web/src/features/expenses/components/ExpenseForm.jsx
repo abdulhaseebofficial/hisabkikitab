@@ -8,6 +8,7 @@ import Button from '../../../shared/components/ui/Button';
 import { PAYMENT_METHODS, RECURRING_FREQUENCIES, categoryColor, categoryEmoji } from '../../../shared/utils/constants';
 import { cn, currencySymbol, formatMoney, toInputDate } from '../../../shared/utils/format';
 import useT from '../../../shared/i18n/I18nProvider';
+import useCategoryLabel from '../../../shared/i18n/useCategoryLabel';
 import { useAuth } from '../../auth';
 import { sumMoney, toMinor } from '../../../shared/utils/money';
 
@@ -33,6 +34,9 @@ const QUICK_AMOUNTS = [50, 100, 200, 500, 1000];
 
 export default function ExpenseForm({ expense, categories = [], currency = 'PKR', onSubmit, onCancel, submitting }) {
   const { t } = useT();
+  // The radios carry the stored id as their value and the reader's words as
+  // their text. Without this the picker offered "student_shopping".
+  const categoryLabel = useCategoryLabel();
   const { user } = useAuth();
   const householder = Boolean(user && user.financeMode === 'householder');
   const {
@@ -154,7 +158,7 @@ export default function ExpenseForm({ expense, categories = [], currency = 'PKR'
               >
                 <input type="radio" value={name} className="sr-only" {...register('category')} />
                 <span aria-hidden="true">{categoryEmoji(name)}</span>
-                {name}
+                <span dir="auto">{categoryLabel(name)}</span>
                 {active && (
                   <span
                     className="h-1.5 w-1.5 rounded-full"
@@ -209,7 +213,7 @@ export default function ExpenseForm({ expense, categories = [], currency = 'PKR'
               This repeats every month
             </span>
             <span className="block text-xs text-slate-500 dark:text-slate-400">
-              Perfect for the mess bill or hostel fee. Hisabki Kitab will add it for you automatically.
+              Perfect for the mess bill or hostel fee. HisabKi Kitab will add it for you automatically.
             </span>
           </span>
         </label>

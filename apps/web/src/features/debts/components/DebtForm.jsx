@@ -151,8 +151,26 @@ export default function DebtForm({ open, onClose, onSubmit, debt = null, currenc
             onChange={(event) => { setContactSearch(event.target.value); setContactPage(1); setValue('contactId', ''); }} />
           <Select label={t('udhaar.chooseContact')} hint={contactsLoading ? t('common.loading') : undefined}
             options={[{ value: '', label: t('udhaar.newContact') },
-              ...contacts.map((contact) => ({ value: contact.id,
-                label: `${contact.displayName}${contact.contactInfo ? ` · ${contact.contactInfo}` : ''} · ${t('udhaar.contactRef')} ${contact.id.slice(-6)}` }))]}
+              ...contacts.map((contact) => {
+                const duplicates = contacts.filter((c) => c.displayName.trim().toLowerCase() === contact.displayName.trim().toLowerCase());
+                let detail = '';
+                if (contact.contactInfo) {
+                  const samePhoneDuplicates = duplicates.filter((c) => (c.contactInfo || '').trim() === contact.contactInfo.trim());
+                  if (samePhoneDuplicates.length > 1) {
+                    const dupIndex = samePhoneDuplicates.findIndex((c) => c.id === contact.id) + 1;
+                    detail = ` (${contact.contactInfo}) (Person ${dupIndex})`;
+                  } else {
+                    detail = ` (${contact.contactInfo})`;
+                  }
+                } else if (duplicates.length > 1) {
+                  const dupIndex = duplicates.findIndex((c) => c.id === contact.id) + 1;
+                  detail = ` (Person ${dupIndex})`;
+                }
+                return {
+                  value: contact.id,
+                  label: `${contact.displayName}${detail}`,
+                };
+              })]}
             {...register('contactId', { onChange: (event) => {
               if (event.target.value) setValue('personName', '', { shouldValidate: true });
             } })} />

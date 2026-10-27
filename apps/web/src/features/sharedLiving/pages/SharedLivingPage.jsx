@@ -42,7 +42,7 @@ const remembered = (userId) => {
     return userId ? JSON.parse(localStorage.getItem(`shared-living:${userId}`) || '{}') : {};
   } catch { return {}; }
 };
-export default function SharedLivingPage({ userId }) {
+export default function SharedLivingPage({ userId, readOnly = false }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = sharedSection(searchParams);
   const setTab = (section) => setSearchParams(sharedSectionSearch(searchParams, section));
@@ -101,7 +101,7 @@ export default function SharedLivingPage({ userId }) {
     api
       .month(spaceId, month)
       .catch(async (err) => {
-        if (err.response?.data?.message !== "shared.noMonth" ||
+        if (readOnly || err.response?.data?.message !== "shared.noMonth" ||
             spaces.find((space) => space.id === spaceId)?.role !== "admin") throw err;
         await api.save("post", `/spaces/${spaceId}/months/${month}/start`, {});
         return api.month(spaceId, month);
@@ -118,15 +118,16 @@ export default function SharedLivingPage({ userId }) {
     return () => {
       current = false;
     };
-  }, [spaceId, month, version, spaces]);
+  }, [spaceId, month, version, spaces, readOnly]);
   const selected = spaces.find((s) => s.id === spaceId),
     admin = selected?.role === "admin",
-    writable = admin && data && !data.period.closed;
+    periodManageable = !readOnly && admin && data,
+    writable = !readOnly && admin && data && !data.period?.closed;
   const base = `/spaces/${spaceId}`,
     periodPath = `${base}/months/${month}`;
   const categoryLabel = useCallback(
     (id) => {
-      const c = data?.categories.find((item) => item.id === id);
+      const c = data?.categories?.find((item) => item.id === id);
       return c?.name || t(`shared.categories.${c?.stable_key || "other"}`);
     },
     [data, t],
@@ -136,7 +137,7 @@ export default function SharedLivingPage({ userId }) {
     if (!data || !selected) return;
     const csvCell = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
     const rows = [
-      ["Hisabki Kitab - Shared Living report"],
+      ["HisabKi Kitab - Shared Living report"],
       ["Space", selected.name], ["Month", month], ["Currency", selected.currency], [],
       ["Summary", "Amount"],
       ...["spent", "collected", "totalPaid", "settlementOutstanding", "activeMembers"].map((key) => [t(`shared.${key}`), data.summary[key]]),
@@ -402,7 +403,7 @@ export default function SharedLivingPage({ userId }) {
         title={tab === "dashboard" ? t("mode.shared_living") : t(`shared.${tab === 'manage' ? 'manageSpace' : tab}`)}
         subtitle={tab === "dashboard" ? t("shared.subtitle") : `${selected?.name || t("mode.shared_living")} · ${month}`}
       >
-        {tab === "dashboard" && spaces.length > 0 && <div className="flex flex-wrap gap-2">
+        {!readOnly && tab === "dashboard" && spaces.length > 0 && <div className="flex flex-wrap gap-2">
           <Button onClick={() => openSpace()}>{t("shared.createSpace")}</Button>
           <Button
             variant="secondary"
@@ -496,7 +497,7 @@ export default function SharedLivingPage({ userId }) {
                 {t("shared.subtitle")}
               </p>
             </div>
-            <div className="flex shrink-0 flex-wrap gap-2">
+            {!readOnly && <div className="flex shrink-0 flex-wrap gap-2">
               <Button onClick={() => openSpace()}>{t("shared.createSpace")}</Button>
               <Button
                 variant="secondary"
@@ -509,7 +510,7 @@ export default function SharedLivingPage({ userId }) {
               >
                 {t("shared.join")}
               </Button>
-            </div>
+            </div>}
           </div>
         </Card>
       )}
@@ -598,7 +599,7 @@ export default function SharedLivingPage({ userId }) {
           )}
           {tab === "members" && (
             <>
-              {admin && (
+              {writable && (
                 <Button onClick={() => openMember()}>
                   {t("shared.addMember")}
                 </Button>
@@ -625,7 +626,7 @@ export default function SharedLivingPage({ userId }) {
                         <span>{format(value)}</span>
                       </p>
                     ))}
-                    {admin && (
+                    {writable && (
                       <div className="mt-3 flex gap-2">
                         <Button
                           variant="secondary"
@@ -664,7 +665,7 @@ export default function SharedLivingPage({ userId }) {
                 <p>{selected.name} · {selected.currency} · {data.summary.activeMembers} {t("shared.activeMembers").toLowerCase()}</p>
                 {selected.owner_name && <p className="mt-2 text-sm">{t("shared.currentOwner")}: {selected.owner_name}</p>}
                 {selected.organization_name && <p>{t(`shared.organization_${selected.organization_type || "other"}`)}: {selected.organization_name}</p>}
-                {userId && selected.owner_id === userId ? (
+                {!readOnly && (userId && selected.owner_id === userId ? (
                   <div className="mt-4 max-w-xl space-y-3 border-t border-slate-200 pt-4 dark:border-slate-700">
                     <h3 className="font-semibold">{t("shared.transferOwnership")}</h3>
                     <p className="text-sm text-slate-600 dark:text-slate-300">{t("shared.transferOwnershipHint")}</p>
@@ -694,8 +695,8 @@ export default function SharedLivingPage({ userId }) {
                   <div className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700">
                     <Button variant="secondary" disabled={busy} onClick={leaveSpace}>{t("shared.leaveSpace")}</Button>
                   </div>
-                )}
-                {admin && (
+                ))}
+                {writable && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Button onClick={() => openSpace(true)}>
                       {t("shared.editSpace")}
@@ -732,7 +733,7 @@ export default function SharedLivingPage({ userId }) {
                   </div>
                 )}
               </Card>
-              {admin && (
+              {periodManageable && (
                 <Card>
                   <div className="flex flex-wrap gap-2">
                     <Button
@@ -757,7 +758,7 @@ export default function SharedLivingPage({ userId }) {
               )}
               <Card>
                 <h2 className="font-semibold">{t("shared.categoriesTitle")}</h2>
-                {admin && (
+                {writable && (
                   <Button className="mt-3" onClick={() => openCategory()}>
                     {t("shared.addCategory")}
                   </Button>
@@ -771,7 +772,7 @@ export default function SharedLivingPage({ userId }) {
                       {categoryLabel(c.id)} · {t(`shared.${c.kind}`)}{" "}
                       {c.archived && t("shared.archived")}
                     </span>
-                    {admin && (
+                    {writable && (
                       <Button
                         variant="secondary"
                         onClick={() => openCategory(c)}

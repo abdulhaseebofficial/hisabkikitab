@@ -47,6 +47,16 @@ const errorHandler = (err, req, res, _next) => {
     message = 'That record no longer exists';
   }
 
+  // Postgres: the text contained a character the encoding cannot hold - in
+  // practice a NUL byte. `unicodeText` rejects these per field with a message
+  // naming the field, so reaching here means a path that does not use it. Either
+  // way it is a malformed request, and it used to answer 500 and file itself in
+  // the error log as if the server had broken.
+  if (err.code === '22021') {
+    statusCode = 400;
+    message = 'One of the values sent contains a character that cannot be stored';
+  }
+
   if (err.name === 'JsonWebTokenError') {
     statusCode = 401;
     message = 'Invalid token';

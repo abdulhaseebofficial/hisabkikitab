@@ -9,6 +9,7 @@
 const PDFDocument = require('pdfkit');
 const reports = require('./reports.service');
 const { toCsv } = require('./reports.csv');
+const { pdfText } = require('./reports.pdfText');
 const asyncHandler = require('../../shared/http/asyncHandler');
 const { apiToMinor, minorToDecimal } = require('../../shared/finance/personalMoney');
 
@@ -39,9 +40,10 @@ const exportReport = asyncHandler(async (req, res) => {
       ['Period', snapshot.monthLabel],
       ['Currency', cur],
       [],
-      ['Income', snapshot.income],
+      ['Received income', snapshot.income],
+      ['Planned income', snapshot.plannedIncome],
       ['Total spent', snapshot.totalSpent],
-      ['Money left', snapshot.remaining],
+      ['Income minus spending', snapshot.remaining],
       ['Transactions', expenses.length],
       [],
       ['Spending by category'],
@@ -76,6 +78,11 @@ const exportReport = asyncHandler(async (req, res) => {
     const [whole, cents] = decimal.split('.');
     return `${cur} ${BigInt(whole).toLocaleString('en-IN')}${cents === '00' ? '' : `.${cents}`}`;
   };
+  // Every value a person typed goes through `text.safe` before it is drawn.
+  // The built-in PDF font has no Urdu, Devanagari or CJK glyphs, and used to
+  // emit them as nothing at all.
+  const text = pdfText(doc);
+
   const line = () => doc.moveDown(0.4).strokeColor('#e5e7eb').lineWidth(1)
     .moveTo(48, doc.y).lineTo(547, doc.y).stroke().moveDown(0.6);
 
@@ -84,15 +91,16 @@ const exportReport = asyncHandler(async (req, res) => {
   doc.moveDown(0.2);
   doc.fillColor('#111827').fontSize(16).text(snapshot.monthLabel);
   doc.fillColor('#6b7280').fontSize(10)
-    .text(`${req.user.name}${req.user.hostelName ? ' - ' + req.user.hostelName : ''}`)
+    .text(`${text.safe(req.user.name)}${req.user.hostelName ? ' - ' + text.safe(req.user.hostelName) : ''}`)
     .text(`Generated ${new Date().toDateString()}`);
   line();
 
   doc.fillColor('#111827').fontSize(13).text('Summary');
   doc.moveDown(0.3).fontSize(11).fillColor('#374151');
-  doc.text(`Income: ${money(snapshot.income)}`);
+  doc.text(`Received income: ${money(snapshot.income)}`);
+  doc.text(`Planned income: ${money(snapshot.plannedIncome)}`);
   doc.text(`Total spent: ${money(snapshot.totalSpent)}`);
-  doc.text(`Money left: ${money(snapshot.remaining)}   (${100 - snapshot.spentPercent}% of income)`);
+  doc.text(`Income minus spending: ${money(snapshot.remaining)}`);
   doc.text(`Average per day: ${money(snapshot.dailyAverage)}`);
   doc.text(`Transactions: ${expenses.length}`);
   line();
@@ -103,9 +111,11 @@ const exportReport = asyncHandler(async (req, res) => {
     doc.fillColor('#9ca3af').text('No expenses recorded for this month.');
   } else {
     snapshot.breakdown.forEach((b) => {
-      // A simple text bar keeps the PDF dependency-free.
-      const bar = '\u2588'.repeat(Math.max(1, Math.round(b.percent / 4)));
-      doc.fillColor('#374151').text(`${b.category.padEnd(20, ' ')} ${money(b.amount).padStart(14, ' ')}  ${String(b.percent).padStart(5, ' ')}%`, { continued: true });
+      // A simple text bar keeps the PDF dependency-free. '=' rather than the
+      // block character this used: U+2588 is absent from the built-in font, so
+      // every bar in every report so far has drawn as empty space.
+      const bar = '='.repeat(Math.max(1, Math.round(b.percent / 4)));
+      doc.fillColor('#374151').text(`${text.safe(b.category).padEnd(20, ' ')} ${money(b.amount).padStart(14, ' ')}  ${String(b.percent).padStart(5, ' ')}%`, { continued: true });
       doc.fillColor('#818cf8').text(`  ${bar}`);
     });
   }
@@ -116,7 +126,7 @@ const exportReport = asyncHandler(async (req, res) => {
     doc.moveDown(0.3).fontSize(11);
     snapshot.budgets.forEach((b) => {
       const colour = b.status === 'over' ? '#dc2626' : b.status === 'warning' ? '#d97706' : '#16a34a';
-      doc.fillColor('#374151').text(`${b.category.padEnd(20, ' ')} ${money(b.spent)} of ${money(b.limit)}  `, { continued: true });
+      doc.fillColor('#374151').text(`${text.safe(b.category).padEnd(20, ' ')} ${money(b.spent)} of ${money(b.limit)}  `, { continued: true });
       doc.fillColor(colour).text(`${b.usedPercent}% ${b.status.toUpperCase()}`);
     });
     line();
@@ -131,13 +141,20 @@ const exportReport = asyncHandler(async (req, res) => {
     if (doc.y > 760) doc.addPage();
     const row = [
       new Date(e.date).toISOString().slice(0, 10).padEnd(12, ' '),
-      String(e.category).slice(0, 20).padEnd(21, ' '),
-      String(e.description || '-').slice(0, 29).padEnd(31, ' '),
-      String(e.paymentMethod).slice(0, 11).padEnd(12, ' '),
+      text.safe(e.category).slice(0, 20).padEnd(21, ' '),
+      text.safe(e.description || '-').slice(0, 29).padEnd(31, ' '),
+      text.safe(e.paymentMethod).slice(0, 11).padEnd(12, ' '),
       money(e.amount),
     ].join('');
     doc.text(row);
   });
+
+  // Printed only when something could not be drawn, and it names the way to
+  // get the full text rather than leaving the reader to wonder.
+  const omissionNote = text.note();
+  if (omissionNote) {
+    doc.moveDown(1).fontSize(9).fillColor('#b45309').text(omissionNote);
+  }
 
   doc.moveDown(1).fontSize(9).fillColor('#9ca3af')
     .text('Generated by Hisabki Kitab - your AI money coach for hostel life.', { align: 'center' });

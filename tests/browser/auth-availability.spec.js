@@ -46,7 +46,7 @@ test('login and signup branding text meets AA contrast in both themes', async ({
   await page.goto('/login/');
 
   for (const theme of ['light', 'dark']) {
-    await page.evaluate((value) => localStorage.setItem('hw-theme', value), theme);
+    await page.evaluate((value) => localStorage.setItem('hkk-theme', value), theme);
     for (const route of ['/login/', '/register/']) {
       await page.goto(route);
       await expect(page.locator('html')).toHaveClass(theme === 'dark' ? /dark/ : /^(?!.*dark)/);

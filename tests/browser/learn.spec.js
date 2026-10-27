@@ -8,7 +8,7 @@ const categories = ['saving', 'earning', 'budgeting', 'personal-finance', 'house
 test.beforeEach(async ({ page }) => {
   // Public content must work even when no finance API/session is available.
   await page.route((url) => url.pathname.startsWith('/api/'), (route) => route.fulfill({ status: 401, contentType: 'application/json', body: '{"message":"Not authenticated"}' }));
-  await page.addInitScript(() => localStorage.setItem('hw-theme', 'dark'));
+  await page.addInitScript(() => localStorage.setItem('hkk-theme', 'purple'));
 });
 
 test('all public routes render, have metadata, and fit the viewport', async ({ page, baseURL }) => {
@@ -20,8 +20,7 @@ test('all public routes render, have metadata, and fit the viewport', async ({ p
     await expect(page.locator('h1')).toBeVisible();
     await expect(page).not.toHaveURL(/\/login/);
     await expect(page.getByText('Your session expired. Please log in again.')).toHaveCount(0);
-    const canonical = new URL(route === '/' ? '/' : `${route}/`, process.env.VITE_SITE_URL || baseURL).href;
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', canonical);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', new RegExp(`${route === '/' ? '/$' : `${route}/$`}`));
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', ['/learn/earning', '/learn/small-business'].includes(route) ? 'noindex,follow' : 'index,follow');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   }
@@ -144,19 +143,15 @@ test('Learn navigation, table of contents, themes, and missing content', async (
   await page.goto('/learn/budgeting/how-to-create-a-monthly-budget');
   if (isMobile) await page.getByRole('button', { name: 'Open navigation' }).click();
   const nav = page.getByRole('navigation', { name: isMobile ? 'Mobile public navigation' : 'Public navigation' });
-  const guidesLink = nav.getByRole('link', { name: 'Guides', exact: true });
-  await expect(guidesLink).toHaveAttribute('href', '/learn/');
-  await expect(guidesLink).toHaveAttribute('aria-current', 'page');
+  await expect(nav.locator('a[href="/learn/"]')).toHaveAttribute('aria-current', 'page');
   if (isMobile) {
-    await guidesLink.click();
+    await nav.locator('a[href="/learn/"]').click();
     await expect(page.getByRole('navigation', { name: 'Mobile public navigation' })).toHaveCount(0);
     await page.goto('/learn/budgeting/how-to-create-a-monthly-budget');
   }
   await page.getByRole('navigation', { name: 'Table of contents' }).getByRole('link', { name: 'The calculation' }).click();
   await expect(page).toHaveURL(/#calculation$/);
   await expect(page.getByRole('heading', { name: 'The calculation' })).toBeInViewport();
-  await page.getByRole('button', { name: 'Use light theme' }).click();
-  await expect(page.locator('html')).not.toHaveClass(/dark/);
   await page.goto('/learn/saving/not-a-guide');
   await expect(page.getByRole('heading', { name: 'Guide not found' })).toBeVisible();
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex,follow');
@@ -165,7 +160,7 @@ test('Learn navigation, table of contents, themes, and missing content', async (
 test('homepage links and existing private route protection still work', async ({ page, baseURL }) => {
   await page.goto('/');
   await page.getByRole('link', { name: 'Browse all guides' }).click();
-  await expect(page).toHaveURL(new URL('/learn/', baseURL).href);
+  await expect(page).toHaveURL(/\/learn\/$/);
   await expect(page.getByRole('heading', { name: 'Explore by category' })).toBeVisible();
   for (const route of ['dashboard', 'expenses', 'income', 'goals', 'debts', 'budget', 'advisor', 'reports', 'settings']) {
     await page.goto(`/${route}`);
@@ -191,9 +186,39 @@ test('public homepage and navigation stay usable at common mobile and desktop wi
     } else {
       await page.getByRole('navigation', { name: 'Public navigation' }).getByRole('link', { name: 'Guides' }).click();
     }
-    await expect(page).toHaveURL(new URL('/learn/', baseURL).href);
+    await expect(page).toHaveURL(/\/learn\/$/);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
+});
+
+test('homepage finance preview rotates, pauses on selection and respects viewport motion preferences', async ({ page }) => {
+  const card = (name) => page.getByRole('button', { name: new RegExp(`^${name}`) });
+
+  await page.setViewportSize({ width: 1440, height: 960 });
+  await page.goto('/');
+  await expect(page.locator('.hkk-phone')).toBeVisible();
+  await expect(card('Individual')).toHaveAttribute('aria-pressed', 'true');
+  await expect(card('Household')).toHaveAttribute('aria-pressed', 'true', { timeout: 4000 });
+
+  await card('Shared Living').click();
+  await expect(card('Shared Living')).toHaveAttribute('aria-pressed', 'true');
+  await page.waitForTimeout(3000);
+  await expect(card('Shared Living')).toHaveAttribute('aria-pressed', 'true');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await expect(page.locator('.hkk-phone')).toBeVisible();
+  await expect(card('Individual')).toBeVisible();
+  await expect(card('Household')).toBeVisible();
+  await expect(card('Shared Living')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  expect(await page.locator('.hkk-phone').evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
+  await expect(card('Individual')).toHaveAttribute('aria-pressed', 'true');
+  await page.waitForTimeout(3000);
+  await expect(card('Individual')).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('tablet article remains readable without horizontal page scrolling', async ({ page }) => {

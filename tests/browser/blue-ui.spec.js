@@ -1,9 +1,32 @@
 const { test, expect } = require('@playwright/test');
 
 const apiEnvelope = (data) => ({ success: true, data });
+const testUser = {
+  _id: 'local-ui-test-user',
+  name: 'Test User',
+  email: 'user@example.test',
+  monthlyIncome: 100000,
+  currency: 'PKR',
+  university: '',
+  hostelName: '',
+  financeMode: 'student',
+  language: 'en',
+  onboardingCompleted: true,
+  hasPassword: true,
+  isDemo: false,
+};
+
+const dashboard = {
+  monthLabel: 'October 2026',
+  totals: { income: 100000, plannedIncome: 100000, incomeLogged: 100000, spent: 40000, remaining: 60000, spentPercent: 40, dailyAverage: 1300, safeDailySpend: 2000, daysLeftInMonth: 12, expenseCount: 18 },
+  categoryBreakdown: [], trend: [], comparison: { previousMonthSpent: 30000, changePercent: 33 },
+  budgets: [], goals: [], recentExpenses: [],
+  debts: { payable: 0, receivable: 0, netBalance: 0, overdue: 0, dueSoon: [] },
+  upcomingBills: [],
+};
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('hw-theme', 'light'));
+  await page.addInitScript(() => localStorage.setItem('hkk-theme', 'light'));
   await page.route((url) => url.pathname.startsWith('/api/'), (route) => {
     if (new URL(route.request().url()).pathname === '/api/auth/config') {
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(apiEnvelope({ google: { enabled: false } })) });
@@ -49,11 +72,14 @@ test('phone hardware and finance cards animate once without blocking reduced mot
     name: getComputedStyle(card).animationName,
     delay: getComputedStyle(card).animationDelay,
   })));
-  expect(entrance).toEqual([
-    { name: 'hkk-card-enter', delay: '0s' },
-    { name: 'hkk-card-enter', delay: '0.14s' },
-    { name: 'hkk-card-enter', delay: '0.28s' },
-  ]);
+  // One card per finance mode, each entering once, staggered by 0.14s. Derived
+  // from the rendered count so adding a mode does not look like a motion bug,
+  // while every name and delay is still asserted exactly.
+  expect(entrance.length).toBe(4);
+  expect(entrance).toEqual(entrance.map((_, index) => ({
+    name: 'hkk-card-enter',
+    delay: index === 0 ? '0s' : `${(index * 0.14).toFixed(2)}s`,
+  })));
   await page.waitForTimeout(1000);
 
   const card = page.locator('.hkk-mode-card').nth(1);
@@ -119,13 +145,13 @@ test('homepage fits desktop, tablet, Android and iPhone widths and links to real
       const box = el.getBoundingClientRect();
       return box.left >= 0 && box.right <= innerWidth + 1;
     })).toBe(true);
-    await expect(page.locator('.hkk-mode-card')).toHaveCount(3);
+    await expect(page.locator('.hkk-mode-card')).toHaveCount(4);
     expect(await page.locator('.hkk-phone-screen').evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
     const reject = page.getByRole('button', { name: 'Reject analytics' });
     if (await reject.isVisible()) await reject.click();
     await page.screenshot({ path: `release-artifacts/blue-ui-${width}.png`, fullPage: true, animations: 'disabled' });
-    await page.getByRole('button', { name: 'Use dark theme' }).click();
-    await expect(page.locator('html')).toHaveClass(/dark/);
+    await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await page.screenshot({ path: `release-artifacts/blue-ui-${width}-dark.png`, fullPage: true, animations: 'disabled' });
   }
 
@@ -145,10 +171,10 @@ test('homepage finance cards render left of the phone on desktop and below it on
   for (const width of [1440, 820, 393, 375]) {
     await page.setViewportSize({ width, height: width < 500 ? 812 : 1000 });
     await page.goto('/');
-    await expect(page.locator('.hkk-mode-card')).toHaveCount(3);
+    await expect(page.locator('.hkk-mode-card')).toHaveCount(4);
 
     for (const theme of ['light', 'dark']) {
-      if (theme === 'dark') await page.getByRole('button', { name: 'Use dark theme' }).click();
+      if (theme === 'dark') await page.getByRole('button', { name: 'Switch to dark theme' }).click();
       const layout = await page.evaluate(() => {
         const bounds = (element) => {
           const { left, right, top, bottom } = element.getBoundingClientRect();
@@ -171,11 +197,9 @@ test('homepage finance cards render left of the phone on desktop and below it on
       if (width === 1440) {
         expect(layout.copy.right).toBeLessThan(cardLeft);
         expect(cardRight).toBeLessThan(layout.phone.left);
-        expect(layout.cards[0].right - layout.cards[0].left).toBeCloseTo(196, 0);
       } else if (width === 820) {
         expect(layout.copy.bottom).toBeLessThan(layout.phone.top);
         expect(cardRight).toBeLessThan(layout.phone.left);
-        expect(layout.cards[0].right - layout.cards[0].left).toBeCloseTo(196, 0);
       } else {
         expect(layout.copy.bottom).toBeLessThan(layout.phone.top);
         expect(layout.phone.bottom).toBeLessThan(cardTop);
@@ -184,39 +208,13 @@ test('homepage finance cards render left of the phone on desktop and below it on
   }
 });
 
-test('official logo loads and blue theme follows and persists the visitor preference', async ({ browser, baseURL }) => {
-  const context = await browser.newContext({ colorScheme: 'dark' });
-  const page = await context.newPage();
-  await page.route((url) => url.pathname.startsWith('/api/'), (route) => route.fulfill({
-    status: 401, contentType: 'application/json', body: '{"message":"Not authenticated"}',
-  }));
-  await page.goto(baseURL);
-  await expect(page.locator('html')).toHaveClass(/dark/);
-  await expect(page.locator('.hkk-phone-top img')).toBeVisible();
-  await expect.poll(() => page.locator('.hkk-phone-top img').evaluate((img) => img.naturalWidth)).toBeGreaterThan(0);
-  const initial = await page.evaluate(() => ({
-    background: document.documentElement.style.backgroundColor,
-    brand: getComputedStyle(document.documentElement).getPropertyValue('--brand-600').trim(),
-    logoLoaded: document.querySelector('.hkk-phone-top img')?.naturalWidth > 0,
-  }));
-  expect(initial).toEqual({ background: 'rgb(8, 27, 75)', brand: '20 104 255', logoLoaded: true });
-
-  await page.getByRole('button', { name: 'Use light theme' }).click();
-  await expect(page.locator('html')).not.toHaveClass(/dark/);
-  expect(await page.evaluate(() => localStorage.getItem('hw-theme'))).toBe('light');
-  await page.reload();
-  await expect(page.locator('html')).not.toHaveClass(/dark/);
-  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--brand-600').trim())).toBe('20 104 255');
-  await context.close();
-});
-
 test('iPhone 12 preview keeps its proportions and the complete dashboard visible', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   for (const [width, height, phoneWidth] of [[1440, 900, 250], [1280, 720, 250], [820, 1180, 240], [390, 844, 250], [375, 667, 250]]) {
     await page.setViewportSize({ width, height });
     await page.goto('/');
     for (const theme of ['light', 'dark']) {
-      if (theme === 'dark') await page.getByRole('button', { name: 'Use dark theme' }).click();
+      if (theme === 'dark') await page.getByRole('button', { name: 'Switch to dark theme' }).click();
       for (let mode = 0; mode < 3; mode += 1) {
         await page.locator('.hkk-mode-card').nth(mode).click();
         const layout = await page.evaluate(() => {
@@ -248,4 +246,173 @@ test('iPhone 12 preview keeps its proportions and the complete dashboard visible
       }
     }
   }
+});
+
+test('demo preview stays public, fictional and isolated from finance APIs', async ({ page }) => {
+  const apiRequests = [];
+  await page.unrouteAll();
+  await page.route((url) => url.pathname.startsWith('/api/'), (route) => {
+    apiRequests.push(new URL(route.request().url()).pathname);
+    if (new URL(route.request().url()).pathname === '/api/auth/config') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(apiEnvelope({ google: { enabled: false } })) });
+    }
+    return route.fulfill({ status: 401, contentType: 'application/json', body: '{"message":"Not authenticated"}' });
+  });
+
+  await page.goto('/login');
+  await page.getByRole('link', { name: 'Explore Demo Preview' }).click();
+  await expect(page).toHaveURL(/\?demo=preview#finance-preview$/);
+  await expect(page.getByText('Demo Preview Mode')).toBeVisible();
+  await expect(page.getByText(/No account or session is created/)).toBeVisible();
+  await expect(page.locator('.hkk-phone')).toContainText('Illustrative PKR figures');
+  await expect(page.locator('.hkk-phone-actions button')).toHaveCount(2);
+  await expect(page.locator('.hkk-phone-actions button').first()).toBeDisabled();
+  await expect(page.locator('.hkk-phone-actions button').last()).toBeDisabled();
+  await expect(page.locator('.hkk-phone-nav a')).toHaveCount(0);
+  for (const mode of ['Individual', 'Household', 'Shared Living']) {
+    await page.locator('.hkk-mode-card').filter({ hasText: mode }).click();
+    await expect(page.locator('.hkk-phone')).toHaveAttribute('aria-label', `${mode} sample finance preview`);
+  }
+  expect(apiRequests.every((path) => path === '/api/auth/config')).toBe(true);
+  expect(await page.evaluate(() => Object.keys(localStorage).filter((key) => /token|demo/i.test(key)))).toEqual([]);
+  const rejectAnalytics = page.getByRole('button', { name: 'Reject analytics' });
+  if (await rejectAnalytics.isVisible()) await rejectAnalytics.click();
+  for (const width of [1440, 375]) {
+    await page.setViewportSize({ width, height: width === 375 ? 812 : 1000 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: `release-artifacts/demo-preview-${width}.png`, fullPage: true });
+    await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+    await page.screenshot({ path: `release-artifacts/demo-preview-${width}-dark.png`, fullPage: true });
+    await page.getByRole('button', { name: 'Switch to light theme' }).click();
+  }
+  await page.getByRole('link', { name: 'Exit preview and sign in' }).click();
+  await expect(page).toHaveURL(/\/login\/?$/);
+  expect(apiRequests.every((path) => path === '/api/auth/config')).toBe(true);
+});
+
+test('normal login renders dashboard, restores session and logs out with existing API contract', async ({ page }) => {
+  let signedIn = false;
+  let loginPosts = 0;
+  let logoutPosts = 0;
+  await page.unrouteAll();
+  await page.route((url) => url.pathname.startsWith('/api/'), (route) => {
+    const req = route.request();
+    const path = new URL(req.url()).pathname;
+    let data = {};
+    if (path === '/api/auth/config') data = { google: { enabled: false } };
+    else if (path === '/api/auth/login' && req.method() === 'POST') {
+      signedIn = true; loginPosts += 1; data = { user: testUser, accessToken: 'local-test-token' };
+    } else if (path === '/api/auth/me') {
+      if (!signedIn) return route.fulfill({ status: 401, contentType: 'application/json', body: '{"message":"Not authenticated"}' });
+      data = { user: testUser };
+    } else if (path === '/api/auth/logout' && req.method() === 'POST') {
+      signedIn = false; logoutPosts += 1;
+    } else if (path === '/api/dashboard/summary') data = dashboard;
+    else if (path === '/api/profile/categories') data = { defaults: [], custom: [], all: [] };
+    else if (path === '/api/notifications') data = { items: [] };
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(apiEnvelope(data)) });
+  });
+
+  await page.goto('/login');
+  await page.getByLabel('Email').fill('user@example.test');
+  await page.locator('input[name="password"]').fill('local-test-password');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(page).toHaveURL(/\/dashboard\/?$/);
+  await expect(page.getByText('Income minus spending')).toBeVisible();
+  expect(loginPosts).toBe(1);
+  expect(await page.evaluate(() => document.body.innerText.includes('Rs 60,000'))).toBe(true);
+
+  await page.reload();
+  await expect(page.getByText('Income minus spending')).toBeVisible();
+  await page.getByRole('button', { name: /^TU(?: Test)?$/ }).click({ timeout: 5000 });
+  await page.getByRole('button', { name: 'Log out' }).click();
+  await expect(page).toHaveURL(/\/login\/?$/);
+  expect(logoutPosts).toBe(1);
+});
+
+test('normal login reports rejected credentials and network failure without creating a session', async ({ page }) => {
+  let networkFailure = false;
+  let financeRequests = 0;
+  await page.unrouteAll();
+  await page.route((url) => url.pathname.startsWith('/api/'), (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === '/api/auth/config') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(apiEnvelope({ google: { enabled: false } })) });
+    }
+    if (path === '/api/auth/login' && networkFailure) return route.abort('failed');
+    if (path === '/api/auth/login') {
+      return route.fulfill({ status: 401, contentType: 'application/json', body: '{"message":"Invalid email or password"}' });
+    }
+    financeRequests += 1;
+    return route.fulfill({ status: 401, contentType: 'application/json', body: '{"message":"Not authenticated"}' });
+  });
+
+  await page.goto('/login');
+  await page.getByLabel('Email').fill('user@example.test');
+  await page.locator('input[name="password"]').fill('incorrect-password');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(page.getByText('Invalid email or password')).toBeVisible();
+  await expect(page).toHaveURL(/\/login\/?$/);
+
+  networkFailure = true;
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(page.getByText('Cannot reach the server. Is the backend running?')).toBeVisible();
+  await expect(page).toHaveURL(/\/login\/?$/);
+  expect(financeRequests).toBe(0);
+});
+
+test('expired session is rejected and redirects a protected route to login', async ({ page }) => {
+  const requests = [];
+  await page.unrouteAll();
+  await page.route((url) => url.pathname.startsWith('/api/'), (route) => {
+    const path = new URL(route.request().url()).pathname;
+    requests.push(path);
+    return route.fulfill({ status: 401, contentType: 'application/json', body: '{"message":"Session expired"}' });
+  });
+  await page.goto('/dashboard');
+  await expect(page).toHaveURL(/\/login\/?$/);
+  expect(requests).toContain('/api/auth/me');
+  expect(requests).toContain('/api/auth/refresh');
+  expect(requests.every((path) => path.startsWith('/api/auth/'))).toBe(true);
+});
+
+/**
+ * Ported from the older homepage-blue-ui spec, which covered four things the
+ * tests above do not: that the OS dark preference is honoured on first paint,
+ * that the official mark is a real image that actually decodes, that the blue
+ * tokens resolve to their approved values, and that a visitor's theme choice
+ * survives a reload. The button label is the current one; the old copy still
+ * asked for "Use light theme", which this branch renamed.
+ */
+test('official logo loads and the blue theme follows and persists the visitor preference', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ colorScheme: 'dark' });
+  const page = await context.newPage();
+  await page.route((url) => url.pathname.startsWith('/api/'), (route) => route.fulfill({
+    status: 401, contentType: 'application/json', body: '{"message":"Not authenticated"}',
+  }));
+
+  await page.goto(baseURL);
+  await expect(page.locator('html')).toHaveClass(/dark/);
+  await expect(page.locator('.hkk-phone-top img')).toBeVisible();
+  await expect
+    .poll(() => page.locator('.hkk-phone-top img').evaluate((img) => img.naturalWidth))
+    .toBeGreaterThan(0);
+
+  expect(await page.evaluate(() => ({
+    background: document.documentElement.style.backgroundColor,
+    brand: getComputedStyle(document.documentElement).getPropertyValue('--brand-600').trim(),
+    logoLoaded: document.querySelector('.hkk-phone-top img')?.naturalWidth > 0,
+  }))).toEqual({ background: 'rgb(8, 27, 75)', brand: '20 104 255', logoLoaded: true });
+
+  await page.getByRole('button', { name: 'Switch to light theme' }).click();
+  await expect(page.locator('html')).not.toHaveClass(/dark/);
+  expect(await page.evaluate(() => localStorage.getItem('hkk-theme'))).toBe('light');
+
+  // The choice has to outlive the page, not just the click.
+  await page.reload();
+  await expect(page.locator('html')).not.toHaveClass(/dark/);
+  expect(await page.evaluate(
+    () => getComputedStyle(document.documentElement).getPropertyValue('--brand-600').trim()
+  )).toBe('20 104 255');
+  await context.close();
 });

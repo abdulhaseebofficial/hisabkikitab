@@ -272,9 +272,15 @@ const deleteAccount = async (userId, password) => {
     throw err;
   }
   if (!deletion.deleted) {
-    if (deletion.hasSuccessor)
-      throw ApiError.conflict('shared.ownerTransferBeforeDelete');
-    throw ApiError.conflict('shared.ownerNoSuccessorDelete');
+    // A space and a business are both blocked by ownership, but the way out of
+    // each is different, so they must not share one message.
+    const business = deletion.blocker === 'business';
+    if (deletion.hasSuccessor) {
+      throw ApiError.conflict(business
+        ? 'shared.businessOwnerTransferBeforeDelete' : 'shared.ownerTransferBeforeDelete');
+    }
+    throw ApiError.conflict(business
+      ? 'shared.businessOwnerNoSuccessorDelete' : 'shared.ownerNoSuccessorDelete');
   }
 };
 
@@ -311,6 +317,7 @@ const findByResetToken = (hashedToken) => usersRepo.findByResetToken(hashedToken
 const revokeAllSessions = (userId) => usersRepo.revokeAllSessions(userId);
 
 const findById = (userId, options) => usersRepo.findById(userId, options);
+const findDemo = () => usersRepo.findDemo();
 
 /* ------------------------------- google ----------------------------- */
 // Thin pass-throughs, like findByEmail above: auth owns the sign-in decision,
@@ -338,6 +345,7 @@ module.exports = {
   findByResetToken,
   revokeAllSessions,
   findById,
+  findDemo,
   findByGoogleId,
   linkGoogleId,
   createFromGoogle,

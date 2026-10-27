@@ -283,11 +283,51 @@ const mustReject = async (tx, name, sql, params, expected) => {
              JOIN pg_attribute a ON a.attrelid=conrelid AND a.attnum=k.attnum
              WHERE a.attname='user_id')`
     );
+    // Two business tables are an audit trail for a whole team rather than one
+    // person's records: a cashier leaving must not erase the sales history the
+    // owner is accountable for. They anonymise the actor with SET NULL and are
+    // removed with the business itself, which is asserted below. Everything
+    // else that names a user must cascade.
+    const ANONYMISED_ON_DELETE = new Set(['biz_audit_logs', 'biz_offline_sync_log']);
     const notCascading = cascades.rows.filter((r) => r.confdeltype !== 'c');
+    const orphaning = notCascading.filter(
+      (r) => !(ANONYMISED_ON_DELETE.has(r.table_name) && r.confdeltype === 'n')
+    );
     ok(
-      'deleting an account removes every table that references it',
-      notCascading.length === 0,
-      notCascading.map((r) => `${r.table_name}=${r.confdeltype}`).join(', ') || 'all CASCADE'
+      'deleting an account removes or anonymises every table that references it',
+      orphaning.length === 0,
+      orphaning.map((r) => `${r.table_name}=${r.confdeltype}`).join(', ') || 'all CASCADE or anonymised'
+    );
+
+    for (const table of ANONYMISED_ON_DELETE) {
+      const viaBusiness = await tx.query(
+        `SELECT confdeltype FROM pg_constraint
+          WHERE contype='f' AND conrelid=$1::regclass AND confrelid='businesses'::regclass
+            AND EXISTS (SELECT 1 FROM unnest(conkey) AS k(attnum)
+              JOIN pg_attribute a ON a.attrelid=conrelid AND a.attnum=k.attnum
+              WHERE a.attname='business_id')`,
+        [table]
+      );
+      ok(
+        `${table} is still removed with its business`,
+        viaBusiness.rows.length === 1 && viaBusiness.rows[0].confdeltype === 'c',
+        viaBusiness.rows.map((r) => r.confdeltype).join(',') || 'no business_id foreign key'
+      );
+    }
+
+    // An owned business blocks the DELETE outright, so the account service has
+    // to recognise it rather than let the violation look like a lost race.
+    const ownerRule = await tx.query(
+      `SELECT confdeltype FROM pg_constraint
+        WHERE contype='f' AND conrelid='businesses'::regclass AND confrelid='users'::regclass
+          AND EXISTS (SELECT 1 FROM unnest(conkey) AS k(attnum)
+            JOIN pg_attribute a ON a.attrelid=conrelid AND a.attnum=k.attnum
+            WHERE a.attname='owner_id')`
+    );
+    ok(
+      'a business owner is refused deletion rather than silently losing the business',
+      ownerRule.rows.length === 1 && ownerRule.rows[0].confdeltype === 'r',
+      ownerRule.rows.map((r) => r.confdeltype).join(',') || 'no owner_id foreign key'
     );
 
     await tx.query('ROLLBACK');

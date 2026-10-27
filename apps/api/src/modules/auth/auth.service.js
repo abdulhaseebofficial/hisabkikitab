@@ -172,9 +172,17 @@ const login = async (email, password) => {
   if (!user || !passwordMatches) {
     throw ApiError.unauthorized('Invalid email or password');
   }
+  if (user.isDemo) throw ApiError.unauthorized('Use Try Demo to open the read-only demo');
 
   const session = await issueSession(user);
   return { user: users.toPublic(user), ...session };
+};
+
+/** Issues a normal session for the one database-marked demo identity. */
+const loginDemo = async () => {
+  const user = await users.findDemo();
+  if (!user) throw ApiError.internal('Demo account is not available');
+  return { user: users.toPublic(user), accessToken: signAccessToken(user._id, user.tokenVersion) };
 };
 
 /* ------------------------------ refresh ----------------------------- */
@@ -351,6 +359,7 @@ module.exports = {
   signInWithGoogle,
   register,
   login,
+  loginDemo,
   refresh,
   logout,
   forgotPassword,

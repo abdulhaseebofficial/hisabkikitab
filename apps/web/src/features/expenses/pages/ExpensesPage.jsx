@@ -33,7 +33,8 @@ const INITIAL_FILTERS = {
 
 export default function Expenses() {
   const { t } = useT();
-  const { currency } = useAuth();
+  const { user, currency } = useAuth();
+  const readOnly = Boolean(user?.isDemo);
   const { categories } = useCategories();
   // The shell owns the add-an-expense dialog. Using it here rather than a
   // second copy is what lets the button honestly advertise the N shortcut:
@@ -168,8 +169,8 @@ export default function Expenses() {
                 key={expense._id}
                 expense={expense}
                 currency={currency}
-                onEdit={openEdit}
-                onDelete={setDeleting}
+                onEdit={readOnly ? undefined : openEdit}
+                onDelete={readOnly ? undefined : setDeleting}
               />
             ))}
           </ul>

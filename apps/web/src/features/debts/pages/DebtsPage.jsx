@@ -29,7 +29,8 @@ const DEFAULT_FILTERS = { search: '', page: 1 };
  * with itself.
  */
 export default function DebtsPage() {
-  const { currency } = useAuth();
+  const { user, currency } = useAuth();
+  const readOnly = Boolean(user?.isDemo);
   const { t } = useT();
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -153,9 +154,9 @@ export default function DebtsPage() {
   return (
     <div className="space-y-5">
       <PageHeader title={t('udhaar.title')} subtitle={t('udhaar.subtitle')}>
-        <Button icon={Plus} onClick={() => { setEditing(null); setFormOpen(true); }}>
+        {!readOnly && <Button icon={Plus} onClick={() => { setEditing(null); setFormOpen(true); }}>
           {t('udhaar.addRecord')}
-        </Button>
+        </Button>}
       </PageHeader>
 
       <div className="grid gap-2 sm:grid-cols-2">
@@ -190,7 +191,7 @@ export default function DebtsPage() {
           }
           actionLabel={filters.search ? undefined : t('udhaar.empty.action')}
           actionIcon={Plus}
-          onAction={filters.search ? undefined : () => { setEditing(null); setFormOpen(true); }}
+          onAction={readOnly || filters.search ? undefined : () => { setEditing(null); setFormOpen(true); }}
         />
       ) : (
         <div className="space-y-2">
@@ -198,7 +199,7 @@ export default function DebtsPage() {
             <div key={person.key} className="hw-card overflow-hidden p-3 sm:p-4">
               <button type="button" className="flex w-full items-center justify-between gap-3 text-left" aria-expanded={openPerson === person.key}
                 onClick={() => { setOpenPerson(openPerson === person.key ? '' : person.key); setRecordPage(1); }}>
-                <span className="min-w-0"><strong className="block truncate">{person.name}</strong><span className="text-xs text-slate-500 dark:text-slate-400">{person.recordCount} {t('udhaar.records')} · {person.contactInfo ? `${person.contactInfo} · ` : ''}{t('udhaar.contactRef')} {person.contactId?.slice(-6)}</span></span>
+                <span className="min-w-0"><strong className="block truncate">{person.name}</strong><span className="text-xs text-slate-500 dark:text-slate-400">{person.recordCount} {t('udhaar.records')}{person.contactInfo ? ` · ${person.contactInfo}` : ''}</span></span>
                 <span className="flex shrink-0 items-center gap-2 text-right"><span className="text-sm font-semibold tabular-nums">{person.netBalance > 0 ? t('udhaar.personOwesYou') : person.netBalance < 0 ? t('udhaar.youOwePerson') : t('udhaar.settled')}: {formatMoney(Math.abs(person.netBalance), currency)}</span><ChevronDown className="h-4 w-4" /></span>
               </button>
               {openPerson === person.key && <div className="mt-3 space-y-2 border-t border-slate-200 pt-3 dark:border-slate-700">
@@ -248,6 +249,7 @@ export default function DebtsPage() {
       />}
 
       <DebtDetail
+        readOnly={readOnly}
         open={Boolean(openId) && !detailLoading}
         onClose={() => setOpenId(null)}
         debt={detail?.debt}

@@ -6,6 +6,7 @@ import Input from '../../../shared/components/ui/Input';
 import { PAYMENT_METHODS } from '../../../shared/utils/constants';
 import { cn, toInputDate } from '../../../shared/utils/format';
 import useT from '../../../shared/i18n/I18nProvider';
+import useCategoryLabel from '../../../shared/i18n/useCategoryLabel';
 
 // Keys, not labels: the preset a person picked must survive a language
 // change, and only the word on the pill is allowed to move.
@@ -17,6 +18,15 @@ const PRESETS = [
 ];
 
 /** Turns a preset key into a from/to pair. */
+/**
+ * The date range a preset fills the two date inputs with.
+ *
+ * These are the calendar days a person reads and edits, so they follow the
+ * same local calendar as the date picker beside them and as the day a new
+ * expense is dated with. The server then reads each day as a UTC bound, which
+ * is where the accounting month is defined - see
+ * docs/TIMEZONE_AND_PERIOD_POLICY.md.
+ */
 export const presetRange = (key) => {
   const now = new Date();
 
@@ -26,7 +36,12 @@ export const presetRange = (key) => {
     return { from: toInputDate(from), to: toInputDate(now) };
   }
   if (key === 'month') {
-    return { from: toInputDate(new Date(now.getFullYear(), now.getMonth(), 1)), to: toInputDate(now) };
+    // To the end of the month rather than to today. A new expense is dated by
+    // the local calendar day, which east of UTC can be a day ahead of the UTC
+    // day: ending the range at "now" meant an expense recorded after local
+    // midnight disappeared from This month the instant it was saved.
+    return { from: toInputDate(new Date(now.getFullYear(), now.getMonth(), 1)),
+      to: toInputDate(new Date(now.getFullYear(), now.getMonth() + 1, 0)) };
   }
   if (key === 'prev') {
     const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -47,6 +62,8 @@ export const presetRange = (key) => {
  */
 export default function ExpenseFilters({ filters, onChange, onReset, categories = [], resultCount }) {
   const { t } = useT();
+  // The filter carries the stored id; the chip and the dropdown show the words.
+  const categoryLabel = useCategoryLabel();
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const set = (patch) => onChange({ ...filters, ...patch, page: 1 });
@@ -54,7 +71,7 @@ export default function ExpenseFilters({ filters, onChange, onReset, categories 
   // One entry per narrowing filter, each able to clear just itself.
   const activeChips = [
     filters.search && { key: 'search', label: t('filters.chipSearch', { value: filters.search }), clear: { search: '' } },
-    filters.category && { key: 'category', label: filters.category, clear: { category: '' } },
+    filters.category && { key: 'category', label: categoryLabel(filters.category), clear: { category: '' } },
     filters.paymentMethod && {
       key: 'paymentMethod',
       label: t('filters.chipPaidWith', { value: filters.paymentMethod }),
@@ -87,6 +104,7 @@ export default function ExpenseFilters({ filters, onChange, onReset, categories 
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="search"
+            dir="auto"
             value={filters.search}
             onChange={(event) => set({ search: event.target.value })}
             placeholder={t('expenses.searchPlaceholder')}
@@ -179,7 +197,7 @@ export default function ExpenseFilters({ filters, onChange, onReset, categories 
         <div className="grid gap-3 border-t border-slate-200 pt-3 sm:grid-cols-2 lg:grid-cols-4 dark:border-slate-800">
           <Select
             label={t('common.category')}
-            options={categories}
+            options={categories.map((id) => ({ value: id, label: categoryLabel(id) }))}
             placeholder={t('expenses.anyCategory')}
             value={filters.category}
             onChange={(event) => set({ category: event.target.value })}

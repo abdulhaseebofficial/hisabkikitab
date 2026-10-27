@@ -14,9 +14,13 @@
  *
  * Amounts and descriptions are sized for Pakistan.
  *
- *   email:    demo@hisabkikitab.app
- *   password: demo1234
+ * Legacy implementation retained for migration history. The active seed is
+ * the deterministic, read-only implementation below.
  */
+
+require('./demo-readonly');
+
+if (false) {
 
 require('dotenv').config();
 const connectDB = require('../../apps/api/src/infrastructure/database/connect');
@@ -118,7 +122,7 @@ const run = async () => {
     // what the dashboard says good morning to in both of them.
     name: 'Demo User',
     email: DEMO_EMAIL,
-    password: 'demo1234',
+    password: String(Date.now()),
     monthlyIncome: 28000,
     currency: 'PKR',
     university: 'University of the Punjab, Lahore',
@@ -322,7 +326,7 @@ const run = async () => {
   console.log('');
   console.log('  Demo data ready');
   console.log(`  email     ${DEMO_EMAIL}`);
-  console.log('  password  demo1234');
+  console.log('  password login disabled');
   console.log(`  expenses  ${n} (${studentRows} student, ${houseRows} householder)`);
   console.log('  Switch modes in Settings to see the two sets of books.');
   console.log('');
@@ -336,3 +340,4 @@ run().catch(async (err) => {
   await closePool().catch(() => {});
   process.exit(1);
 });
+}

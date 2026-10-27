@@ -9,13 +9,6 @@
   font-display: swap;
   src: url('@fontsource-variable/inter/files/inter-latin-wght-normal.woff2') format('woff2-variations');
 }
-@font-face {
-  font-family: 'Source Serif 4 Variable';
-  font-style: normal;
-  font-weight: 200 900;
-  font-display: swap;
-  src: url('@fontsource-variable/source-serif-4/files/source-serif-4-latin-wght-normal.woff2') format('woff2-variations');
-}
 
 @layer base {
   :root {
@@ -82,14 +75,14 @@
   }
 
   body {
-    /* Cream paper in light, warm charcoal in dark - never pure white or black. */
     @apply bg-canvas-light text-slate-900 antialiased;
     @apply dark:bg-canvas-dark dark:text-slate-100;
     font-family: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    transition: background-color 180ms ease, color 180ms ease;
   }
 
-  /* Page titles wear the serif. Doing it here means no component has to opt in. */
+  /* Keep headings in the same crisp sans-serif family as the product UI. */
   h1 {
     @apply font-display font-semibold tracking-[-0.01em];
     overflow-wrap: break-word;
@@ -132,7 +125,7 @@
   }
 
   ::selection {
-    @apply bg-brand-200 text-slate-900;
+    @apply bg-brand-600 text-white;
   }
 }
 
@@ -179,6 +172,48 @@
     @apply mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300;
   }
 
+  /*
+   * Every element that carries text somebody typed is marked dir="auto", and
+   * this is what makes that marking safe.
+   *
+   * `plaintext` does two things. It picks the direction from the text's own
+   * first strong character, so an Urdu description right-aligns and an English
+   * one does not. And it makes the element a bidi paragraph of its own, which
+   * means a stray RTL override (U+202E) pasted into a note cannot reach out and
+   * reorder the amount, the date or the row beside it. Stored text is never
+   * altered to defend against that - it is contained instead, which is the
+   * difference between protecting the reader and rewriting the record.
+   *
+   * Browsers apply this through their own stylesheet for dir="auto"; saying it
+   * here means a reset or a future Tailwind preflight cannot quietly drop it.
+   */
+  [dir='auto'] {
+    unicode-bidi: plaintext;
+  }
+
+  /*
+   * The same rule for every field a person types prose into, reached through
+   * CSS rather than through an attribute on each one.
+   *
+   * `unicode-bidi: plaintext` is the CSS equivalent of dir="auto": the field
+   * takes its direction from the first strong character of its own value, so
+   * an Urdu description right-aligns as it is typed and an English one does
+   * not. Doing it here covers the ninety-odd hand-written inputs across the
+   * Business screens as well as the shared components, without touching
+   * ninety-odd call sites - and a field that renders through `hw-input` later
+   * gets it for free.
+   *
+   * Scoped to the types that hold prose. An amount, a date, an email or a
+   * password is a structured value: letting one of those re-align itself would
+   * move a figure out of its column the moment it began with an Urdu digit.
+   * `select` is excluded for the same reason - its text is a label we chose,
+   * not something the person wrote.
+   */
+  textarea.hw-input,
+  input.hw-input:is([type='text'], [type='search'], :not([type])) {
+    unicode-bidi: plaintext;
+  }
+
   .hw-error {
     @apply mt-1.5 text-xs font-medium text-danger;
   }
@@ -206,10 +241,10 @@
     @apply absolute inset-0 -translate-x-full;
     background-image: linear-gradient(
       90deg,
-      rgba(253, 252, 250, 0) 0,
-      rgba(253, 252, 250, 0.35) 45%,
-      rgba(253, 252, 250, 0.6) 60%,
-      rgba(253, 252, 250, 0)
+      rgb(var(--slate-50) / 0) 0,
+      rgb(var(--slate-50) / 0.04) 45%,
+      rgb(var(--slate-50) / 0.07) 60%,
+      rgb(var(--slate-50) / 0)
     );
     animation: shimmer 1.6s infinite;
   }
