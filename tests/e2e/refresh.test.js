@@ -14,9 +14,11 @@
  * whole point and it cannot be faked convincingly.
  */
 const path = require('path');
-const { ok, section, heading, call, report, requireApi, bailIfRateLimited } = require('./helpers');
+const { ok, section, heading, call, report, requireApi, bailIfRateLimited, BASE } = require('./helpers');
 
-const BASE = (process.env.API_URL || 'http://localhost:5000') + '/api';
+// BASE comes from helpers so this suite and the shared `call()` always hit the
+// same server. They used to diverge - this read API_URL while call() read
+// HW_API - and pointing them at two servers made a working session look broken.
 
 /** A raw refresh call carrying an explicit cookie, so tabs can be simulated. */
 const refreshWith = async (cookie) => {

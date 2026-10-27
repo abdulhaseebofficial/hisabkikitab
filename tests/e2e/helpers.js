@@ -8,7 +8,31 @@
 
 require('../../scripts/require-test-database');
 const crypto = require('node:crypto');
-const BASE = process.env.HW_API || 'http://localhost:5000/api';
+
+/**
+ * One canonical API base for every suite that shares a login.
+ *
+ * Two names are accepted for historical reasons: most suites read HW_API (which
+ * already carries the /api suffix), while refresh.test.js read API_URL (an
+ * origin, with /api appended). When those point at different servers the
+ * symptom is baffling - a token minted against one server is rejected by the
+ * other, every /auth/me 401s, and it looks like an authentication bug that is
+ * not there. So if both are set they must resolve to the same origin, and we
+ * fail loudly here - before a single request - rather than let a suite mutate
+ * state against a server it never authenticated with.
+ */
+const toOrigin = (v) => (v ? v.trim().replace(/\/api\/?$/, '').replace(/\/$/, '') : '');
+const hwOrigin = toOrigin(process.env.HW_API);
+const apiOrigin = toOrigin(process.env.API_URL);
+if (hwOrigin && apiOrigin && hwOrigin !== apiOrigin) {
+  throw new Error(
+    `Test API targets conflict: HW_API resolves to "${hwOrigin}" but API_URL resolves to ` +
+      `"${apiOrigin}". Suites that share a session must target one server - set both to the ` +
+      'same origin, or set only one.'
+  );
+}
+const ORIGIN = hwOrigin || apiOrigin || 'http://localhost:5000';
+const BASE = `${ORIGIN}/api`;
 
 const state = { pass: 0, failures: [], cookie: '' };
 
@@ -133,4 +157,5 @@ module.exports = {
   requireApi,
   bailIfRateLimited,
   currentCookie,
+  BASE,
 };
