@@ -10,11 +10,14 @@ import TrustContent from '../features/trust/TrustContent';
 
 import { trustPaths, trustPageFromPath } from '../features/trust/content/pages';
 import { trustMetadata } from '../features/trust/metadata';
+import { features, featurePaths, featureMetadata, FeatureContent } from '../features/productFeatures';
 
 export { publicPaths };
 export const toolPaths = ['/tools', ...tools.map((tool) => `/tools/${tool.slug}`)];
 export { trustPaths };
-export const sitemapPaths = [...indexablePaths, ...toolPaths, ...trustPaths];
+export { featurePaths };
+export const sitemapPaths = [...indexablePaths, ...toolPaths, ...trustPaths, ...featurePaths];
+
 function validateArticle(article) {
   if (!article.sections?.length || !article.sources?.length || article.sections.some((section) =>
     !section.blocks?.length || section.blocks.some((block) =>
@@ -22,12 +25,28 @@ function validateArticle(article) {
     throw new Error(`Invalid Learn article body: ${article.slug}`);
   }
 }
+
 export function renderTool(path, origin) {
   const tool = tools.find((item) => `/tools/${item.slug}` === path);
   const page = toolsMetadata(tool, path, origin);
   const html = renderToString(<StaticRouter location={path}><PublicFrame><ToolsContent tool={tool} /></PublicFrame></StaticRouter>);
   return { metadata: { title: page.title, canonical: page.canonical, schema: page.schema, tags: page.tags }, html };
 }
+
+export function renderFeature(path, origin) {
+  const isHub = path === '/features';
+  const feature = isHub ? null : features.find((item) => `/features/${item.slug}` === path);
+  const page = featureMetadata(feature, path, origin);
+  const html = renderToString(
+    <StaticRouter location={path}>
+      <PublicFrame>
+        <FeatureContent feature={feature} isHub={isHub} />
+      </PublicFrame>
+    </StaticRouter>
+  );
+  return { metadata: page, html };
+}
+
 export async function render(path, origin) {
   const page = resolvePage(path);
   if (page.article) {
@@ -38,6 +57,7 @@ export async function render(path, origin) {
   }
   return { initialArticle: page.article || null, metadata: pageMetadata(page, origin), html: renderToString(<StaticRouter location={path}><PublicFrame><LearnContent page={page} /></PublicFrame></StaticRouter>) };
 }
+
 export function renderTrust(path, origin) {
   const page = trustPageFromPath(path);
   if (!page) throw new Error(`Unknown public trust route: ${path}`);

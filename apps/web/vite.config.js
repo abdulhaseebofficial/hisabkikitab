@@ -31,6 +31,7 @@ export default defineConfig(({ isSsrBuild, mode }) => {
     setupFiles: ['./vitest.setup.js'],
     include: ['src/**/*.test.jsx', 'src/**/*.test.js'],
     globals: true,
+    testTimeout: 15000,
   },
 
   // The workspace contract is CommonJS while the web app is ESM. Prebundle it

@@ -1,11 +1,11 @@
 import { readFile, access } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { JSDOM } from 'jsdom';
-import { publicPaths, toolPaths, trustPaths, sitemapPaths } from '../../apps/web/dist-ssr/prerender.js';
+import { publicPaths, toolPaths, trustPaths, featurePaths, sitemapPaths } from '../../apps/web/dist-ssr/prerender.js';
 
 const origin = 'https://www.hisabkikitab.com';
 const dist = resolve('apps/web/dist');
-const generated = new Set([...publicPaths, ...toolPaths, ...trustPaths]);
+const generated = new Set([...publicPaths, ...toolPaths, ...trustPaths, ...featurePaths]);
 const indexable = new Set(sitemapPaths);
 const appRoutes = new Set(['/login', '/register', '/forgot-password', '/onboarding', '/dashboard', '/expenses', '/income', '/goals', '/debts', '/budget', '/advisor', '/reports', '/settings', '/business']);
 const normalize = (path) => path.replace(/\/+$/, '') || '/';

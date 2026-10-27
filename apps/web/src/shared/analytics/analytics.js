@@ -26,7 +26,7 @@ const SAFE_VALUES = Object.freeze({
   method: new Set(['password', 'google']),
   content_category: new Set(['saving','earning','budgeting','personal-finance','household','shared-living','lending-borrowing','freelancing','small-business','financial-habits']),
   calculator_name: new Set(['budget-calculator','savings-goal-calculator','expense-split-calculator','emergency-fund-calculator','debt-repayment-calculator','net-worth-calculator','freelancer-income-calculator']),
-  feature_name: new Set(['dashboard','expenses','income','goals','lending-borrowing','budget','reports','advisor']),
+  feature_name: new Set(['dashboard','expenses','income','goals','lending-borrowing','budget','reports','advisor','features-hub','expense-tracker','monthly-budgeting','shared-living-roommates','lending-borrowing-khata']),
 });
 
 let initialized = false;

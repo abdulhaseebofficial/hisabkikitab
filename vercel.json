@@ -24,6 +24,14 @@
           "destination": "/tools/index.html"
         },
         {
+          "source": "/features/:feature/",
+          "destination": "/features/:feature/index.html"
+        },
+        {
+          "source": "/features/",
+          "destination": "/features/index.html"
+        },
+        {
           "source": "/learn/:category/:slug/",
           "destination": "/learn/:category/:slug/index.html"
         },
@@ -117,6 +125,16 @@
     {
       "source": "/tools/:tool([a-z0-9-]+)",
       "destination": "/tools/:tool/",
+      "statusCode": 301
+    },
+    {
+      "source": "/features",
+      "destination": "/features/",
+      "statusCode": 301
+    },
+    {
+      "source": "/features/:feature([a-z0-9-]+)",
+      "destination": "/features/:feature/",
       "statusCode": 301
     },
     {

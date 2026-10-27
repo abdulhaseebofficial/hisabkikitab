@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { JSDOM } from 'jsdom';
-import { publicPaths, toolPaths, trustPaths, sitemapPaths } from '../../apps/web/dist-ssr/prerender.js';
+import { publicPaths, toolPaths, trustPaths, featurePaths, sitemapPaths } from '../../apps/web/dist-ssr/prerender.js';
 import { scanGeneratedLinks } from './link-graph.mjs';
 
 const origin = 'https://www.hisabkikitab.com';
 const dist = resolve('apps/web/dist');
-const generated = [...publicPaths, ...toolPaths, ...trustPaths];
+const generated = [...publicPaths, ...toolPaths, ...trustPaths, ...featurePaths];
 const documentFor = async (path) => new JSDOM(await readFile(resolve(dist, path === '/' ? 'index.html' : `${path.slice(1)}/index.html`), 'utf8')).window.document;
 const meta = (doc, name, property = 'name') => doc.querySelector(`meta[${property}="${name}"]`)?.content;
 const schemaFor = (doc) => [...doc.querySelectorAll('script[type="application/ld+json"]')].flatMap((script) => {

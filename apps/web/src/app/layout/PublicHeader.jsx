@@ -8,6 +8,7 @@ import InstallAppModal from '../../shared/components/pwa/InstallAppModal';
 
 const links = [
   { to: '/', label: 'Home' },
+  { to: '/features', label: 'Features' },
   { to: '/dashboard', label: 'My finances' },
   { to: '/learn', label: 'Guides' },
   { to: '/tools', label: 'Tools' },
