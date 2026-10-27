@@ -2,11 +2,11 @@
   "slug": "emergency-fund-how-much-should-you-save",
   "category": "personal-finance",
   "title": "Emergency Fund: How Much Should You Save?",
-  "excerpt": "Estimate a personal emergency buffer from essential expenses and your circumstances.",
-  "introduction": "An emergency fund is money reserved for unexpected costs or an interruption to income. There is no single amount that fits every household. The examples here are planning illustrations in PKR.",
+  "excerpt": "Estimate a realistic emergency savings buffer based on essential household costs, income stability, and Pakistani liquid savings options.",
+  "introduction": "An emergency fund is dedicated money reserved for unexpected crises, such as urgent medical care, home repairs, or temporary job interruptions. There is no one-size-fits-all number. The step-by-step guidance below provides practical Pakistani Rupee (PKR) planning scenarios to help you establish financial security without distress borrowing.",
   "author": "HisabKi Kitab Editorial Team",
   "publishedAt": "2026-09-28",
-  "updatedAt": "2026-09-28",
+  "updatedAt": "2026-10-28",
   "featured": true,
   "sections": [
     {
@@ -15,7 +15,7 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "A repair or delayed paycheck can force you to borrow if every rupee is already committed."
+          "text": "When every rupee of monthly income is committed to everyday expenses, an unexpected emergency—such as a hospital bill, sudden car breakdown, water motor failure, or delayed salary—can force individuals into taking expensive credit card debt, high-interest personal loans, or selling jewelry and assets at distress prices."
         }
       ]
     },
@@ -25,7 +25,7 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "Begin with essential monthly expenses, not total salary. Consider how stable your income is, who depends on it, and what other support is available. A smaller first milestone can be more achievable than trying to build a large reserve immediately."
+          "text": "Calculate your target emergency fund based strictly on non-negotiable monthly essential expenses (bare-bones survival budget), NOT your total lifestyle spending. Essential expenses include house rent, basic groceries/ration, necessary utility bills, school fees, and essential medicines. Aim for three progressive milestones: Milestone 1 (1 Month Essentials starter buffer), Milestone 2 (3 Months Core Resilience), and Milestone 3 (6 Months Comprehensive Security)."
         }
       ]
     },
@@ -35,31 +35,35 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "Sara estimates essentials at PKR 40,000 per month. She first targets PKR 10,000, then compares what one, three, or six months of essentials would look like. These are scenarios, not a prescription."
+          "text": "Sara reviews her monthly bank statements and identifies that her essential household baseline costs total PKR 50,000 per month (Rent PKR 22,000, Ration PKR 16,000, Utilities PKR 8,000, Transport PKR 4,000). She develops a tiered emergency savings roadmap with a monthly contribution of PKR 12,500."
         },
         {
           "type": "table",
-          "caption": "Illustrative amounts in PKR",
+          "caption": "Tiered emergency fund milestones and timeline in Pakistani Rupees (PKR)",
           "headers": [
-            "Illustrative buffer",
-            "PKR"
+            "Milestone level",
+            "Months of cover",
+            "Target reserve (PKR)",
+            "Timeline at PKR 12,500/month"
           ],
           "rows": [
             [
-              "First milestone",
-              "10,000"
+              "Starter Milestone (Immediate buffer)",
+              "1 Month",
+              "50,000",
+              "4 months"
             ],
             [
-              "One month",
-              "40,000"
+              "Core Milestone (Standard resilience)",
+              "3 Months",
+              "150,000",
+              "12 months"
             ],
             [
-              "Three months",
-              "120,000"
-            ],
-            [
-              "Six months",
-              "240,000"
+              "Comprehensive Milestone (High security)",
+              "6 Months",
+              "300,000",
+              "24 months"
             ]
           ]
         }
@@ -71,7 +75,7 @@
       "blocks": [
         {
           "type": "calculation",
-          "text": "Essential monthly costs ? months of cover = target reserve. PKR 40,000 ? 3 = PKR 120,000. At PKR 5,000 per month, building this from zero takes 24 months, ignoring withdrawals and returns."
+          "text": "Target Reserve = Monthly Essential Costs × Target Months of Cover. For 3 months: PKR 50,000 × 3 = PKR 150,000. At a disciplined monthly savings contribution of PKR 12,500: PKR 150,000 ÷ PKR 12,500 = 12 months to achieve complete core security."
         }
       ]
     },
@@ -82,11 +86,11 @@
         {
           "type": "steps",
           "items": [
-            "List rent, basic food, utilities, essential travel, and required payments.",
-            "Choose a first milestone you can reasonably work toward.",
-            "Keep the reserve accessible and separate from everyday spending; check account terms and fees.",
-            "Decide which events count as emergencies.",
-            "Review your target after changes in income or dependants and replenish after use."
+            "Calculate your exact monthly survival budget, excluding dining out, entertainment, and luxury shopping.",
+            "Choose Milestone 1 (PKR 50,000) as an achievable first goal before aiming for 6 months of expenses.",
+            "Open a separate, dedicated high-yield or Shariah-compliant Islamic savings account that is distinct from your daily checking account.",
+            "Keep the money fully liquid: accessible within 24 hours via ATM or online banking, but without an active debit card in your everyday wallet.",
+            "Replenish used emergency funds as your top financial priority before resuming discretionary luxury spending."
           ]
         }
       ]
@@ -98,9 +102,10 @@
         {
           "type": "list",
           "items": [
-            "Counting an available loan as emergency savings.",
-            "Using the reserve for predictable annual purchases.",
-            "Keeping urgent money somewhere difficult to access."
+            "Investing emergency reserves in volatile stock markets, crypto, or illiquid property that cannot be cashed out immediately without loss.",
+            "Keeping emergency money in physical cash at home, exposing it to theft, fire, or casual spending temptations.",
+            "Confusing predictable annual expenses (such as Eid shopping, vehicle token tax, or school admission fees) with emergencies—use separate sinking funds for expected annual costs.",
+            "Believing an emergency fund is only for high earners—even a modest PKR 25,000 buffer prevents minor crises from spiraling into borrowing."
           ]
         }
       ]
@@ -111,11 +116,11 @@
       "blocks": [
         {
           "type": "subheading",
-          "text": "Make it easier to keep going"
+          "text": "Where to park emergency savings in Pakistan"
         },
         {
           "type": "tip",
-          "text": "A known annual bill belongs in a separate planned-expense pot, even if it feels large."
+          "text": "Prioritize capital protection and instant liquidity over high yield. Daily-product Islamic savings accounts or money market mutual funds with instant redemption facilities (allowing same-day withdrawal via bank transfer without exit penalties) offer a safe hedge against inflation while ensuring cash is available during genuine emergencies."
         }
       ]
     },
@@ -125,30 +130,47 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "Choose a reserve around your risks and resources. Building it gradually still improves your ability to handle a surprise."
+          "text": "An emergency fund provides more than financial safety; it delivers mental peace. Knowing you have 3 to 6 months of essential living costs set aside allows you to navigate life's inevitable surprises with confidence and dignity."
         }
       ]
     }
   ],
   "sources": [
     {
-      "title": "CFPB: An essential guide to building an emergency fund",
-      "url": "https://www.consumerfinance.gov/an-essential-guide-to-building-an-emergency-fund/"
+      "title": "State Bank of Pakistan — Deposit Protection Corporation (DPC)",
+      "url": "https://www.dpc.org.pk/"
+    },
+    {
+      "title": "SECP Jamapunji: Emergency Funds & Financial Security",
+      "url": "https://jamapunji.pk/"
+    },
+    {
+      "title": "CFPB: An Essential Guide to Building an Emergency Fund",
+      "url": "https://www.consumerfinance.gov/consumer-tools/educator-tools/your-money-your-goals/toolkit/"
     }
   ],
-  "ads": [],
+  "ads": [
+    "after-introduction",
+    "before-related"
+  ],
   "cta": {
-    "label": "Set a savings goal",
-    "to": "/goals"
+    "label": "Calculate your emergency fund target in HisabKi Kitab",
+    "to": "/tools/emergency-fund-calculator/",
+    "featureName": "expense-tracker"
   },
   "faqs": [
     {
-      "question": "How large should an emergency fund be?",
-      "answer": "Estimate from essential costs and your own income stability, dependants and available support. Treat any month target as a planning scenario, not a rule."
+      "question": "How much money should be in an emergency fund in Pakistan? (Emergency fund mein kitnay paise hone chahiye?)",
+      "answer": "Most salaried households should target 3 to 6 months of essential baseline living expenses (rent, ration, utilities). Freelancers, contractors, or single-income families should ideally aim for 6 to 9 months of runway."
     },
     {
-      "question": "Should I use an emergency fund for a planned annual bill?",
-      "answer": "A known bill is usually easier to plan for in a separate sinking fund so emergency savings remain available for unexpected needs."
+      "question": "Where is the best place to keep an emergency fund in Pakistan?",
+      "answer": "Keep your emergency fund in a dedicated, high-liquidity bank savings account or a low-risk daily-redemption Islamic money market mutual fund where your capital is protected and accessible within 24 hours."
+    },
+    {
+      "question": "Can I use a rotating committee (kameti) as my emergency fund?",
+      "answer": "While a kameti helps build savings discipline, it is illiquid and cannot guarantee cash payout on the exact day an unforeseen crisis strikes. A true emergency fund must remain under your direct, immediate control."
     }
-  ]
+  ],
+  "readingTime": 4
 }

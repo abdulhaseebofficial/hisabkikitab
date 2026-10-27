@@ -23,114 +23,134 @@
         "answer": "Check estimates and flexible costs, protect essential needs, and look at realistic changes in timing or income. Avoid assuming borrowed money solves a recurring shortfall."
       }
     ],
-    "readingTime": 2
+    "readingTime": 4
   },
   {
     "slug": "emergency-fund-how-much-should-you-save",
     "category": "personal-finance",
     "title": "Emergency Fund: How Much Should You Save?",
-    "excerpt": "Estimate a personal emergency buffer from essential expenses and your circumstances.",
+    "excerpt": "Estimate a realistic emergency savings buffer based on essential household costs, income stability, and Pakistani liquid savings options.",
     "author": "HisabKi Kitab Editorial Team",
     "publishedAt": "2026-09-28",
-    "updatedAt": "2026-09-28",
+    "updatedAt": "2026-10-28",
     "featured": true,
     "ads": [],
     "cta": {
-      "label": "Set a savings goal",
-      "to": "/goals"
+      "label": "Calculate your emergency fund target in HisabKi Kitab",
+      "to": "/tools/emergency-fund-calculator/",
+      "featureName": "expense-tracker"
     },
     "faqs": [
       {
-        "question": "How large should an emergency fund be?",
-        "answer": "Estimate from essential costs and your own income stability, dependants and available support. Treat any month target as a planning scenario, not a rule."
+        "question": "How much money should be in an emergency fund in Pakistan? (Emergency fund mein kitnay paise hone chahiye?)",
+        "answer": "Most salaried households should target 3 to 6 months of essential baseline living expenses (rent, ration, utilities). Freelancers, contractors, or single-income families should ideally aim for 6 to 9 months of runway."
       },
       {
-        "question": "Should I use an emergency fund for a planned annual bill?",
-        "answer": "A known bill is usually easier to plan for in a separate sinking fund so emergency savings remain available for unexpected needs."
+        "question": "Where is the best place to keep an emergency fund in Pakistan?",
+        "answer": "Keep your emergency fund in a dedicated, high-liquidity bank savings account or a low-risk daily-redemption Islamic money market mutual fund where your capital is protected and accessible within 24 hours."
+      },
+      {
+        "question": "Can I use a rotating committee (kameti) as my emergency fund?",
+        "answer": "While a kameti helps build savings discipline, it is illiquid and cannot guarantee cash payout on the exact day an unforeseen crisis strikes. A true emergency fund must remain under your direct, immediate control."
       }
     ],
-    "readingTime": 2
+    "readingTime": 4
   },
   {
     "slug": "how-freelancers-can-manage-irregular-income",
     "category": "freelancing",
     "title": "How Freelancers Can Manage Irregular Income",
-    "excerpt": "Build a cash-flow plan around payment dates, essential costs and a buffer between stronger and quieter months.",
+    "excerpt": "Build a resilient cash-flow baseline, manage international client payments, and budget for dry spells in Pakistan.",
     "author": "HisabKi Kitab Editorial Team",
     "publishedAt": "2026-09-28",
-    "updatedAt": "2026-09-28",
+    "updatedAt": "2026-10-28",
     "featured": true,
     "ads": [],
     "cta": {
-      "label": "Track your income",
-      "to": "/income"
+      "label": "Track freelance income and expenses in HisabKi Kitab",
+      "to": "/features/expense-tracker/",
+      "featureName": "expense-tracker"
     },
     "faqs": [
       {
-        "question": "Should freelancers budget from their best month?",
-        "answer": "A stronger month may not repeat. Review your own payment history and keep future income estimates cautious."
+        "question": "How should freelancers budget when monthly income is irregular? (Freelance income ka hisab kaise karein?)",
+        "answer": "Calculate your 6-month average income, establish a conservative baseline monthly draw (70% of average), deposit client earnings into a buffer holding account, and transfer only your fixed salary each month to smooth out cash flow."
       },
       {
-        "question": "Are invoices the same as income I can spend?",
-        "answer": "An invoice is a request for payment. Until money clears, track it separately from available cash."
+        "question": "What is a Foreign Inward Remittance Advice (FIRA) and why do Pakistani freelancers need it?",
+        "answer": "A FIRA (or Proceeds Realization Certificate) is an official bank document proving that incoming funds represent export earnings realized through formal banking channels, required for reduced tax rates under FBR Section 154A."
+      },
+      {
+        "question": "How large of a financial runway should a freelancer keep?",
+        "answer": "While salaried employees typically need 3 months of expenses, freelancers should ideally maintain 6 months of essential living costs to comfortably absorb client payment delays and market slow seasons."
       }
     ],
-    "readingTime": 2
+    "readingTime": 4
   },
   {
     "slug": "how-to-create-a-monthly-budget",
     "category": "budgeting",
     "title": "How to Create a Monthly Budget",
-    "excerpt": "Build a monthly plan using your actual income, essential costs, and a realistic savings target.",
+    "excerpt": "Build a monthly household budget using take-home income, essential expenses, and realistic Pakistani Rupee savings targets.",
     "author": "HisabKi Kitab Editorial Team",
     "publishedAt": "2026-09-28",
-    "updatedAt": "2026-09-28",
+    "updatedAt": "2026-10-28",
     "featured": true,
     "ads": [
       "after-introduction",
       "before-related"
     ],
     "cta": {
-      "label": "Create your budget in HisabKi Kitab",
-      "to": "/budget"
+      "label": "Plan your budget with HisabKi Kitab",
+      "to": "/features/monthly-budgeting/",
+      "featureName": "monthly-budgeting"
     },
     "faqs": [
       {
-        "question": "What should a monthly budget include?",
-        "answer": "Include reliable take-home income, essential bills, variable costs, planned savings and flexible spending."
+        "question": "What is the best way to make a monthly salary budget in Pakistan? (Salary ka budget kaise banayein?)",
+        "answer": "Start with your confirmed net take-home pay. Ring-fence 50-60% for essential household costs (rent, ration, utilities), reserve at least 10% for savings, and divide the remaining balance across 4 weeks for day-to-day out-of-pocket expenses."
       },
       {
-        "question": "How often should I review a budget?",
-        "answer": "A short weekly review helps catch changes before the month ends. Update the plan when income or bills change."
+        "question": "How should I handle rising electricity and utility bills in my budget?",
+        "answer": "Track your utility bills across summer and winter seasons. Set aside a 10-15% utility buffer during moderate weather months to absorb peak summer electricity surcharges without breaking your monthly grocery plan."
+      },
+      {
+        "question": "How often should I review my monthly budget?",
+        "answer": "A short 10-minute weekly review helps you identify overspending early, while a full monthly reconciliation at payday allows you to adjust category limits for the upcoming month."
       }
     ],
-    "readingTime": 2
+    "readingTime": 4
   },
   {
     "slug": "how-to-track-money-you-lend-and-borrow",
     "category": "lending-borrowing",
     "title": "How to Keep a Clear Record of Money You Lend and Borrow",
-    "excerpt": "Record who paid, how much is outstanding and when you agreed to review or repay it.",
+    "excerpt": "Track peer loans, Qarz-e-Hasana, installment repayments, and outstanding balances with clear digital records.",
     "author": "HisabKi Kitab Editorial Team",
     "publishedAt": "2026-09-28",
-    "updatedAt": "2026-09-28",
+    "updatedAt": "2026-10-28",
     "featured": true,
     "ads": [],
     "cta": {
-      "label": "Manage lending and borrowing",
-      "to": "/debts"
+      "label": "Track lending and borrowing in HisabKi Kitab",
+      "to": "/features/lending-borrowing-khata/",
+      "featureName": "lending-borrowing-khata"
     },
     "faqs": [
       {
-        "question": "What should a loan record include?",
-        "answer": "Record the people involved, original amount, dates, payments, current outstanding amount and what repayment arrangement both people confirmed."
+        "question": "How can I track money lent to friends and family without causing awkwardness? (Udhar ka hisab kaise rakhein?)",
+        "answer": "Position record-keeping as mutual bookkeeping rather than suspicion. Send a friendly digital message confirming the date, principal amount, and agreed repayment milestones so both parties have an identical point of reference."
       },
       {
-        "question": "Does a personal note replace a formal agreement?",
-        "answer": "A personal record helps with bookkeeping but is not a substitute for a formal agreement or qualified legal advice where those are needed."
+        "question": "What information should be recorded for every loan repayment?",
+        "answer": "Record the payment date, transfer reference or receipt, amount paid, and the new updated outstanding balance. Both parties should verify the updated figure."
+      },
+      {
+        "question": "What is the difference between Qarz-e-Hasana and commercial debt?",
+        "answer": "Qarz-e-Hasana is an interest-free personal loan extended out of goodwill where the borrower repays only the exact principal amount without interest charges, markups, or commercial penalties."
       }
     ],
-    "readingTime": 2
+    "readingTime": 4
   },
   {
     "slug": "how-to-manage-household-expenses",
@@ -156,7 +176,7 @@
         "answer": "Agree who records each purchase and review the shared record together so responsibility does not fall invisibly on one person."
       }
     ],
-    "readingTime": 2
+    "readingTime": 4
   },
   {
     "slug": "how-to-reduce-unnecessary-spending",
@@ -182,7 +202,7 @@
         "answer": "No. A plan should leave room for choices you value and remain workable over time."
       }
     ],
-    "readingTime": 2
+    "readingTime": 4
   },
   {
     "slug": "how-to-save-money-every-month",
@@ -208,7 +228,7 @@
         "answer": "Many people find it easier to set aside an affordable amount when income arrives, then review the plan regularly."
       }
     ],
-    "readingTime": 2
+    "readingTime": 4
   },
   {
     "slug": "how-to-set-financial-goals",
@@ -234,33 +254,38 @@
         "answer": "Review the budget and adjust the amount, target or timeline. Avoid borrowing just to maintain a savings target."
       }
     ],
-    "readingTime": 2
+    "readingTime": 4
   },
   {
     "slug": "how-to-split-expenses-with-roommates",
     "category": "shared-living",
     "title": "How to Split Expenses With Roommates",
-    "excerpt": "Agree on a fair split, record payments, and settle shared costs without confusion.",
+    "excerpt": "Agree on a fair split, track hostel mess and apartment bills, and settle shared costs without confusion.",
     "author": "HisabKi Kitab Editorial Team",
     "publishedAt": "2026-09-28",
-    "updatedAt": "2026-09-28",
+    "updatedAt": "2026-10-28",
     "featured": true,
     "ads": [],
     "cta": {
-      "label": "Track shared expenses",
-      "to": "/dashboard?section=daily"
+      "label": "Manage shared roommate expenses in HisabKi Kitab",
+      "to": "/features/shared-living-roommates/",
+      "featureName": "shared-living-roommates"
     },
     "faqs": [
       {
-        "question": "Should roommates always split expenses equally?",
-        "answer": "Only if everyone agrees that an equal share is fair for that cost. Room size, use and agreements can support a different split."
+        "question": "How should roommates divide utility bills with unequal usage? (Roommates ke darmiyan bills kaise divide karein?)",
+        "answer": "Base utility charges (internet, gas, meter fees) should be split equally. For high-draw appliances like air conditioners or electric heaters used in specific rooms, flatmates should agree on a sub-meter or a seasonal surcharge paid by the user."
       },
       {
-        "question": "How often should shared expenses be settled?",
-        "answer": "Pick a predictable date and agree how receipts, reimbursements and move-out balances will be recorded."
+        "question": "What is the best way to manage shared groceries in a hostel? (Hostel mess ka hisab kaise karein?)",
+        "answer": "Create a pooled digital khata for communal grocery staples (flour, oil, tea, dairy). Log each expense on the day of purchase, and have all participants settle their balances weekly via Raast or digital bank transfer."
+      },
+      {
+        "question": "How do you avoid money disputes with friends when living together?",
+        "answer": "Eliminate guesswork by logging every shared rupee digitally with receipts. Confirm settlements promptly through digital transaction IDs, and hold a 15-minute monthly house meeting to review the ledger together."
       }
     ],
-    "readingTime": 2
+    "readingTime": 4
   },
   {
     "slug": "how-to-track-monthly-expenses",
@@ -286,7 +311,7 @@
         "answer": "Keep transfers separate. They move money between your own accounts rather than paying for something."
       }
     ],
-    "readingTime": 2
+    "readingTime": 4
   },
   {
     "slug": "simple-ways-to-track-income-and-expenses",
@@ -312,6 +337,6 @@
         "answer": "No. A transfer changes where money is held. Record it as a transfer so it is not counted as new income or new spending."
       }
     ],
-    "readingTime": 2
+    "readingTime": 4
   }
 ]

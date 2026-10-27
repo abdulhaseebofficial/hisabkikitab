@@ -2,11 +2,11 @@
   "slug": "how-to-split-expenses-with-roommates",
   "category": "shared-living",
   "title": "How to Split Expenses With Roommates",
-  "excerpt": "Agree on a fair split, record payments, and settle shared costs without confusion.",
-  "introduction": "Shared living is easier when everyone understands what is shared and how it will be paid. The fictional example below uses an equal split in PKR; roommates can agree on another method.",
+  "excerpt": "Agree on a fair split, track hostel mess and apartment bills, and settle shared costs without confusion.",
+  "introduction": "Shared living in a student hostel or flat is easier when everyone understands what is shared and how it will be paid. The practical Pakistani Rupee (PKR) scenario below demonstrates equal splits, utility cost allocation, and transparent settlement bookkeeping.",
   "author": "HisabKi Kitab Editorial Team",
   "publishedAt": "2026-09-28",
-  "updatedAt": "2026-09-28",
+  "updatedAt": "2026-10-28",
   "featured": true,
   "sections": [
     {
@@ -15,7 +15,7 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "One person pays the internet bill, another buys groceries, and nobody knows the final balance."
+          "text": "In shared flats and university hostels, one roommate pays the advance rent deposit, another pays the electricity bill, and someone else buys groceries and cleaning supplies. Without a centralized ledger, informal mental accounting leads to forgotten transactions, delayed settlements, and strained friendships."
         }
       ]
     },
@@ -25,7 +25,7 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "Agree on eligible expenses and the split before spending. Equal shares may fit common supplies, while room size or actual use may justify a different arrangement. Separate what someone owes from what they already paid."
+          "text": "Establish clear ground rules for eligible shared expenses before spending money. Shared costs generally include apartment rent, common utility bills (electricity, gas, water, internet), and communal kitchen essentials. Personal snacks, private transport, and individual phone bills must remain completely separate. Track every expenditure with the exact date, payer, and participating roommates."
         }
       ]
     },
@@ -35,35 +35,39 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "Three roommates agree to share PKR 12,000 of common costs equally. Ali paid PKR 8,000, Sana paid PKR 4,000, and Omar paid nothing yet."
+          "text": "Three university flatmates (Bilal, Hamza, and Usman) in Lahore share a monthly common pool of PKR 60,000 for apartment rent, electricity, and high-speed internet. Bilal paid the full rent upfront, Hamza paid the electricity bill, and Usman paid for internet and drinking water."
         },
         {
           "type": "table",
-          "caption": "Illustrative amounts in PKR",
+          "caption": "Monthly expense split and settlement ledger in Pakistani Rupees (PKR)",
           "headers": [
             "Roommate",
+            "Expense covered",
             "Paid (PKR)",
-            "Share (PKR)",
-            "Settlement"
+            "Fair share (PKR)",
+            "Net settlement status"
           ],
           "rows": [
             [
-              "Ali",
-              "8,000",
-              "4,000",
-              "Receives 4,000"
+              "Bilal",
+              "Apartment Rent",
+              "36,000",
+              "20,000",
+              "Receives 16,000"
             ],
             [
-              "Sana",
-              "4,000",
-              "4,000",
-              "Nothing due"
+              "Hamza",
+              "Electricity Bill (LESCO)",
+              "15,000",
+              "20,000",
+              "Owes 5,000 (pays Bilal)"
             ],
             [
-              "Omar",
-              "0",
-              "4,000",
-              "Pays 4,000"
+              "Usman",
+              "WiFi & Drinking Water",
+              "9,000",
+              "20,000",
+              "Owes 11,000 (pays Bilal)"
             ]
           ]
         }
@@ -75,7 +79,7 @@
       "blocks": [
         {
           "type": "calculation",
-          "text": "PKR 12,000 ? 3 = PKR 4,000 each. Omar pays Ali PKR 4,000; all three then carry the same net cost."
+          "text": "Total common expenses: PKR 36,000 + PKR 15,000 + PKR 9,000 = PKR 60,000. Equal share: PKR 60,000 ÷ 3 roommates = PKR 20,000 each. Hamza transfers PKR 5,000 to Bilal, and Usman transfers PKR 11,000 to Bilal. Bilal receives PKR 16,000, bringing all three roommates to an exact net expenditure of PKR 20,000."
         }
       ]
     },
@@ -86,11 +90,11 @@
         {
           "type": "steps",
           "items": [
-            "Agree which costs are shared and which are personal.",
-            "Choose equal shares or record agreed percentages that total 100%.",
-            "Save receipts and record the payer, date, amount, and participants.",
-            "Review the ledger together on a regular settlement date.",
-            "Mark transfers as settlements so they are not counted as a second expense."
+            "Agree in writing on what counts as shared versus personal before moving in.",
+            "Choose a consistent split method (equal split or room-size weighted).",
+            "Record every shared purchase digitally on the date it occurs, attaching a receipt photo.",
+            "Establish a fixed monthly Settlement Day (such as the 5th of every month) for instant digital transfers (Raast/Easypaisa/JazzCash).",
+            "Mark reimbursement transfers strictly as settlements so they are never double-counted as new expenses."
           ]
         }
       ]
@@ -102,9 +106,10 @@
         {
           "type": "list",
           "items": [
-            "Adding a personal purchase to a shared receipt.",
-            "Changing a split after others have already paid.",
-            "Counting a reimbursement as new household spending."
+            "Allowing unsettled balances to roll over across multiple months until memory fades.",
+            "Forgetting to adjust calculations when a roommate travels home for semester breaks (decide in advance if room rent continues).",
+            "Vague oral promises like 'I will pay next time' without writing down the actual rupee amount.",
+            "Failing to agree on guest policies or extra utility usage from personal heaters or air conditioning units."
           ]
         }
       ]
@@ -115,11 +120,11 @@
       "blocks": [
         {
           "type": "subheading",
-          "text": "Make it easier to keep going"
+          "text": "Handling heavy appliance usage in shared living"
         },
         {
           "type": "tip",
-          "text": "Write down how you will handle a move-out, guests, and partial months before those situations arise."
+          "text": "If one roommate runs a high-wattage air conditioner or room heater while others do not, an equal electricity split can cause resentment. Consider installing a separate sub-meter or agreeing on a seasonal fixed surcharge for the heavy appliance user."
         }
       ]
     },
@@ -129,30 +134,43 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "A clear agreement and a shared record matter more than a complicated formula. Confirm disputed costs before settling."
+          "text": "Shared living works best when money matters are open and objective. Maintaining a digital shared expense ledger eliminates awkward conversations, builds trust, and keeps your living environment harmonious."
         }
       ]
     }
   ],
   "sources": [
     {
-      "title": "CFPB: Spending and cash-flow tools (background; roommate example is original)",
-      "url": "https://www.consumerfinance.gov/consumer-tools/educator-tools/your-money-your-goals/toolkit/"
+      "title": "SECP Jamapunji: Personal Budgeting & Shared Financial Discipline",
+      "url": "https://jamapunji.pk/"
+    },
+    {
+      "title": "Consumer Protection Guidelines for Shared Tenancies",
+      "url": "https://consumer.gov/your-money"
     }
   ],
-  "ads": [],
+  "ads": [
+    "after-introduction",
+    "before-related"
+  ],
   "cta": {
-    "label": "Track shared expenses",
-    "to": "/dashboard?section=daily"
+    "label": "Manage shared roommate expenses in HisabKi Kitab",
+    "to": "/features/shared-living-roommates/",
+    "featureName": "shared-living-roommates"
   },
   "faqs": [
     {
-      "question": "Should roommates always split expenses equally?",
-      "answer": "Only if everyone agrees that an equal share is fair for that cost. Room size, use and agreements can support a different split."
+      "question": "How should roommates divide utility bills with unequal usage? (Roommates ke darmiyan bills kaise divide karein?)",
+      "answer": "Base utility charges (internet, gas, meter fees) should be split equally. For high-draw appliances like air conditioners or electric heaters used in specific rooms, flatmates should agree on a sub-meter or a seasonal surcharge paid by the user."
     },
     {
-      "question": "How often should shared expenses be settled?",
-      "answer": "Pick a predictable date and agree how receipts, reimbursements and move-out balances will be recorded."
+      "question": "What is the best way to manage shared groceries in a hostel? (Hostel mess ka hisab kaise karein?)",
+      "answer": "Create a pooled digital khata for communal grocery staples (flour, oil, tea, dairy). Log each expense on the day of purchase, and have all participants settle their balances weekly via Raast or digital bank transfer."
+    },
+    {
+      "question": "How do you avoid money disputes with friends when living together?",
+      "answer": "Eliminate guesswork by logging every shared rupee digitally with receipts. Confirm settlements promptly through digital transaction IDs, and hold a 15-minute monthly house meeting to review the ledger together."
     }
-  ]
+  ],
+  "readingTime": 4
 }

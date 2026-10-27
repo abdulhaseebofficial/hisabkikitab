@@ -2,11 +2,11 @@
   "slug": "how-to-create-a-monthly-budget",
   "category": "budgeting",
   "title": "How to Create a Monthly Budget",
-  "excerpt": "Build a monthly plan using your actual income, essential costs, and a realistic savings target.",
-  "introduction": "A budget helps you decide what your money needs to do before you spend it. Start with the month ahead, use real numbers, and leave room to adjust. All amounts below are fictional PKR examples, not recommended spending limits.",
+  "excerpt": "Build a monthly household budget using take-home income, essential expenses, and realistic Pakistani Rupee savings targets.",
+  "introduction": "A budget helps you decide what your money needs to do before you spend it. Start with the month ahead, use real take-home numbers, and leave room to adjust for seasonal utilities and groceries. All figures below are illustrative Pakistani Rupee (PKR) examples, not rigid spending prescriptions.",
   "author": "HisabKi Kitab Editorial Team",
   "publishedAt": "2026-09-28",
-  "updatedAt": "2026-09-28",
+  "updatedAt": "2026-10-28",
   "featured": true,
   "sections": [
     {
@@ -15,7 +15,7 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "When bills arrive at different times, a healthy account balance can make you feel you have more spending money than you really do."
+          "text": "When salary arrives on the 1st, a healthy bank balance can create a false sense of security. But when house rent, electricity bills (LESCO/K-Electric), school fees, and ration expenses arrive at staggered dates throughout the month, unbudgeted spending early on leads to cash shortages before the next payday."
         }
       ]
     },
@@ -25,7 +25,7 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "Separate money already committed to essentials from money available for flexible spending. Use take-home income rather than salary before deductions. For irregular work, plan around income you can reasonably rely on and revise the plan when money arrives."
+          "text": "Separate money committed to essential obligations from money available for flexible day-to-day spending. Base your plan on net take-home pay rather than gross salary before taxes and deductions. For families and individuals in Pakistan, an adapted 50/30/20 guideline works well: 50–60% for non-negotiable household essentials (ration, rent, utilities), 20–30% for variable living costs, and 10–20% for emergency savings or debt payoff."
         }
       ]
     },
@@ -35,39 +35,51 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "Ayesha expects PKR 60,000 this month. She sets aside money for rent, food, transport, bills, and savings before choosing a flexible spending limit."
+          "text": "Ayesha manages a household with PKR 100,000 net monthly take-home income. She sets aside funds for rent, monthly ration, utilities, transport, and a dedicated emergency reserve before assigning her flexible spending limit."
         },
         {
           "type": "table",
-          "caption": "Illustrative amounts in PKR",
+          "caption": "Illustrative monthly allocation in Pakistani Rupees (PKR)",
           "headers": [
             "Monthly allocation",
-            "PKR"
+            "Category type",
+            "PKR amount"
           ],
           "rows": [
             [
-              "Rent",
-              "18,000"
+              "Rent / House Maintenance",
+              "Fixed Essential",
+              "32,000"
             ],
             [
-              "Food",
+              "Food & Monthly Ration (Kirana)",
+              "Essential Living",
+              "24,000"
+            ],
+            [
+              "Utilities (Electricity, Gas, Water)",
+              "Fixed Essential",
               "12,000"
             ],
             [
-              "Transport",
-              "5,000"
+              "Transport & Fuel",
+              "Essential Commute",
+              "8,000"
             ],
             [
-              "Bills",
-              "7,000"
-            ],
-            [
-              "Savings",
+              "Education & Children Fees",
+              "Fixed Essential",
               "6,000"
             ],
             [
-              "Flexible spending",
-              "12,000"
+              "Emergency Savings Buffer",
+              "Savings & Security",
+              "10,000"
+            ],
+            [
+              "Flexible Spending & Leisure",
+              "Discretionary",
+              "8,000"
             ]
           ]
         }
@@ -79,7 +91,7 @@
       "blocks": [
         {
           "type": "calculation",
-          "text": "60,000 - (18,000 + 12,000 + 5,000 + 7,000 + 6,000) = PKR 12,000 available for flexible spending."
+          "text": "PKR 100,000 Net Income − (32,000 + 24,000 + 12,000 + 8,000 + 6,000 + 10,000 Committed Costs) = PKR 8,000 available for discretionary spending across the month."
         }
       ]
     },
@@ -90,11 +102,11 @@
         {
           "type": "steps",
           "items": [
-            "List expected take-home income and the dates it should arrive.",
-            "Record fixed bills, due dates, and recent variable costs.",
-            "Reserve money for savings and known upcoming costs.",
-            "Compare planned spending with income; reduce flexible costs if the total is too high.",
-            "Review the plan each week and record what actually happened."
+            "List confirmed take-home pay and the exact dates it clears into your account.",
+            "Ring-fence committed expenses: rent, utility bills, school fees, and ration.",
+            "Transfer a predetermined savings percentage (minimum 10%) immediately at payday before spending.",
+            "Divide your discretionary allowance across 4 weeks so you do not run out of funds mid-month.",
+            "Conduct a 10-minute weekly review to compare actual receipts against your planned categories."
           ]
         }
       ]
@@ -106,9 +118,10 @@
         {
           "type": "list",
           "items": [
-            "Treating a credit limit as income.",
-            "Forgetting annual fees, repairs, or school costs.",
-            "Setting food and travel limits too low to follow."
+            "Treating a revolving committee (kameti) payout as fresh income rather than disciplined past savings.",
+            "Forgetting periodic annual bills such as vehicle token taxes, Eid shopping, or school admissions.",
+            "Setting daily food or commute estimates too low to realistically follow in an inflationary environment.",
+            "Relying on credit cards or informal borrowing to bridge recurring monthly spending gaps."
           ]
         }
       ]
@@ -119,11 +132,11 @@
       "blocks": [
         {
           "type": "subheading",
-          "text": "Make it easier to keep going"
+          "text": "Managing seasonal utility spikes in Pakistan"
         },
         {
           "type": "tip",
-          "text": "A monthly total can hide a shortfall before payday. Check the running balance at each bill date as well."
+          "text": "Summer air conditioning and winter gas charges cause dramatic bill fluctuations. Look at your past 12 months of utility bills, calculate the monthly average, and save a small utility cushion during mild spring and autumn months to absorb peak billing seasons."
         }
       ]
     },
@@ -133,12 +146,16 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "Your first budget is a starting estimate. A useful plan gets more accurate through review, not through perfect predictions."
+          "text": "Your first budget is a baseline estimate, not a permanent constraint. A practical budget becomes more accurate through regular weekly reviews and honest category adjustments, giving you full control over your financial future."
         }
       ]
     }
   ],
   "sources": [
+    {
+      "title": "State Bank of Pakistan — National Financial Literacy Program (NFLP)",
+      "url": "https://www.nflp.org.pk/"
+    },
     {
       "title": "Consumer.gov: Making a Budget",
       "url": "https://consumer.gov/your-money/making-budget"
@@ -149,17 +166,23 @@
     "before-related"
   ],
   "cta": {
-    "label": "Create your budget in HisabKi Kitab",
-    "to": "/budget"
+    "label": "Plan your budget with HisabKi Kitab",
+    "to": "/features/monthly-budgeting/",
+    "featureName": "monthly-budgeting"
   },
   "faqs": [
     {
-      "question": "What should a monthly budget include?",
-      "answer": "Include reliable take-home income, essential bills, variable costs, planned savings and flexible spending."
+      "question": "What is the best way to make a monthly salary budget in Pakistan? (Salary ka budget kaise banayein?)",
+      "answer": "Start with your confirmed net take-home pay. Ring-fence 50-60% for essential household costs (rent, ration, utilities), reserve at least 10% for savings, and divide the remaining balance across 4 weeks for day-to-day out-of-pocket expenses."
     },
     {
-      "question": "How often should I review a budget?",
-      "answer": "A short weekly review helps catch changes before the month ends. Update the plan when income or bills change."
+      "question": "How should I handle rising electricity and utility bills in my budget?",
+      "answer": "Track your utility bills across summer and winter seasons. Set aside a 10-15% utility buffer during moderate weather months to absorb peak summer electricity surcharges without breaking your monthly grocery plan."
+    },
+    {
+      "question": "How often should I review my monthly budget?",
+      "answer": "A short 10-minute weekly review helps you identify overspending early, while a full monthly reconciliation at payday allows you to adjust category limits for the upcoming month."
     }
-  ]
+  ],
+  "readingTime": 4
 }

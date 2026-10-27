@@ -2,33 +2,12 @@
   "slug": "how-to-track-money-you-lend-and-borrow",
   "category": "lending-borrowing",
   "title": "How to Keep a Clear Record of Money You Lend and Borrow",
-  "excerpt": "Record who paid, how much is outstanding and when you agreed to review or repay it.",
-  "introduction": "A clear written record helps both people remember what they agreed. This guide covers simple record-keeping, not contract terms or legal rights. Its fictional examples use PKR.",
+  "excerpt": "Track peer loans, Qarz-e-Hasana, installment repayments, and outstanding balances with clear digital records.",
+  "introduction": "In Pakistan, informal peer-to-peer lending among family, friends, and colleagues is culturally common. Keeping a clear written record protects both parties and eliminates misunderstandings. This educational guide covers informal bookkeeping and mutual accountability in Pakistani Rupees (PKR), not commercial banking credit or legal advice.",
   "author": "HisabKi Kitab Editorial Team",
   "publishedAt": "2026-09-28",
-  "updatedAt": "2026-09-28",
+  "updatedAt": "2026-10-28",
   "featured": true,
-  "ads": [],
-  "cta": {
-    "label": "Manage lending and borrowing",
-    "to": "/debts"
-  },
-  "faqs": [
-    {
-      "question": "What should a loan record include?",
-      "answer": "Record the people involved, original amount, dates, payments, current outstanding amount and what repayment arrangement both people confirmed."
-    },
-    {
-      "question": "Does a personal note replace a formal agreement?",
-      "answer": "A personal record helps with bookkeeping but is not a substitute for a formal agreement or qualified legal advice where those are needed."
-    }
-  ],
-  "sources": [
-    {
-      "title": "CFPB: Your Money, Your Goals toolkit",
-      "url": "https://www.consumerfinance.gov/consumer-tools/educator-tools/your-money-your-goals/toolkit/"
-    }
-  ],
   "sections": [
     {
       "id": "problem",
@@ -36,7 +15,7 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "A verbal promise can be remembered differently later, especially when small repayments happen over several months."
+          "text": "Informal peer loans and mutual aid (Qarz-e-Hasana) often begin with verbal promises or casual text messages. When repayments occur in small, irregular installments over several months, memories naturally diverge about how much was originally lent, what has been repaid, and what balance remains."
         }
       ]
     },
@@ -46,7 +25,7 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "Write down the original amount, date, people involved and repayment dates you both agreed. Record each payment separately, then update the balance. Confirm the record together and keep it private."
+          "text": "A reliable personal debt ledger (Digital Khata) requires five core fields for every transaction: (1) date, (2) principal amount, (3) parties involved, (4) agreed repayment milestones, and (5) a running updated balance. Informal personal loans are zero-interest agreements where the borrower repays only the exact principal received. Both parties should have access to the same ledger to maintain complete mutual confidence."
         }
       ]
     },
@@ -56,7 +35,48 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "A fictional record shows PKR 12,000 lent on 1 September. The parties agreed to review payments monthly. The borrower later pays PKR 3,000, which both confirm."
+          "text": "Tariq extends an interest-free personal loan of PKR 50,000 to his colleague Usman on 1 August for emergency vehicle repairs. They agree on a 3-month milestone schedule. Usman makes partial repayments in September and October before clearing the final balance in November."
+        },
+        {
+          "type": "table",
+          "caption": "Multi-installment personal debt ledger in Pakistani Rupees (PKR)",
+          "headers": [
+            "Date",
+            "Transaction description",
+            "Lent (PKR)",
+            "Repaid (PKR)",
+            "Remaining balance (PKR)"
+          ],
+          "rows": [
+            [
+              "01 Aug 2026",
+              "Emergency repair advance",
+              "50,000",
+              "0",
+              "50,000"
+            ],
+            [
+              "05 Sep 2026",
+              "First monthly installment",
+              "0",
+              "15,000",
+              "35,000"
+            ],
+            [
+              "05 Oct 2026",
+              "Second monthly installment",
+              "0",
+              "15,000",
+              "20,000"
+            ],
+            [
+              "05 Nov 2026",
+              "Final loan settlement",
+              "0",
+              "20,000",
+              "0 (Settled)"
+            ]
+          ]
         }
       ]
     },
@@ -66,7 +86,7 @@
       "blocks": [
         {
           "type": "calculation",
-          "text": "PKR 12,000 original amount - PKR 3,000 confirmed repayment = PKR 9,000 outstanding in this example."
+          "text": "Remaining Balance = Original Loan Principal − Sum of Confirmed Partial Payments. PKR 50,000 Principal − (PKR 15,000 + PKR 15,000 + PKR 20,000) = PKR 0 remaining balance."
         }
       ]
     },
@@ -77,11 +97,11 @@
         {
           "type": "steps",
           "items": [
-            "Ask whether the other person is comfortable discussing and recording the arrangement.",
-            "Write down the original amount, date, payer, recipient and agreed review or payment dates.",
-            "Share a copy and ask the other person to confirm it is accurate.",
-            "Record each payment once, with its date and amount.",
-            "Check the updated balance together if either person has a question."
+            "Confirm loan expectations in writing upfront: agree on repayment dates, partial installment amounts, and payment methods.",
+            "Always use traceable digital payment channels (Raast ID or online banking transfer) with a clear note (e.g., 'Loan installment').",
+            "Log every repayment immediately upon receipt, noting the date, amount, and updated balance.",
+            "Share an updated balance confirmation with the other person after every installment.",
+            "If unexpected circumstances delay a payment, communicate proactively with a realistic revised timeline before the due date passes."
           ]
         }
       ]
@@ -93,9 +113,10 @@
         {
           "type": "list",
           "items": [
-            "Counting a promised payment as received before it arrives.",
-            "Changing the balance without showing which payment changed it.",
-            "Assuming people remember informal changes to the original agreement."
+            "Counting a promised repayment as received before cleared funds appear in your account.",
+            "Deducting casual shared expenses (like paying for lunch) from a loan balance without recording it in the ledger.",
+            "Lending money that you will need for your own urgent living costs or rent within the next 30 to 60 days.",
+            "Feeling embarrassed about requesting a written record—transparency demonstrates professionalism and protects both individuals."
           ]
         }
       ]
@@ -105,8 +126,12 @@
       "title": "Useful tips",
       "blocks": [
         {
+          "type": "subheading",
+          "text": "Ethical communication in informal lending"
+        },
+        {
           "type": "tip",
-          "text": "Use a neutral reminder and agree in advance how you will handle a late or missed payment. Consider your own budget before lending money you may need soon."
+          "text": "When reminding a friend or relative about an upcoming due date, keep the message factual and polite. A simple note such as 'Hi Usman, just confirming our record shows the second installment of PKR 15,000 is due on 5 October' removes emotional friction and maintains goodwill."
         }
       ]
     },
@@ -116,9 +141,43 @@
       "blocks": [
         {
           "type": "paragraph",
-          "text": "A shared, up-to-date record can reduce confusion. Keep expectations respectful and seek qualified legal help if a dispute or formal agreement requires it."
+          "text": "Good financial bookkeeping does not reflect distrust; it protects personal relationships. By keeping an objective, transparent record of money lent and borrowed, you safeguard your peace of mind and ensure mutual respect."
         }
       ]
     }
-  ]
+  ],
+  "sources": [
+    {
+      "title": "State Bank of Pakistan — Consumer Protection Framework",
+      "url": "https://www.sbp.org.pk/cpd/cpd.asp"
+    },
+    {
+      "title": "CFPB: Your Money, Your Goals toolkit",
+      "url": "https://www.consumerfinance.gov/consumer-tools/educator-tools/your-money-your-goals/toolkit/"
+    }
+  ],
+  "ads": [
+    "after-introduction",
+    "before-related"
+  ],
+  "cta": {
+    "label": "Track lending and borrowing in HisabKi Kitab",
+    "to": "/features/lending-borrowing-khata/",
+    "featureName": "lending-borrowing-khata"
+  },
+  "faqs": [
+    {
+      "question": "How can I track money lent to friends and family without causing awkwardness? (Udhar ka hisab kaise rakhein?)",
+      "answer": "Position record-keeping as mutual bookkeeping rather than suspicion. Send a friendly digital message confirming the date, principal amount, and agreed repayment milestones so both parties have an identical point of reference."
+    },
+    {
+      "question": "What information should be recorded for every loan repayment?",
+      "answer": "Record the payment date, transfer reference or receipt, amount paid, and the new updated outstanding balance. Both parties should verify the updated figure."
+    },
+    {
+      "question": "What is the difference between Qarz-e-Hasana and commercial debt?",
+      "answer": "Qarz-e-Hasana is an interest-free personal loan extended out of goodwill where the borrower repays only the exact principal amount without interest charges, markups, or commercial penalties."
+    }
+  ],
+  "readingTime": 4
 }
