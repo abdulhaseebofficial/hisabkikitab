@@ -16,6 +16,7 @@
     "migrate": "npm run migrate -w @hisabkikitab/api",
     "migrate:deployed": "node -r dotenv/config apps/api/src/infrastructure/database/migrate.js dotenv_config_path=.env.production.local",
     "migrate:adopt": "node -r dotenv/config apps/api/src/infrastructure/database/migrate.js adopt dotenv_config_path=.env.production.local",
+    "restore:drill": "node scripts/restore-drill.mjs",
     "migrate:status": "npm run migrate:status -w @hisabkikitab/api",
     "test:migrations": "node tests/migrations/fresh-schema.test.js",
     "test:db": "node tests/db/constraints.test.js && node tests/db/debt-transaction.test.js && node --test tests/db/debt-contacts.test.js && node --test tests/db/shared-living.test.js && node --test tests/db/shared-living-ownership.test.js && node --test tests/db/shared-bill-occurrence.test.js && node --test tests/db/phase1.test.js && node --test tests/db/personal-money-shadow.test.js && node --test tests/db/personal-money-exact.test.js && node --test tests/db/date-boundaries.test.js && node --test tests/db/scheduler.test.js && node --test tests/db/financial-requests.test.js && node --test tests/db/access-token-revocation.test.js && node --test tests/db/account-deletion-ownership.test.js && node --test tests/db/recurring-cron-comprehensive.test.js && node --test tests/db/audit-read-only.test.js && node --test tests/db/unicode-storage.test.js",
