@@ -378,7 +378,10 @@ test('Scenario 19: Unauthorized Financial API Requests Rejection', async () => {
     const req = {
       method: 'GET',
       params: { businessId: 'biz_A' },
-      user: { id: USERS.unauthorizedUser.id, isDemo: false },
+      // `_id`, not `id`: the auth middleware builds req.user through toApi(),
+      // which renames the column. A fixture shaped with `id` silently passes
+      // undefined into the membership lookup and proves nothing.
+      user: { _id: USERS.unauthorizedUser.id, isDemo: false },
     };
     const res = {
       status(s) { statusCalled = s; return this; },
@@ -411,7 +414,7 @@ test('Scenario 20: Cross-Business Document / PDF Access Rejection', async () => 
     const req = {
       params: { businessId: 'biz_A' },
       query: { type: 'pnl' },
-      user: { id: USERS.businessOwnerB.id, isDemo: false },
+      user: { _id: USERS.businessOwnerB.id, isDemo: false },
     };
     const res = {
       status(s) { statusCalled = s; return this; },
