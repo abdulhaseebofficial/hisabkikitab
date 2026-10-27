@@ -16,6 +16,24 @@
 > cannot be pointed at production without separate authorisation and an approved
 > secure handling procedure for customer data.
 
+## Measured limitations of the verified drill
+
+The drill proves the *mechanism*. Read its numbers with these limits in mind.
+
+| | |
+| --- | --- |
+| Dataset measured | 0.54 MB dump, 4,263 rows, 77 tables, synthetic data across all four modes |
+| Backup time | 0.6s |
+| Restore time | 2.8s |
+| **Predicts production RTO?** | **No.** Production's volume is not known from here. Backup and restore time scale with data size; the structure is already covered because the schema is identical. Re-measure against a production-sized copy before quoting any recovery-time objective. |
+| Data-loss window (RPO) | **Undetermined.** A logical dump is a point-in-time snapshot, so the exposure is the age of the newest backup. Without knowing whether the project has scheduled backups or PITR, the RPO cannot be stated at all -- it could be minutes or it could be everything. |
+| Downtime during a real restore | Not rehearsed. The drill restores into a *new* database; it never cuts over. Cutover, connection-string switching and reversing a cutover remain untested. |
+| Production data | Never used. The drill refuses non-local sources by design. |
+
+So: the recovery *procedure* is verified and repeatable; the recovery
+*objectives* (RTO and RPO) are still unknown, and both depend on the open
+backup-provision question below.
+
 Status (original): **blocked, not verified**. On 5 October 2026, the linked Supabase production project showed a Free organization plan. Its dashboard stated that Free projects have no managed backups, PITR is a Pro add-on, and restoring to a new project requires Pro or above with physical backups enabled. No independent dump was available in this workspace. The owner must provide a usable backup and an isolated restore destination before this drill can run. This repository still does not prove retention or recovery time. Never restore over production.
 
 1. In the actual database provider console, record the provider, project, region, backup schedule, retention period, PITR availability and limits, and responsible operator. Save evidence in a private operations location, not Git. Confirm the plan includes these features; do not infer them from application code.
