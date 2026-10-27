@@ -163,3 +163,46 @@ test('rename while creating or settling keeps the selected contact and exact led
     await client.end();
   }
 });
+
+/**
+ * Unicode normalisation must not become a merge rule.
+ *
+ * Phase 3 made every free-text field NFC-normalise on the way in, so a name
+ * typed with a combining accent and the same name typed precomposed end up
+ * byte-identical in the database. That is correct for storage and search, and
+ * it is exactly where a financial system could go wrong: two people whose
+ * names render identically are still two people, and their money must not be
+ * pooled. Identity is the contact row's id, never its display name.
+ */
+test('contacts whose names normalise to the same string stay separate, with separate money', async () => {
+  const decomposed = 'José Ali';   // e + U+0301 COMBINING ACUTE
+  const precomposed = 'José Ali';   // U+00E9 LATIN SMALL LETTER E WITH ACUTE
+  assert.notEqual(decomposed, precomposed, 'the two inputs must differ before normalisation');
+  assert.equal(decomposed.normalize('NFC'), precomposed.normalize('NFC'),
+    'and must be identical after it, or this test proves nothing');
+
+  const lent = await service.create(
+    user(), { kind: 'LENT', personName: decomposed, originalAmount: 70 }, crypto.randomUUID());
+  const borrowed = await service.create(
+    user(), { kind: 'LENT', personName: precomposed, originalAmount: 30 }, crypto.randomUUID());
+
+  assert.notEqual(lent.contactId, borrowed.contactId,
+    'identical-looking names must not collapse onto one contact');
+
+  const rows = await query(
+    'SELECT id, display_name FROM debt_contacts WHERE user_id=$1 AND id = ANY($2)',
+    [owner.id, [lent.contactId, borrowed.contactId]]);
+  assert.equal(rows.length, 2, 'both contacts must exist as distinct rows');
+
+  // Each ledger keeps its own amount; nothing was summed across the two.
+  assert.equal((await repo.findById(lent._id, 'student', owner.id)).remainingAmount, 70);
+  assert.equal((await repo.findById(borrowed._id, 'student', owner.id)).remainingAmount, 30);
+  assert.equal((await repo.personRecords(owner.id, 'student', lent.contactId)).items.length, 1);
+  assert.equal((await repo.personRecords(owner.id, 'student', borrowed.contactId)).items.length, 1);
+
+  // A search for the readable form finds both, without merging them.
+  const found = await repo.contacts(owner.id, 'Ali');
+  const ids = found.items.map((item) => item.id);
+  assert.ok(ids.includes(lent.contactId) && ids.includes(borrowed.contactId),
+    'search must surface both contacts');
+});
