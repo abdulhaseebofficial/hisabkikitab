@@ -25,7 +25,17 @@ const envOrigin = () => {
   return frontendURL;
 };
 
-const origin = envOrigin();
+const origin = (() => {
+  const raw = envOrigin();
+  if (!raw) return frontendURL;
+  try {
+    const parsed = new URL(raw);
+    if (parsed.hostname === 'hisabkikitab.com') parsed.hostname = 'www.hisabkikitab.com';
+    return parsed.origin;
+  } catch {
+    return raw;
+  }
+})();
 const publicUrl = (route) => new URL(route === '/' ? '/' : `${route}/`, origin).href;
 
 test.beforeEach(async ({ page }) => {

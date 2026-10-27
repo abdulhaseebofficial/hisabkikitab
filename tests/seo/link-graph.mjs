@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { JSDOM } from 'jsdom';
 import { publicPaths, toolPaths, trustPaths, sitemapPaths } from '../../apps/web/dist-ssr/prerender.js';
 
-const origin = 'https://hisabkikitab.com';
+const origin = 'https://www.hisabkikitab.com';
 const dist = resolve('apps/web/dist');
 const generated = new Set([...publicPaths, ...toolPaths, ...trustPaths]);
 const indexable = new Set(sitemapPaths);

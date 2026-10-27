@@ -158,6 +158,16 @@
       "source": "/forgot-password",
       "destination": "/forgot-password/",
       "statusCode": 301
+    },
+    {
+      "source": "/signup",
+      "destination": "/register/",
+      "statusCode": 301
+    },
+    {
+      "source": "/signup/",
+      "destination": "/register/",
+      "statusCode": 301
     }
   ],
   "headers": [

@@ -2,17 +2,13 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { loadEnv } from 'vite';
 import { publicPaths, toolPaths, trustPaths, sitemapPaths, render, renderTool, renderTrust } from '../dist-ssr/prerender.js';
+import { canonicalSiteOrigin } from '../../../scripts/site-origin.mjs';
 
 const env = { ...loadEnv('production', process.cwd(), ''), ...process.env };
 // Prefer the explicit public origin. Vercel exposes its production domain for
 // production builds; preview domains are deliberately never used for SEO.
-const configuredOrigin = env.VITE_SITE_URL || (env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}` : '');
-if (!configuredOrigin) throw new Error('Set VITE_SITE_URL to the production origin (or build on Vercel with VERCEL_PROJECT_PRODUCTION_URL available).');
-const parsedOrigin = new URL(configuredOrigin);
-if (parsedOrigin.protocol !== 'https:' || parsedOrigin.pathname !== '/' || parsedOrigin.search || parsedOrigin.hash) {
-  throw new Error('VITE_SITE_URL must be an HTTPS origin such as https://example.com, without a path, query, or fragment.');
-}
-const origin = parsedOrigin.origin;
+const origin = canonicalSiteOrigin(env.VITE_SITE_URL || (env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${env.VERCEL_PROJECT_PRODUCTION_URL}` : ''));
+if (!origin) throw new Error('Set VITE_SITE_URL to the production origin (or build on Vercel with VERCEL_PROJECT_PRODUCTION_URL available).');
 const escape = (value) => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 const verificationToken = String(env.VITE_GOOGLE_SITE_VERIFICATION || '').trim();
 const template = await readFile(resolve('dist/index.html'), 'utf8');

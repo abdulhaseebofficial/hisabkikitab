@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { JSDOM } from 'jsdom';
 import { publicPaths, sitemapPaths } from '../../apps/web/dist-ssr/prerender.js';
 
-const origin = 'https://hisabkikitab.com';
+const origin = 'https://www.hisabkikitab.com';
 const dist = resolve('apps/web/dist');
 const pageFile = (path) => resolve(dist, path === '/' ? 'index.html' : `${path.slice(1)}/index.html`);
 const html = async (path) => new JSDOM(await readFile(pageFile(path), 'utf8')).window.document;
