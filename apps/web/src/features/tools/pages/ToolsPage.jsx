@@ -257,6 +257,14 @@ export function ToolCalculator({ tool }) {
             Already registered? {details.memberActionText || action}
           </Link>
         </div>
+        {['budget-calculator', 'expense-split-calculator'].includes(tool.slug) && (
+          <p className="mt-3.5 border-t border-brand-100 pt-3 text-xs text-slate-600 dark:border-brand-500/20 dark:text-slate-400">
+            Prefer offline spreadsheets?{' '}
+            <Link to="/templates" className="font-semibold text-brand-700 hover:underline dark:text-brand-300">
+              Download our free Excel budget templates
+            </Link>
+          </p>
+        )}
       </aside>
     </>
   );

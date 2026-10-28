@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { loadEnv } from 'vite';
-import { publicPaths, toolPaths, trustPaths, featurePaths, sitemapPaths, render, renderTool, renderTrust, renderFeature } from '../dist-ssr/prerender.js';
+import { publicPaths, toolPaths, trustPaths, featurePaths, templatePaths, sitemapPaths, render, renderTool, renderTrust, renderFeature, renderTemplate } from '../dist-ssr/prerender.js';
 import { canonicalSiteOrigin } from '../../../scripts/site-origin.mjs';
 
 const env = { ...loadEnv('production', process.cwd(), ''), ...process.env };
@@ -24,7 +24,7 @@ const appShell = template
   .replace(/<meta\s+name="description"[\s\S]*?\/>/, '')
   .replace('</head>', '<meta name="robots" content="noindex,follow" />\n</head>');
 await writeFile(resolve('dist/app.html'), appShell);
-for (const path of [...publicPaths, ...toolPaths, ...trustPaths, ...featurePaths]) {
+for (const path of [...publicPaths, ...toolPaths, ...trustPaths, ...featurePaths, ...templatePaths]) {
   const { html, metadata, initialArticle } = await (
     trustPaths.includes(path)
       ? renderTrust(path, origin)
@@ -32,6 +32,8 @@ for (const path of [...publicPaths, ...toolPaths, ...trustPaths, ...featurePaths
       ? renderTool(path, origin)
       : featurePaths.includes(path)
       ? renderFeature(path, origin)
+      : templatePaths.includes(path)
+      ? renderTemplate(path, origin)
       : render(path, origin)
   );
   const verificationTag = verificationToken ? `<meta name="google-site-verification" content="${escape(verificationToken)}" />\n` : '';
