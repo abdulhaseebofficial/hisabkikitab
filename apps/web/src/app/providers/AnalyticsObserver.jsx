@@ -19,6 +19,8 @@ const TITLES = {
   '/goals': 'Goals', '/debts': 'Udhaar', '/budget': 'Budget', '/advisor': 'AI advisor',
   '/reports': 'Reports', '/settings': 'Settings',
   '/tools': 'Financial tools',
+  '/features': 'Product Features & Workspaces | HisabKi Kitab',
+  '/templates': 'Free Financial Planning & Budget Templates | HisabKi Kitab',
 };
 
 export default function AnalyticsObserver() {
@@ -53,6 +55,12 @@ export default function AnalyticsObserver() {
       } else if (/^\/(about|contact|privacy|terms|disclaimer)$/.test(normalized)) {
         const { trustPageFromPath } = await import('../../features/trust/content/pages');
         title = `${trustPageFromPath(normalized).title} | HisabKi Kitab`;
+      } else if (normalized === '/features' || normalized.startsWith('/features/')) {
+        const { features } = await import('../../features/productFeatures/content/featuresData');
+        const feat = features.find(item => `/features/${item.slug}` === normalized);
+        title = feat ? `${feat.title} | HisabKi Kitab` : normalized === '/features' ? 'Product Features & Workspaces | HisabKi Kitab' : 'Feature not found | HisabKi Kitab';
+      } else if (normalized === '/templates' || normalized.startsWith('/templates/')) {
+        title = 'Free Financial Planning & Budget Templates | HisabKi Kitab';
       }
       if (!cancelled) trackPageView(location.pathname, title);
     };
