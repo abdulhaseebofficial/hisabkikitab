@@ -59,6 +59,9 @@ it('blocks GA before a choice and after rejection or withdrawal', () => {
 it('normalizes public slash variants and never sends a reset token or query', () => {
   expect(normalizePage('/learn/saving/example?private=value')).toBe('/learn/saving/example/');
   expect(normalizePage('/learn/')).toBe('/learn/');
+  expect(normalizePage('/templates')).toBe('/templates/');
+  expect(normalizePage('/templates/')).toBe('/templates/');
+  expect(normalizePage('/features')).toBe('/features/');
   expect(normalizePage('/reset-password/private-token/?email=private')).toBe('/reset-password/:token');
 });
 

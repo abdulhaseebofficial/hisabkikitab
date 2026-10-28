@@ -1,6 +1,6 @@
 export const routePath = (path) => String(path || '/').replace(/\/+$/, '') || '/';
 
-export const isPublicPage = (path) => /^\/$|^\/(?:learn|tools|features)(?:\/|$)|^\/(?:about|contact|privacy|terms|disclaimer)\/?$/.test(path);
+export const isPublicPage = (path) => /^\/$|^\/(?:learn|tools|features|templates)(?:\/|$)|^\/(?:about|contact|privacy|terms|disclaimer)\/?$/.test(path);
 const isAuthPage = (path) => /^\/(?:login|register|forgot-password)\/?$/.test(path);
 
 // Only page URLs use this helper. Files, APIs and private application routes
