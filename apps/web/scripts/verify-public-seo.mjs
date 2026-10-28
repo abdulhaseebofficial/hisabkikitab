@@ -52,7 +52,7 @@ for (const url of urls) {
   if (schemaUrls.some((value) => new URL(value).origin !== origin)) throw new Error(`Structured data uses a non-production origin on ${pathname}`);
   for (const item of Array.isArray(schema) ? schema : [schema]) types.add(item['@type']);
   if (pathname.startsWith('/learn/') && pathname.split('/').filter(Boolean).length === 3 && !schema.some((item) => item['@type'] === 'Article')) throw new Error(`Missing Article schema on ${pathname}`);
-  if (pathname === '/learn' || pathname.startsWith('/learn/') || pathname.startsWith('/tools')) {
+  if (pathname === '/learn' || pathname.startsWith('/learn/') || pathname.startsWith('/tools') || pathname.startsWith('/templates')) {
     if (!schema.some((item) => item['@type'] === 'BreadcrumbList')) throw new Error(`Missing Breadcrumb schema on ${pathname}`);
   }
   if (['/about/', '/contact/', '/privacy/', '/terms/', '/disclaimer/'].includes(pathname)) {

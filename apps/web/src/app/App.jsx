@@ -50,10 +50,12 @@ const LazyLearnPage = lazy(() => import('../features/learn/LearnPage'));
 const LazyToolsPage = lazy(() => import('../features/tools/pages/ToolsPage'));
 const LazyTrustPage = lazy(() => import('../features/trust/TrustPage'));
 const LazyFeaturePage = lazy(() => import('../features/productFeatures/pages/FeaturePage'));
+const LazyTemplatesPage = lazy(() => import('../features/templates/pages/TemplatesHubPage'));
 const LearnPage = (props) => { const Component = initialPublicRoute?.kind === 'learn' ? initialPublicRoute.Component : LazyLearnPage; return <Component {...props} />; };
 const ToolsPage = (props) => { const Component = initialPublicRoute?.kind === 'tools' ? initialPublicRoute.Component : LazyToolsPage; return <Component {...props} />; };
 const TrustPage = (props) => { const Component = initialPublicRoute?.kind === 'trust' ? initialPublicRoute.Component : LazyTrustPage; return <Component {...props} />; };
 const FeaturePage = (props) => { const Component = initialPublicRoute?.kind === 'features' ? initialPublicRoute.Component : LazyFeaturePage; return <Component {...props} />; };
+const TemplatesPage = (props) => { const Component = initialPublicRoute?.kind === 'templates' ? initialPublicRoute.Component : LazyTemplatesPage; return <Component {...props} />; };
 
 export async function prepareInitialRoute(path) {
   if (path === '/' || /^\/learn(?:\/|$)/.test(path)) {
@@ -65,6 +67,9 @@ export async function prepareInitialRoute(path) {
   } else if (/^\/features(?:\/|$)/.test(path)) {
     const { default: Component } = await import('../features/productFeatures/pages/FeaturePage');
     initialPublicRoute = { kind: 'features', Component };
+  } else if (/^\/templates(?:\/|$)/.test(path)) {
+    const { default: Component } = await import('../features/templates/pages/TemplatesHubPage');
+    initialPublicRoute = { kind: 'templates', Component };
   } else if (/^\/(about|contact|privacy|terms|disclaimer)\/?$/.test(path)) {
     const { default: Component } = await import('../features/trust/TrustPage');
     initialPublicRoute = { kind: 'trust', Component };
@@ -133,6 +138,7 @@ export default function App() {
                 <Route path="/tools/:tool" element={<ToolsPage />} />
                 <Route path="/features" element={<FeaturePage />} />
                 <Route path="/features/:feature" element={<FeaturePage />} />
+                <Route path="/templates" element={<TemplatesPage />} />
                 <Route path="/about" element={<TrustPage />} />
                 <Route path="/contact" element={<TrustPage />} />
                 <Route path="/privacy" element={<TrustPage />} />

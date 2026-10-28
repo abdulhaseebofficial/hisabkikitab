@@ -32,6 +32,10 @@
           "destination": "/features/index.html"
         },
         {
+          "source": "/templates/",
+          "destination": "/templates/index.html"
+        },
+        {
           "source": "/learn/:category/:slug/",
           "destination": "/learn/:category/:slug/index.html"
         },
@@ -135,6 +139,11 @@
     {
       "source": "/features/:feature([a-z0-9-]+)",
       "destination": "/features/:feature/",
+      "statusCode": 301
+    },
+    {
+      "source": "/templates",
+      "destination": "/templates/",
       "statusCode": 301
     },
     {

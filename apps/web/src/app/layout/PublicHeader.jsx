@@ -12,6 +12,7 @@ const links = [
   { to: '/dashboard', label: 'My finances' },
   { to: '/learn', label: 'Guides' },
   { to: '/tools', label: 'Tools' },
+  { to: '/templates', label: 'Templates' },
 ];
 
 export default function PublicHeader({ controls }) {

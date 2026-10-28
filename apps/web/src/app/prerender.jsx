@@ -11,12 +11,14 @@ import TrustContent from '../features/trust/TrustContent';
 import { trustPaths, trustPageFromPath } from '../features/trust/content/pages';
 import { trustMetadata } from '../features/trust/metadata';
 import { features, featurePaths, featureMetadata, FeatureContent } from '../features/productFeatures';
+import { templatePaths, templatesMetadata, TemplatesContent } from '../features/templates';
 
 export { publicPaths };
 export const toolPaths = ['/tools', ...tools.map((tool) => `/tools/${tool.slug}`)];
 export { trustPaths };
 export { featurePaths };
-export const sitemapPaths = [...indexablePaths, ...toolPaths, ...trustPaths, ...featurePaths];
+export { templatePaths };
+export const sitemapPaths = [...indexablePaths, ...toolPaths, ...trustPaths, ...featurePaths, ...templatePaths];
 
 function validateArticle(article) {
   if (!article.sections?.length || !article.sources?.length || article.sections.some((section) =>
@@ -64,4 +66,16 @@ export function renderTrust(path, origin) {
   const metadata = trustMetadata(page, origin);
   const html = renderToString(<StaticRouter location={path}><PublicFrame><TrustContent page={page} /></PublicFrame></StaticRouter>);
   return { metadata, html };
+}
+
+export function renderTemplate(path, origin) {
+  const page = templatesMetadata(path, origin);
+  const html = renderToString(
+    <StaticRouter location={path}>
+      <PublicFrame>
+        <TemplatesContent />
+      </PublicFrame>
+    </StaticRouter>
+  );
+  return { metadata: page, html };
 }

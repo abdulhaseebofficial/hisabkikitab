@@ -2,7 +2,7 @@ import Link from '../../shared/seo/PublicLink';
 import { PrivacyChoices } from '../../shared/analytics/ConsentBanner';
 
 const links = [
-  ['My finances', '/dashboard'], ['Features', '/features'], ['Guides', '/learn'], ['Tools', '/tools'],
+  ['My finances', '/dashboard'], ['Features', '/features'], ['Guides', '/learn'], ['Tools', '/tools'], ['Templates', '/templates'],
   ['About', '/about'], ['Contact', '/contact'], ['Privacy', '/privacy'],
   ['Terms', '/terms'], ['Disclaimer', '/disclaimer'],
 ];
