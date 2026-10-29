@@ -260,7 +260,7 @@ export function ToolCalculator({ tool }) {
         {['budget-calculator', 'expense-split-calculator'].includes(tool.slug) && (
           <p className="mt-3.5 border-t border-brand-100 pt-3 text-xs text-slate-600 dark:border-brand-500/20 dark:text-slate-400">
             Prefer offline spreadsheets?{' '}
-            <Link to="/templates" className="font-semibold text-brand-700 hover:underline dark:text-brand-300">
+            <Link to="/templates/" className="font-semibold text-brand-700 hover:underline dark:text-brand-300">
               Download our free Excel budget templates
             </Link>
           </p>
@@ -296,6 +296,25 @@ export function ToolsContent({ tool }) {
           {tools.map((item) => (
             <ToolCard key={item.slug} tool={item} />
           ))}
+        </div>
+      </section>
+      <section className="mt-12 rounded-2xl border border-brand-100 bg-brand-50/50 p-6 sm:p-8 dark:border-brand-900/40 dark:bg-brand-950/20">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-xl">
+            <h2 className="font-display text-xl font-bold text-slate-900 dark:text-slate-100">
+              Prefer Offline Spreadsheets?
+            </h2>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              Download free, formula-tested Excel templates (.xlsx) for household budgeting and roommate expense splitting with zero macros and full PKR formatting.
+            </p>
+          </div>
+          <Link
+            to="/templates/"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700"
+          >
+            <span>Browse Free Templates</span>
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
         </div>
       </section>
     </>

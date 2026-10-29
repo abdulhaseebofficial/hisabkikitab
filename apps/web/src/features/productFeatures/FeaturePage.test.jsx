@@ -62,4 +62,16 @@ describe('Phase 3 product feature landing pages', () => {
       expect(meta.schema.some((s) => s['@type'] === 'WebApplication')).toBe(false);
     }
   });
+
+  it('renders free spreadsheet templates card in features hub linking to /templates/', () => {
+    render(
+      <MemoryRouter>
+        <FeatureContent isHub={true} />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { level: 2, name: /Free Spreadsheet Templates/i })).toBeInTheDocument();
+    const templateLink = screen.getByRole('link', { name: /Download Free Templates/i });
+    expect(templateLink).toHaveAttribute('href', '/templates/');
+  });
 });

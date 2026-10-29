@@ -154,7 +154,22 @@ function FeaturesHubContent() {
       </section>
 
       {/* Free Interactive Tools & Guides Section */}
-      <section aria-label="Free tools and educational guides" className="grid gap-6 sm:grid-cols-2">
+      <section aria-label="Free tools and educational guides" className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="rounded-2xl border border-slate-200 bg-canvas-card p-6 dark:border-slate-800 dark:bg-canvas-darkCard">
+          <div className="flex items-center gap-3">
+            <FileSpreadsheet className="h-6 w-6 text-brand-600 dark:text-brand-400" aria-hidden="true" />
+            <h2 className="font-display text-lg font-bold text-slate-900 dark:text-slate-100">Free Spreadsheet Templates</h2>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-300">
+            Download pre-formatted Excel workbooks (.xlsx) for monthly household budgets and roommate expense splitting with zero macros.
+          </p>
+          <div className="mt-4">
+            <Link to="/templates/" className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline dark:text-brand-300">
+              Download Free Templates <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
+
         <div className="rounded-2xl border border-slate-200 bg-canvas-card p-6 dark:border-slate-800 dark:bg-canvas-darkCard">
           <div className="flex items-center gap-3">
             <Calculator className="h-6 w-6 text-brand-600 dark:text-brand-400" aria-hidden="true" />
@@ -284,7 +299,7 @@ function FeatureDetailContent({ feature }) {
         <h2 id="capabilities-heading" className="font-display text-2xl font-bold text-slate-900 dark:text-slate-100">
           Key Capabilities Built for Everyday Pakistani Realities
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {feature.capabilities.map((cap, index) => (
             <div
               key={index}
@@ -365,7 +380,7 @@ function FeatureDetailContent({ feature }) {
         <h2 id="connected-tools-heading" className="font-display text-xl font-bold text-slate-900 dark:text-slate-100">
           Connected Calculators & Educational Guides
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {feature.relatedCalculator && (
             <div className="rounded-xl border border-slate-200 bg-canvas-card p-5 dark:border-slate-800 dark:bg-canvas-darkCard">
               <span className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
@@ -388,6 +403,27 @@ function FeatureDetailContent({ feature }) {
             </div>
           )}
 
+          {feature.relatedTemplate && (
+            <div className="rounded-xl border border-slate-200 bg-canvas-card p-5 dark:border-slate-800 dark:bg-canvas-darkCard">
+              <span className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+                Spreadsheet Template
+              </span>
+              <h3 className="mt-1 font-semibold text-slate-900 dark:text-slate-100">
+                {feature.relatedTemplate.title}
+              </h3>
+              <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
+                {feature.relatedTemplate.description}
+              </p>
+              <div className="mt-4">
+                <Link
+                  to={feature.relatedTemplate.path}
+                  className="inline-flex min-h-11 items-center gap-1.5 text-xs font-semibold text-brand-700 hover:underline dark:text-brand-300"
+                >
+                  Download Free Template (.xlsx) <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                </Link>
+              </div>
+            </div>
+          )}
           {feature.relatedGuide && (
             <div className="rounded-xl border border-slate-200 bg-canvas-card p-5 dark:border-slate-800 dark:bg-canvas-darkCard">
               <span className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">

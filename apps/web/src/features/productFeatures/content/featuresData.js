@@ -137,6 +137,12 @@ export const features = [
       title: 'How to Create a Monthly Budget',
       description: 'Step-by-step guidance on creating a budget you can actually stick to throughout the month.',
     },
+    relatedTemplate: {
+      path: '/templates/',
+      title: 'Monthly Household Budget Excel Template',
+      description: 'Prefer working offline? Download our free, formula-tested .xlsx spreadsheet for household budgeting.',
+    },
+
     faqs: [
       {
         question: 'What if my monthly income varies from month to month?',
