@@ -36,4 +36,15 @@ describe('homepage finance preview', () => {
     expect(screen.getByRole('button', { name: 'Add Income' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Add Expense' })).toBeDisabled();
   });
+
+  it('renders the free downloadable budget templates section linking to /templates/', () => {
+    render(<MemoryRouter><HomeContent ArticleCard={ArticleCard} /></MemoryRouter>);
+
+    expect(screen.getByRole('heading', { name: /Downloadable Excel & Google Sheets Budget Templates/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: /Monthly Household Budget Planner/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: /Roommate & Hostel Expense Splitter/i })).toBeInTheDocument();
+
+    const templateLinks = screen.getAllByRole('link', { name: /template|splitter/i }).filter((l) => l.getAttribute('href') === '/templates/');
+    expect(templateLinks.length).toBeGreaterThanOrEqual(2);
+  });
 });

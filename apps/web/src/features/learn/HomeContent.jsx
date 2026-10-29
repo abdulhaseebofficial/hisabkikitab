@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from '../../shared/seo/PublicLink';
 import { useLocation } from 'react-router-dom';
 import {
-  ArrowDownLeft, ArrowRight, ArrowUpRight, BookOpen, Briefcase, Check, House,
+  ArrowDownLeft, ArrowRight, ArrowUpRight, BookOpen, Briefcase, Check, FileSpreadsheet, House,
   Plus, Target, Users, Wallet
 } from 'lucide-react';
 import OfficialLogo from '../../shared/components/layout/OfficialLogo';
@@ -250,6 +250,65 @@ export default function HomeContent({ ArticleCard }) {
         <div className="mt-5 text-center">
           <Link to="/tools" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-700 hover:underline dark:text-brand-300">
             View all 7 free financial planning calculators <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </div>
+      </section>
+
+      <section className="hkk-features" aria-labelledby="hkk-templates-preview-heading">
+        <div className="hkk-section-intro">
+          <p className="hkk-eyebrow">Free spreadsheet templates</p>
+          <h2 id="hkk-templates-preview-heading">Downloadable Excel &amp; Google Sheets Budget Templates</h2>
+          <p>Prefer working offline? Download pre-formatted, formula-tested .xlsx workbooks tailored for Pakistani household living and shared student flats.</p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <article className="hw-card hw-discovery-card flex flex-col justify-between p-6 hover:border-brand-400">
+            <div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-950/40 dark:text-brand-300">
+                  <FileSpreadsheet className="h-3.5 w-3.5" aria-hidden="true" />
+                  Household Finance
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">22 KB · .XLSX</span>
+              </div>
+              <h3 className="mt-3 font-display text-lg font-bold text-slate-900 dark:text-slate-100">
+                Monthly Household Budget Planner
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                Pre-formatted for Pakistani Rupees (PKR) with 50/30/20 allocation, variance tracking, and zero macros. Works in Excel and Google Sheets.
+              </p>
+            </div>
+            <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <Link to="/templates/" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:underline dark:text-brand-300">
+                Download household template <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+          </article>
+          <article className="hw-card hw-discovery-card flex flex-col justify-between p-6 hover:border-brand-400">
+            <div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-950/40 dark:text-brand-300">
+                  <FileSpreadsheet className="h-3.5 w-3.5" aria-hidden="true" />
+                  Shared Living &amp; Hostels
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">20 KB · .XLSX</span>
+              </div>
+              <h3 className="mt-3 font-display text-lg font-bold text-slate-900 dark:text-slate-100">
+                Roommate &amp; Hostel Expense Splitter
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                Split rent, utilities, and grocery bills equally across roommates with automated settlement matrices and running balance sheets.
+              </p>
+            </div>
+            <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <Link to="/templates/" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 hover:underline dark:text-brand-300">
+                Download roommate splitter <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+          </article>
+        </div>
+        <div className="mt-6 text-center">
+          <Link to="/templates/" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand-700 hover:underline dark:text-brand-300">
+            Explore all free budget &amp; expense templates <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
       </section>
